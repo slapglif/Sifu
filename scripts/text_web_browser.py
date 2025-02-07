@@ -79,8 +79,8 @@ class SimpleTextBrowser:
                     self._state['current_url'] = url
                     self._state['current_position'] = 0
                     self._state['find_position'] = 0
-                    
-                    return self._get_current_viewport()
+            
+            return self._get_current_viewport()
             
         except Exception as e:
             logger.error(f"Error visiting {url}: {e}")
@@ -124,7 +124,7 @@ class SimpleTextBrowser:
     def state(self) -> Dict[str, Any]:
         """Get current browser state."""
         return dict(self._state)  # Create a new dict to avoid modifying the original
-
+            
     def page_up(self) -> str:
         """Move viewport up."""
         current_position = self._state.get('current_position', 0)
@@ -143,7 +143,7 @@ class SimpleTextBrowser:
             current_position + self.viewport_size
         )
         return self._get_current_viewport()
-
+        
     def find(self, text: str) -> str:
         """Find text in current page."""
         current_page = self._state.get('current_page', '')
@@ -159,7 +159,7 @@ class SimpleTextBrowser:
         self._state['current_position'] = max(0, position - 100)
         self._state['last_search'] = text
         return self._get_current_viewport()
-
+        
     def find_next(self) -> str:
         """Find next occurrence of the last search."""
         current_page = self._state.get('current_page', '')
@@ -175,7 +175,7 @@ class SimpleTextBrowser:
         self._state['find_position'] = position
         self._state['current_position'] = max(0, position - 100)
         return self._get_current_viewport()
-
+        
     def _get_current_viewport(self) -> str:
         """Get the current viewport of text."""
         current_page = self._state.get('current_page', '')
@@ -258,8 +258,7 @@ async def web_search(query: str) -> str:
                             return "\n".join(formatted_results)
                         else:
                             return "Error: No valid results found"
-                    else:
-                        return "Error: No results found in search response"
+     
                     
         except aiohttp.ClientError as e:
             logger.error(f"Error making search request: {e}")
@@ -268,6 +267,8 @@ async def web_search(query: str) -> str:
     except Exception as e:
         logger.error(f"Error in web search: {e}")
         return f"Error: Web search failed - {str(e)}"
+    
+    return "Error: No results found in search response"
 
 web_search_tool = StructuredTool.from_function(
     func=web_search,

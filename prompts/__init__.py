@@ -1,35 +1,81 @@
 """Prompts package for the research agent system."""
 
 from .knowledge_acquisition import (
-    KNOWLEDGE_EXTRACTION_SYSTEM,
-    KNOWLEDGE_EXTRACTION_HUMAN
+    Relationship,
+    SourceMetadata,
+    ExtractedKnowledge,
+    get_knowledge_extraction_prompt,
+    ConfidenceFactors,
+    ConfidenceEvaluation,
+    get_confidence_evaluation_prompt
 )
 
 from .qa import (
-    QUESTION_GENERATION_SYSTEM,
-    QUESTION_GENERATION_HUMAN,
-    ANSWER_GENERATION_SYSTEM,
-    ANSWER_GENERATION_HUMAN,
-    KNOWLEDGE_GAP_SYSTEM,
-    KNOWLEDGE_GAP_HUMAN
+    Question,
+    get_question_generation_prompt,
+    Answer,
+    get_answer_generation_prompt,
+    KnowledgeGap,
+    get_knowledge_gap_prompt
 )
 
 from .synthetic_knowledge import (
-    PATTERN_RECOGNITION_SYSTEM,
-    PATTERN_RECOGNITION_HUMAN,
-    HYPOTHESIS_GENERATION_SYSTEM,
-    HYPOTHESIS_GENERATION_HUMAN,
-    RELATIONSHIP_INFERENCE_SYSTEM,
-    RELATIONSHIP_INFERENCE_HUMAN,
-    KNOWLEDGE_SYNTHESIS_SYSTEM,
-    KNOWLEDGE_SYNTHESIS_HUMAN
+    Pattern,
+    Hypothesis,
+    Relationship,
+    SyntheticKnowledge,
+    get_pattern_recognition_prompt,
+    get_hypothesis_generation_prompt,
+    get_relationship_inference_prompt,
+    get_knowledge_synthesis_prompt
 )
 
 from .visual_qa import (
-    VISUAL_ELEMENT_DETECTION_SYSTEM,
-    VISUAL_ELEMENT_DETECTION_HUMAN,
-    SCENE_ANALYSIS_SYSTEM,
-    SCENE_ANALYSIS_HUMAN,
-    VISUAL_QA_SYSTEM,
-    VISUAL_QA_HUMAN
-) 
+    Region,
+    VisualElement,
+    VisualAttributes,
+    SceneAnalysis,
+    VisualAnswer,
+    get_element_detection_prompt,
+    get_scene_analysis_prompt,
+    get_visual_qa_prompt
+)
+
+__all__ = [
+    # Knowledge Acquisition
+    'Relationship',
+    'SourceMetadata', 
+    'ExtractedKnowledge',
+    'get_knowledge_extraction_prompt',
+    'ConfidenceFactors',
+    'ConfidenceEvaluation', 
+    'get_confidence_evaluation_prompt',
+
+    # QA
+    'Question',
+    'get_question_generation_prompt',
+    'Answer',
+    'get_answer_generation_prompt',
+    'KnowledgeGap',
+    'get_knowledge_gap_prompt',
+
+    # Synthetic Knowledge
+    'Pattern',
+    'Hypothesis',
+    'Relationship',
+    'SyntheticKnowledge',
+    'get_pattern_recognition_prompt',
+    'get_hypothesis_generation_prompt',
+    'get_relationship_inference_prompt',
+    'get_knowledge_synthesis_prompt',
+
+    # Visual QA
+    'Region',
+    'VisualElement',
+    'VisualAttributes',
+    'SceneAnalysis',
+    'VisualAnswer',
+    'get_element_detection_prompt',
+    'get_scene_analysis_prompt',
+    'get_visual_qa_prompt'
+] 

@@ -1,12 +1,38 @@
-"""Synthetic knowledge generation prompts package."""
+"""Synthetic knowledge prompts package."""
 
-from .generation import (
-    PATTERN_RECOGNITION_SYSTEM,
-    PATTERN_RECOGNITION_HUMAN,
-    HYPOTHESIS_GENERATION_SYSTEM,
-    HYPOTHESIS_GENERATION_HUMAN,
-    RELATIONSHIP_INFERENCE_SYSTEM,
-    RELATIONSHIP_INFERENCE_HUMAN,
-    KNOWLEDGE_SYNTHESIS_SYSTEM,
-    KNOWLEDGE_SYNTHESIS_HUMAN
-) 
+from .knowledge_generation import (
+    Pattern,
+    Hypothesis,
+    Relationship,
+    SyntheticKnowledge,
+    get_pattern_recognition_prompt,
+    get_hypothesis_generation_prompt,
+    get_relationship_inference_prompt,
+    get_knowledge_generation_prompt
+)
+
+from .knowledge_synthesis import (
+    get_knowledge_synthesis_prompt
+)
+
+from .join_decision import (
+    get_join_decision_prompt
+)
+
+__all__ = [
+    # Knowledge Generation
+    'Pattern',
+    'Hypothesis',
+    'Relationship',
+    'SyntheticKnowledge',
+    'get_pattern_recognition_prompt',
+    'get_hypothesis_generation_prompt',
+    'get_relationship_inference_prompt',
+    'get_knowledge_generation_prompt',
+    
+    # Knowledge Synthesis
+    'get_knowledge_synthesis_prompt',
+    
+    # Join Decision
+    'get_join_decision_prompt'
+] 

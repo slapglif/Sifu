@@ -1,58 +1,38 @@
-from typing import List, Dict, Optional, Any, Tuple, cast, Literal
+from typing import List, Dict, Optional, Any
 from datetime import datetime
+import json
 from pydantic import BaseModel, Field
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableSequence
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_community.graphs import Neo4jGraph
 from langchain_core.documents import Document
-from langgraph.graph import StateGraph
-from loguru import logger
+from langchain_neo4j import Neo4jGraph
 from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from langchain_ollama import ChatOllama
-import json
 
-from scripts.models import ExtractedKnowledge, Relationship, SourceMetadata
-from scripts.logging_config import log_error_with_traceback, log_info_with_context, log_warning_with_context
 
-from prompts.synthetic_knowledge.generation import (
-    PATTERN_RECOGNITION_SYSTEM,
-    PATTERN_RECOGNITION_HUMAN,
-    HYPOTHESIS_GENERATION_SYSTEM,
-    HYPOTHESIS_GENERATION_HUMAN,
-    RELATIONSHIP_INFERENCE_SYSTEM,
-    RELATIONSHIP_INFERENCE_HUMAN,
-    KNOWLEDGE_SYNTHESIS_SYSTEM,
-    KNOWLEDGE_SYNTHESIS_HUMAN
+from prompts.synthetic_knowledge import (
+    Pattern,
+    Hypothesis,
+    Relationship,
+    get_pattern_recognition_prompt,
+    get_hypothesis_generation_prompt,
+    get_relationship_inference_prompt
+)
+from prompts.synthetic_knowledge.knowledge_synthesis import (
+    SyntheticKnowledge,
+    SourceMetadata,
+    get_knowledge_synthesis_prompt
+)
+from prompts.synthetic_knowledge.join_decision import get_join_decision_prompt
+
+from scripts.logging_config import (
+    log_error_with_traceback,
+)
+from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
+from prompts.knowledge_acquisition import (
+    get_confidence_evaluation_prompt,
+    ConfidenceEvaluation,
 )
 
-class Pattern(BaseModel):
-    """Schema for identified patterns"""
-    pattern_type: str = Field(description="Type of pattern identified")
-    description: str = Field(description="Description of the pattern")
-    supporting_evidence: List[str] = Field(description="Evidence supporting this pattern")
-    confidence: float = Field(description="Confidence in pattern", ge=0.0, le=1.0)
-
-class Hypothesis(BaseModel):
-    """Schema for generated hypotheses"""
-    statement: str = Field(description="The hypothesis statement")
-    reasoning: str = Field(description="Reasoning behind the hypothesis")
-    evidence: List[str] = Field(description="Supporting evidence")
-    confidence: float = Field(description="Confidence in hypothesis", ge=0.0, le=1.0)
-    validation_status: Literal["pending", "processed", "failed"] = Field(description="Validation status")
-
-class SyntheticKnowledge(BaseModel):
-    """Schema for synthetic knowledge"""
-    content: str = Field(description="Synthesized knowledge content")
-    patterns: List[Pattern] = Field(description="Identified patterns")
-    hypotheses: List[Hypothesis] = Field(description="Generated hypotheses")
-    relationships: List[Relationship] = Field(description="Inferred relationships")
-    confidence: float = Field(description="Overall confidence", ge=0.0, le=1.0)
-    validation_status: Literal["pending", "processed", "failed"] = Field(description="Validation status")
-    metadata: Optional[SourceMetadata] = Field(None, description="Source metadata")
+console = Console()
 
 class SynthesisState(BaseModel):
     """Schema for synthesis workflow state"""
@@ -60,653 +40,598 @@ class SynthesisState(BaseModel):
     identified_patterns: List[Pattern] = Field(default_factory=list, description="Identified patterns")
     generated_hypotheses: List[Hypothesis] = Field(default_factory=list, description="Generated hypotheses")
     inferred_relationships: List[Relationship] = Field(default_factory=list, description="Inferred relationships")
-    synthetic_knowledge: Optional[SyntheticKnowledge] = Field(None, description="Generated synthetic knowledge")
+    synthetic_knowledge: Optional[Dict[str, Any]] = Field(None, description="Generated synthetic knowledge")
 
-console = Console()
+class SyntheticKnowledgeGenerator(LLMCompiler):
+    """Synthetic knowledge generation system."""
 
-class SyntheticKnowledgeGenerator:
-    """Generate synthetic knowledge from documents"""
-    def __init__(self, graph: Neo4jGraph, llm: Optional[Any] = None, model: str = "MFDoom/deepseek-r1-tool-calling:1.5b", temperature: float = 0.7):
-        """Initialize the generator"""
+    def __init__(self, graph: Neo4jGraph, llm):
+        """Initialize with graph database and language model."""
+        super().__init__(llm)
         self.graph = graph
-        self.llm = llm if llm is not None else ChatOllama(model=model, temperature=temperature, format="json", mirostat=2, mirostat_eta=0.1, mirostat_tau=5.0)
-        self.state_graph = self._create_workflow()
-        self.console = Console()
-
-    def _create_workflow(self) -> StateGraph:
-        """Create the knowledge synthesis workflow"""
-        # Pattern recognition node
-        async def recognize_patterns(state: Dict) -> Dict:
-            """Recognize patterns in the current state"""
-            try:
-                log_info_with_context("Starting pattern recognition", "Knowledge Generation")
-                
-                if isinstance(state, dict):
-                    current_state = SynthesisState(**state)
-                else:
-                    current_state = state
-                
-                parser = PydanticOutputParser(pydantic_object=Pattern)
-                format_instructions = parser.get_format_instructions()
-                
-                prompt = ChatPromptTemplate.from_messages([
-                    SystemMessage(content=PATTERN_RECOGNITION_SYSTEM + "\n\nFormat Instructions:\n" + format_instructions),
-                    HumanMessage(content=PATTERN_RECOGNITION_HUMAN.format(content="\n".join([doc.page_content for doc in current_state.input_documents])))
-                ])
-                
-                chain = prompt | self.llm | RunnableLambda(self._parse_pattern)
-                
-                try:
-                    pattern = await chain.ainvoke({})
-                    
-                    if isinstance(state, dict):
-                        state['identified_patterns'] = state.get('identified_patterns', []) + [pattern]
-                    else:
-                        state.identified_patterns.append(pattern)
-                    
-                    log_info_with_context(f"Identified pattern: {pattern.pattern_type}", "Knowledge Generation")
-                except Exception as e:
-                    log_warning_with_context(f"Error detecting patterns: {e}", "Knowledge Generation")
-                    # Return default pattern on error
-                    pattern = Pattern(
-                        pattern_type="error",
-                        description="Failed to detect pattern",
-                        supporting_evidence=["Error occurred during pattern detection"],
-                        confidence=0.0
-                    )
-                    if isinstance(state, dict):
-                        state['identified_patterns'] = state.get('identified_patterns', []) + [pattern]
-                    else:
-                        state.identified_patterns.append(pattern)
-                
-                return state
-            except Exception as e:
-                log_error_with_traceback(e, "Error in recognize_patterns")
-                return state
-
-        # Hypothesis generation node
-        async def generate_hypotheses(state: Dict) -> Dict:
-            """Generate hypotheses from patterns"""
-            try:
-                log_info_with_context("Starting hypothesis generation", "Knowledge Generation")
-                
-                if isinstance(state, dict):
-                    current_state = SynthesisState(**state)
-                else:
-                    current_state = state
-                
-                parser = PydanticOutputParser(pydantic_object=Hypothesis)
-                format_instructions = parser.get_format_instructions()
-                
-                prompt = ChatPromptTemplate.from_messages([
-                    SystemMessage(content=HYPOTHESIS_GENERATION_SYSTEM + "\n\nFormat Instructions:\n" + format_instructions),
-                    HumanMessage(content=HYPOTHESIS_GENERATION_HUMAN.format(patterns=json.dumps([p.dict() for p in current_state.identified_patterns], indent=2)))
-                ])
-                
-                chain = prompt | self.llm | RunnableLambda(self._parse_hypothesis)
-                
-                try:
-                    hypothesis = await chain.ainvoke({})
-                    
-                    if isinstance(state, dict):
-                        state['generated_hypotheses'] = state.get('generated_hypotheses', []) + [hypothesis]
-                    else:
-                        state.generated_hypotheses.append(hypothesis)
-                    
-                    log_info_with_context(f"Generated hypothesis: {hypothesis.statement}", "Knowledge Generation")
-                except Exception as e:
-                    log_warning_with_context(f"Error generating hypotheses: {e}", "Knowledge Generation")
-                    # Return default hypothesis on error
-                    hypothesis = Hypothesis(
-                        statement="Failed to generate hypothesis",
-                        reasoning="Error occurred during hypothesis generation",
-                        evidence=["Error occurred"],
-                        confidence=0.0,
-                        validation_status="failed"
-                    )
-                    if isinstance(state, dict):
-                        state['generated_hypotheses'] = state.get('generated_hypotheses', []) + [hypothesis]
-                    else:
-                        state.generated_hypotheses.append(hypothesis)
-                
-                return state
-            except Exception as e:
-                log_error_with_traceback(e, "Error in generate_hypotheses")
-                return state
-
-        # Relationship inference node
-        async def infer_relationships(state: Dict) -> Dict:
-            """Infer relationships from hypotheses"""
-            try:
-                log_info_with_context("Starting relationship inference", "Knowledge Generation")
-                
-                if isinstance(state, dict):
-                    current_state = SynthesisState(**state)
-                else:
-                    current_state = state
-                
-                parser = PydanticOutputParser(pydantic_object=Relationship)
-                format_instructions = parser.get_format_instructions()
-                
-                prompt = ChatPromptTemplate.from_messages([
-                    SystemMessage(content=RELATIONSHIP_INFERENCE_SYSTEM + "\n\nFormat Instructions:\n" + format_instructions),
-                    HumanMessage(content=RELATIONSHIP_INFERENCE_HUMAN.format(hypotheses=json.dumps([h.dict() for h in current_state.generated_hypotheses], indent=2)))
-                ])
-                
-                chain = prompt | self.llm | RunnableLambda(self._parse_relationship)
-                
-                try:
-                    relationship = await chain.ainvoke({})
-                    
-                    if isinstance(state, dict):
-                        state['inferred_relationships'] = state.get('inferred_relationships', []) + [relationship]
-                    else:
-                        state.inferred_relationships.append(relationship)
-                    
-                    log_info_with_context(f"Inferred relationship: {relationship.relation}", "Knowledge Generation")
-                except Exception as e:
-                    log_warning_with_context(f"Error inferring relationships: {e}", "Knowledge Generation")
-                    # Return default relationship on error
-                    relationship = Relationship(
-                        source="error",
-                        relation="is_a",
-                        target="inference_failure",
-                        domain="error"
-                    )
-                    if isinstance(state, dict):
-                        state['inferred_relationships'] = state.get('inferred_relationships', []) + [relationship]
-                    else:
-                        state.inferred_relationships.append(relationship)
-                
-                return state
-            except Exception as e:
-                log_error_with_traceback(e, "Error in infer_relationships")
-                return state
-
-        # Knowledge synthesis node
-        async def synthesize_knowledge(state: Dict) -> Dict:
-            """Synthesize knowledge from the current state"""
-            try:
-                log_info_with_context("Starting knowledge synthesis", "Knowledge Generation")
-                
-                if isinstance(state, dict):
-                    current_state = SynthesisState(**state)
-                else:
-                    current_state = state
-                
-                parser = PydanticOutputParser(pydantic_object=SyntheticKnowledge)
-                format_instructions = parser.get_format_instructions()
-                
-                prompt = ChatPromptTemplate.from_messages([
-                    SystemMessage(content=KNOWLEDGE_SYNTHESIS_SYSTEM + "\n\nFormat Instructions:\n" + format_instructions),
-                    HumanMessage(content=KNOWLEDGE_SYNTHESIS_HUMAN.format(
-                        patterns=json.dumps([p.dict() for p in current_state.identified_patterns], indent=2),
-                        hypotheses=json.dumps([h.dict() for h in current_state.generated_hypotheses], indent=2),
-                        relationships=json.dumps([r.dict() for r in current_state.inferred_relationships], indent=2)
-                    ))
-                ])
-                
-                chain = prompt | self.llm | RunnableLambda(self._parse_synthetic_knowledge)
-                
-                try:
-                    knowledge = await chain.ainvoke({})
-                    
-                    if isinstance(state, dict):
-                        state['synthetic_knowledge'] = knowledge
-                    else:
-                        state.synthetic_knowledge = knowledge
-                    
-                    log_info_with_context("Generated synthetic knowledge", "Knowledge Generation")
-                except Exception as e:
-                    log_warning_with_context(f"Error synthesizing knowledge: {e}", "Knowledge Generation")
-                    # Return default knowledge on error
-                    knowledge = SyntheticKnowledge(
-                        content="Error occurred during knowledge synthesis",
-                        patterns=[],
-                        hypotheses=[],
-                        relationships=[],
-                        confidence=0.0,
-                        validation_status="failed",
-                        metadata=SourceMetadata(
-                            source_type="text",
-                            confidence_score=0.0,
-                            domain_relevance=0.0,
-                            timestamp=datetime.now().isoformat(),
-                            validation_status="failed",
-                            domain="error"
-                        )
-                    )
-                    if isinstance(state, dict):
-                        state['synthetic_knowledge'] = knowledge
-                    else:
-                        state.synthetic_knowledge = knowledge
-                
-                return state
-            except Exception as e:
-                log_error_with_traceback(e, "Error in synthesize_knowledge")
-                return state
-
-        # Create workflow graph
-        workflow = StateGraph(SynthesisState)
-
-        # Add nodes
-        workflow.add_node("recognize_patterns", recognize_patterns)
-        workflow.add_node("generate_hypotheses", generate_hypotheses)
-        workflow.add_node("infer_relationships", infer_relationships)
-        workflow.add_node("synthesize_knowledge", synthesize_knowledge)
-
-        # Add edges
-        workflow.add_edge("recognize_patterns", "generate_hypotheses")
-        workflow.add_edge("generate_hypotheses", "infer_relationships")
-        workflow.add_edge("infer_relationships", "synthesize_knowledge")
-
-        # Set entry point
-        workflow.set_entry_point("recognize_patterns")
-
-        return workflow
-
-    def _parse_pattern(self, response: Any) -> Pattern:
-        """Parse LLM response into Pattern object"""
-        try:
-            # Get the raw text
-            if hasattr(response, "content"):
-                text = response.content
-            elif hasattr(response, "messages"):
-                text = response.messages[-1].content
-            else:
-                text = str(response)
-            
-            # Parse as JSON
-            if isinstance(text, str):
-                try:
-                    data = json.loads(text)
-                except json.JSONDecodeError:
-                    # If not JSON, try to extract pattern from text
-                    data = {
-                        "pattern_type": "unknown",
-                        "description": text.strip(),
-                        "supporting_evidence": [],
-                        "confidence": 0.5
-                    }
-            else:
-                data = text
-            
-            # Ensure we have a dict
-            if not isinstance(data, dict):
-                data = {
-                    "pattern_type": "unknown",
-                    "description": str(data),
-                    "supporting_evidence": [],
-                    "confidence": 0.5
-                }
-            
-            # Fill in missing fields with defaults
-            data.setdefault("pattern_type", "unknown")
-            data.setdefault("description", "No description provided")
-            data.setdefault("supporting_evidence", [])
-            data.setdefault("confidence", 0.5)
-            
-            # Ensure confidence is a float between 0 and 1
-            try:
-                data["confidence"] = float(data["confidence"])
-            except (ValueError, TypeError):
-                data["confidence"] = 0.5
-            data["confidence"] = max(0.0, min(1.0, data["confidence"]))
-            
-            # Create Pattern object
-            return Pattern(**data)
-            
-        except Exception as e:
-            logger.error(f"Error parsing pattern: {e}")
-            return Pattern(
-                pattern_type="error",
-                description="Error parsing pattern",
-                supporting_evidence=["Error occurred"],
-                confidence=0.0
-            )
-
-    def _parse_hypothesis(self, response: Any) -> Hypothesis:
-        """Parse LLM response into Hypothesis object"""
-        try:
-            # Get the raw text
-            if hasattr(response, "content"):
-                text = response.content
-            elif hasattr(response, "messages"):
-                text = response.messages[-1].content
-            else:
-                text = str(response)
-            
-            # Parse as JSON
-            if isinstance(text, str):
-                try:
-                    data = json.loads(text)
-                except json.JSONDecodeError:
-                    # If not JSON, try to extract hypothesis from text
-                    data = {
-                        "statement": text.strip(),
-                        "reasoning": "Extracted from non-JSON response",
-                        "evidence": [],
-                        "confidence": 0.5,
-                        "validation_status": "pending"
-                    }
-            else:
-                data = text
-            
-            # Ensure we have a dict
-            if not isinstance(data, dict):
-                data = {
-                    "statement": str(data),
-                    "reasoning": "Non-dictionary response",
-                    "evidence": [],
-                    "confidence": 0.5,
-                    "validation_status": "pending"
-                }
-            
-            # Fill in missing fields with defaults
-            data.setdefault("statement", "No statement provided")
-            data.setdefault("reasoning", "No reasoning provided")
-            data.setdefault("evidence", [])
-            data.setdefault("confidence", 0.5)
-            data.setdefault("validation_status", "pending")
-            
-            # Ensure confidence is a float between 0 and 1
-            try:
-                data["confidence"] = float(data["confidence"])
-            except (ValueError, TypeError):
-                data["confidence"] = 0.5
-            data["confidence"] = max(0.0, min(1.0, data["confidence"]))
-            
-            # Ensure validation_status is valid
-            if data["validation_status"] not in ["pending", "processed", "failed"]:
-                data["validation_status"] = "pending"
-            
-            # Create Hypothesis object
-            return Hypothesis(**data)
-            
-        except Exception as e:
-            logger.error(f"Error parsing hypothesis: {e}")
-            return Hypothesis(
-                statement="Error parsing hypothesis",
-                reasoning="Error occurred",
-                evidence=["Error occurred"],
-                confidence=0.0,
-                validation_status="failed"
-            )
-
-    def _parse_relationship(self, response: Any) -> Relationship:
-        """Parse LLM response into Relationship object"""
-        try:
-            # Get the raw text
-            if hasattr(response, "content"):
-                text = response.content
-            elif hasattr(response, "messages"):
-                text = response.messages[-1].content
-            else:
-                text = str(response)
-            
-            # Parse as JSON
-            if isinstance(text, str):
-                try:
-                    data = json.loads(text)
-                except json.JSONDecodeError:
-                    # If not JSON, try to extract relationship from text
-                    data = {
-                        "source": "unknown",
-                        "relation": "related_to",
-                        "target": text.strip(),
-                        "domain": "knowledge"
-                    }
-            else:
-                data = text
-            
-            # Ensure we have a dict
-            if not isinstance(data, dict):
-                data = {
-                    "source": "unknown",
-                    "relation": "related_to",
-                    "target": str(data),
-                    "domain": "knowledge"
-                }
-            
-            # Fill in missing fields with defaults
-            data.setdefault("source", "unknown")
-            data.setdefault("relation", "related_to")
-            data.setdefault("target", "unknown")
-            data.setdefault("domain", "knowledge")
-            
-            # Ensure relation is valid
-            if not isinstance(data["relation"], str) or data["relation"] not in ["is_a", "has_part", "related_to"]:
-                data["relation"] = "related_to"
-            
-            # Create Relationship object
-            return Relationship(
-                source=data["source"],
-                relation=cast(Literal["is_a", "has_part", "related_to"], data["relation"]),
-                target=data["target"],
-                domain=data["domain"]
-            )
-            
-        except Exception as e:
-            logger.error(f"Error parsing relationship: {e}")
-            return Relationship(
-                source="error",
-                relation="is_a",
-                target="parsing_failure",
-                domain="error"
-            )
-
-    def _parse_synthetic_knowledge(self, response: Any) -> SyntheticKnowledge:
-        """Parse LLM response into SyntheticKnowledge object"""
-        try:
-            # Get the raw text
-            if hasattr(response, "content"):
-                text = response.content
-            elif hasattr(response, "messages"):
-                text = response.messages[-1].content
-            else:
-                text = str(response)
-            
-            # Parse as JSON
-            if isinstance(text, str):
-                try:
-                    data = json.loads(text)
-                except json.JSONDecodeError:
-                    # If not JSON, try to extract knowledge from text
-                    data = {
-                        "content": text.strip(),
-                        "patterns": [],
-                        "hypotheses": [],
-                        "relationships": [],
-                        "confidence": 0.5,
-                        "validation_status": "pending",
-                        "metadata": {
-                            "source_type": "text",
-                            "confidence_score": 0.5,
-                            "domain_relevance": 0.5,
-                            "timestamp": datetime.now().isoformat(),
-                            "validation_status": "pending",
-                            "domain": "knowledge"
-                        }
-                    }
-            else:
-                data = text
-            
-            # Ensure we have a dict
-            if not isinstance(data, dict):
-                data = {
-                    "content": str(data),
-                    "patterns": [],
-                    "hypotheses": [],
-                    "relationships": [],
-                    "confidence": 0.5,
-                    "validation_status": "pending",
-                    "metadata": {
-                        "source_type": "text",
-                        "confidence_score": 0.5,
-                        "domain_relevance": 0.5,
-                        "timestamp": datetime.now().isoformat(),
-                        "validation_status": "pending",
-                        "domain": "knowledge"
-                    }
-                }
-            
-            # Fill in missing fields with defaults
-            data.setdefault("content", "No content provided")
-            data.setdefault("patterns", [])
-            data.setdefault("hypotheses", [])
-            data.setdefault("relationships", [])
-            data.setdefault("confidence", 0.5)
-            data.setdefault("validation_status", "pending")
-            data.setdefault("metadata", {
-                "source_type": "text",
-                "confidence_score": data["confidence"],
-                "domain_relevance": 0.5,
-                "timestamp": datetime.now().isoformat(),
-                "validation_status": data["validation_status"],
-                "domain": "knowledge"
-            })
-            
-            # Ensure confidence is a float between 0 and 1
-            try:
-                data["confidence"] = float(data["confidence"])
-            except (ValueError, TypeError):
-                data["confidence"] = 0.5
-            data["confidence"] = max(0.0, min(1.0, data["confidence"]))
-            
-            # Ensure validation_status is valid
-            if data["validation_status"] not in ["pending", "processed", "failed"]:
-                data["validation_status"] = "pending"
-            
-            # Parse nested objects
-            if isinstance(data["patterns"], list):
-                data["patterns"] = [self._parse_pattern(p) for p in data["patterns"]]
-            else:
-                data["patterns"] = []
-            
-            if isinstance(data["hypotheses"], list):
-                data["hypotheses"] = [self._parse_hypothesis(h) for h in data["hypotheses"]]
-            else:
-                data["hypotheses"] = []
-            
-            if isinstance(data["relationships"], list):
-                data["relationships"] = [self._parse_relationship(r) for r in data["relationships"]]
-            else:
-                data["relationships"] = []
-            
-            # Parse metadata
-            if isinstance(data["metadata"], dict):
-                metadata = data["metadata"]
-                metadata.setdefault("source_type", "text")
-                metadata.setdefault("confidence_score", data["confidence"])
-                metadata.setdefault("domain_relevance", 0.5)
-                metadata.setdefault("timestamp", datetime.now().isoformat())
-                metadata.setdefault("validation_status", data["validation_status"])
-                metadata.setdefault("domain", "knowledge")
-                
-                # Ensure metadata values are valid
-                if metadata["source_type"] not in ["text", "pdf", "web"]:
-                    metadata["source_type"] = "text"
-                if metadata["validation_status"] not in ["pending", "processed", "failed"]:
-                    metadata["validation_status"] = data["validation_status"]
-                try:
-                    metadata["confidence_score"] = float(metadata["confidence_score"])
-                except (ValueError, TypeError):
-                    metadata["confidence_score"] = 0.5
-                metadata["confidence_score"] = max(0.0, min(1.0, metadata["confidence_score"]))
-                try:
-                    metadata["domain_relevance"] = float(metadata["domain_relevance"])
-                except (ValueError, TypeError):
-                    metadata["domain_relevance"] = 0.5
-                metadata["domain_relevance"] = max(0.0, min(1.0, metadata["domain_relevance"]))
-                
-                data["metadata"] = SourceMetadata(**metadata)
-            else:
-                data["metadata"] = SourceMetadata(
-                    source_type="text",
-                    confidence_score=data["confidence"],
-                    domain_relevance=0.5,
-                    timestamp=datetime.now().isoformat(),
-                    validation_status=data["validation_status"],
-                    domain="knowledge"
-                )
-            
-            # Create SyntheticKnowledge object
-            return SyntheticKnowledge(**data)
-            
-        except Exception as e:
-            logger.error(f"Error parsing synthetic knowledge: {e}")
-            return SyntheticKnowledge(
-                content="Error parsing synthetic knowledge",
-                patterns=[],
-                hypotheses=[],
-                relationships=[],
-                confidence=0.0,
-                validation_status="failed",
-                metadata=SourceMetadata(
-                    source_type="text",
-                    confidence_score=0.0,
-                    domain_relevance=0.0,
-                    timestamp=datetime.now().isoformat(),
-                    validation_status="failed",
-                    domain="error"
-                )
-            )
 
     async def generate_knowledge(self, documents: List[Document]) -> SyntheticKnowledge:
-        """Generate synthetic knowledge from documents"""
+        """Generate synthetic knowledge from documents."""
         try:
-            log_info_with_context(f"Starting knowledge generation with {len(documents)} documents", "Knowledge Generation")
-            console.print(f"[green]✓[/green] Processing {len(documents)} documents")
+            # Create initial state
+            state = {
+                "documents": documents,
+                "plan": None,
+                "results": [],
+                "join_decision": None,
+                "final_result": None
+            }
+
+            # Run LLM compiler workflow
+            result = await self.run(state)
+            return result
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error generating knowledge")
+            raise
+
+    async def _generate_plan(self, state: Dict[str, Any]) -> Plan:
+        """Generate execution plan."""
+        try:
+            tasks = []
+            task_idx = 0
             
-            # Initialize state
-            state = SynthesisState(input_documents=documents, synthetic_knowledge=None)
-            
-            # Run workflow
-            app = self.state_graph.compile()
-            result = await app.ainvoke(state)
-            
-            # Get final knowledge
-            if isinstance(result, dict):
-                knowledge = result.get('synthetic_knowledge')
-            else:
-                knowledge = result.synthetic_knowledge
+            # Add pattern recognition tasks
+            for doc in state.get("input_documents", []):
+                tasks.append(Task(
+                    idx=task_idx,
+                    tool="recognize_patterns",
+                    args={"content": doc.page_content},
+                    dependencies=[]
+                ))
+                task_idx += 1
                 
-            if knowledge is None:
-                log_warning_with_context("No synthetic knowledge generated", "Knowledge Generation")
-                # Return default knowledge if none was generated
-                return SyntheticKnowledge(
-                    content="Failed to generate synthetic knowledge",
-                    patterns=[],
-                    hypotheses=[],
-                    relationships=[],
-                    confidence=0.0,
-                    validation_status="failed",
-                    metadata=SourceMetadata(
-                        source_type="text",
-                        confidence_score=0.0,
-                        domain_relevance=0.0,
-                        timestamp=datetime.now().isoformat(),
-                        validation_status="failed",
-                        domain="error"
-                    )
-                )
-            
-            # Print detailed stats
-            console.print(Panel.fit(
-                f"""
-                Content Length: {len(knowledge.content)} chars
-                Patterns: {len(knowledge.patterns)}
-                Hypotheses: {len(knowledge.hypotheses)}
-                Relationships: {len(knowledge.relationships)}
-                Confidence: {knowledge.confidence:.2f}
-                Validation Status: {knowledge.validation_status}
-                Domain Relevance: {knowledge.metadata.domain_relevance if knowledge.metadata else 0.0:.2f}
-                """,
-                title="Knowledge Generation Results"
+            # Add hypothesis generation task
+            tasks.append(Task(
+                idx=task_idx,
+                tool="generate_hypotheses",
+                args={"patterns": []},  # Will be filled from pattern recognition results
+                dependencies=[t.idx for t in tasks]  # Depends on all pattern recognition tasks
             ))
-                
-            return knowledge
+            task_idx += 1
+            
+            # Add relationship inference task
+            tasks.append(Task(
+                idx=task_idx,
+                tool="infer_relationships",
+                args={"hypotheses": []},  # Will be filled from hypothesis generation results
+                dependencies=[task_idx - 1]  # Depends on hypothesis generation task
+            ))
+            task_idx += 1
+            
+            # Add knowledge synthesis task
+            tasks.append(Task(
+                idx=task_idx,
+                tool="synthesize_knowledge",
+                args={
+                    "patterns": [],  # Will be filled from pattern recognition results
+                    "hypotheses": [],  # Will be filled from hypothesis generation results
+                    "relationships": []  # Will be filled from relationship inference results
+                },
+                dependencies=[task_idx - 1]  # Depends on relationship inference task
+            ))
+            
+            return Plan(
+                tasks=tasks,
+                thought="Generated plan to process documents through pattern recognition, hypothesis generation, relationship inference, and knowledge synthesis"
+            )
             
         except Exception as e:
-            log_error_with_traceback(e, "Error in knowledge generation")
+            log_error_with_traceback(e, "Error generating plan")
+            raise
+
+    async def _execute_tasks(self, tasks: List[Task]) -> List[TaskResult]:
+        """Execute knowledge synthesis tasks"""
+        try:
+            results = []
+            for task in tasks:
+                try:
+                    # Check dependencies
+                    deps_met = all(
+                        any(r.task_id == dep and not r.error for r in results)
+                        for dep in task.dependencies
+                    )
+                    if not deps_met:
+                        continue
+
+                    # Execute task
+                    result = None
+                    if task.tool == "recognize_patterns":
+                        result = await self._recognize_patterns(task.args["content"])
+                    elif task.tool == "generate_hypotheses":
+                        result = await self._generate_hypotheses(task.args["patterns"])
+                    elif task.tool == "infer_relationships":
+                        result = await self._infer_relationships(task.args["hypotheses"])
+                    elif task.tool == "synthesize_knowledge":
+                        result = await self._synthesize_knowledge(
+                            task.args["patterns"],
+                            task.args["hypotheses"],
+                            task.args["relationships"]
+                        )
+
+                    results.append(TaskResult(
+                        task_id=task.idx,
+                        result=result,
+                        error=None
+                    ))
+
+                except Exception as e:
+                    results.append(TaskResult(
+                        task_id=task.idx,
+                        result=None,
+                        error=str(e)
+                    ))
+
+            return results
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error executing synthesis tasks")
+            raise
+
+    async def _make_join_decision(self, state: CompilerState) -> JoinDecision:
+        """Decide whether to complete or replan"""
+        try:
+            # Create join prompt
+            plan_json = "{}"
+            plan = state.get('plan')
+            if plan is not None:
+                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
+
+            results_json = "[]"
+            results = state.get('results')
+            if results:
+                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
+
+            prompt = get_join_decision_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=JoinDecision)
+            decision = await chain.ainvoke({
+                "plan": plan_json,
+                "results": results_json
+            })
+            return decision
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error making join decision")
+            raise
+
+    async def _generate_final_result(self, state: CompilerState) -> SyntheticKnowledge:
+        """Generate final synthetic knowledge"""
+        try:
+            # Combine results into SyntheticKnowledge
+            content = ""
+            patterns = []
+            hypotheses = []
+            relationships = []
+            confidence = 0.0
+            validation_status = "pending"
+            count = 0
+
+            # Extract results from tasks
+            for result in state.get('results', []):
+                if result and result.result:
+                    if isinstance(result.result, dict):
+                        if 'content' in result.result:
+                            content = result.result['content']
+                        if 'patterns' in result.result:
+                            patterns.extend([Pattern(**p) for p in result.result['patterns']])
+                        if 'hypotheses' in result.result:
+                            hypotheses.extend([Hypothesis(**h) for h in result.result['hypotheses']])
+                        if 'relationships' in result.result:
+                            relationships.extend([Relationship(**r) for r in result.result['relationships']])
+                        if 'confidence' in result.result:
+                            confidence += float(result.result['confidence'])
+                            count += 1
+
+            # Average confidence scores
+            if count > 0:
+                confidence = confidence / count
+
+            # Create source metadata
+            metadata = SourceMetadata(
+                source_type="text",
+                confidence_score=confidence,
+                domain_relevance=confidence,
+                timestamp=datetime.now().isoformat(),
+                validation_status=validation_status
+            )
+
+            return SyntheticKnowledge(
+                content=content if content else "No content generated",
+                patterns=patterns,
+                hypotheses=hypotheses,
+                relationships=relationships,
+                confidence=confidence,
+                validation_status=validation_status,
+                metadata=metadata
+            )
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error generating final result")
+            raise
+
+    async def _recognize_patterns(self, content: str) -> List[Dict[str, Any]]:
+        """Recognize patterns in content."""
+        try:
+            prompt = get_pattern_recognition_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Pattern)
+            result = await chain.ainvoke({"content": content})
+            return result.model_dump()
+        except Exception as e:
+            log_error_with_traceback(e, "Error recognizing patterns")
+            raise
+
+    async def _generate_hypotheses(self, patterns: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate hypotheses from patterns."""
+        try:
+            prompt = get_hypothesis_generation_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Hypothesis)
+            result = await chain.ainvoke({"patterns": json.dumps(patterns, indent=2)})
+            return result.model_dump()
+        except Exception as e:
+            log_error_with_traceback(e, "Error generating hypotheses")
+            raise
+
+    async def _infer_relationships(self, hypotheses: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Infer relationships from hypotheses."""
+        try:
+            prompt = get_relationship_inference_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Relationship)
+            result = await chain.ainvoke({"hypotheses": json.dumps(hypotheses, indent=2)})
+            return result.model_dump()
+        except Exception as e:
+            log_error_with_traceback(e, "Error inferring relationships")
+            raise
+
+    async def _synthesize_knowledge(
+        self,
+        patterns: List[Dict[str, Any]],
+        hypotheses: List[Dict[str, Any]],
+        relationships: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Synthesize knowledge from patterns, hypotheses, and relationships."""
+        try:
+            prompt = get_knowledge_synthesis_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=SyntheticKnowledge)
+            result = await chain.ainvoke({
+                "patterns": json.dumps(patterns, indent=2),
+                "hypotheses": json.dumps(hypotheses, indent=2),
+                "relationships": json.dumps(relationships, indent=2)
+            })
+            # Convert SourceMetadata to dict before returning
+            result_dict = result.model_dump()
+            if result_dict.get("metadata"):
+                result_dict["metadata"] = result_dict["metadata"].model_dump()
+            return result_dict
+        except Exception as e:
+            log_error_with_traceback(e, "Error synthesizing knowledge")
+            raise
+
+    async def _evaluate_confidence(self, content: str, entities: List[str], relationships: List[Dict]) -> ConfidenceEvaluation:
+        """Evaluate confidence using proper evaluation prompts."""
+        try:
+            prompt = get_confidence_evaluation_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ConfidenceEvaluation)
+            result = await chain.ainvoke({
+                "content": content,
+                "entities": entities,
+                "relationships": relationships,
+                "source_type": "text"
+            })
+            return result
+        except Exception as e:
+            log_error_with_traceback(e, "Error evaluating confidence")
+            raise
+
+    async def _process_document(self, document: Document) -> Dict[str, Any]:
+        """Process a single document."""
+        try:
+            # Process content
+            patterns = await self._recognize_patterns(document.page_content)
+            hypotheses = await self._generate_hypotheses(patterns)
+            relationships = await self._infer_relationships(hypotheses)
+            
+            # Evaluate confidence
+            confidence_eval = await self._evaluate_confidence(
+                document.page_content,
+                [p["pattern_type"] for p in patterns],
+                relationships
+            )
+            
+            # Create metadata with evaluated confidence
+            metadata = {
+                "source_type": "text",
+                "confidence_score": confidence_eval.confidence,
+                "domain_relevance": confidence_eval.factors.context_relevance,
+                "timestamp": datetime.now().isoformat(),
+                "validation_status": "pending"
+            }
+            
+            # Synthesize knowledge
+            knowledge = await self._synthesize_knowledge(patterns, hypotheses, relationships)
+            if knowledge:
+                knowledge["metadata"] = metadata
+                
+            return knowledge
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error processing document")
+            raise
+
+    async def _execute_task(self, task: Task, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a single task."""
+        try:
+            # Process task
+            result = None
+            if task.tool == "recognize_patterns":
+                result = await self._recognize_patterns(task.args["content"])
+            elif task.tool == "generate_hypotheses":
+                result = await self._generate_hypotheses(task.args["patterns"])
+            elif task.tool == "infer_relationships":
+                result = await self._infer_relationships(task.args["hypotheses"])
+            elif task.tool == "synthesize_knowledge":
+                result = await self._synthesize_knowledge(
+                    task.args["patterns"],
+                    task.args["hypotheses"],
+                    task.args["relationships"]
+                )
+                if result:
+                    # Evaluate confidence
+                    confidence_eval = await self._evaluate_confidence(
+                        result.get("content", ""),
+                        [p["pattern_type"] for p in result.get("patterns", [])],
+                        result.get("relationships", [])
+                    )
+                    result["metadata"] = {
+                        "source_type": "text",
+                        "confidence_score": confidence_eval.confidence,
+                        "domain_relevance": confidence_eval.factors.context_relevance,
+                        "timestamp": datetime.now().isoformat(),
+                        "validation_status": "pending"
+                    }
+
+            return {"task_id": task.idx, "result": result}
+
+        except Exception as e:
+            log_error_with_traceback(e, f"Error executing task {task.tool}")
+            return {
+                "task_id": task.idx,
+                "result": None,
+                "error": str(e)
+            }
+
+    async def _handle_error(self, error: Exception, state: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle errors during execution."""
+        try:
+            # Create error state with zero confidence
+            error_state = state.copy()
+            error_state["error"] = str(error)
+            error_state["error_metadata"] = {
+                "source_type": "text",
+                "confidence_score": 0.0,
+                "domain_relevance": 0.0,
+                "timestamp": datetime.now().isoformat(),
+                "validation_status": "failed"
+            }
+            error_state["status"] = "failed"
+
+            return error_state
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error handling error")
+            raise
+
+    async def _join_task_results(self, task_results: List[TaskResult], state: Dict[str, Any]) -> JoinDecision:
+        """Join task results and decide next steps."""
+        try:
+            # Process results
+            complete = True
+            thought = "All tasks completed successfully"
+            replan = False
+            feedback = None
+
+            for result in task_results:
+                if result.error:
+                    complete = False
+                    thought = f"Task {result.task_id} failed: {result.error}"
+                    replan = True
+                    feedback = f"Task {result.task_id} needs to be retried"
+                    break
+
+                if result.result is None:
+                    complete = False
+                    thought = f"Task {result.task_id} returned no result"
+                    replan = True
+                    feedback = f"Task {result.task_id} needs to be retried"
+                    break
+
+                # Evaluate confidence for knowledge synthesis results
+                if result.result.get("synthetic_knowledge"):
+                    confidence_eval = await self._evaluate_confidence(
+                        result.result["synthetic_knowledge"].get("content", ""),
+                        [p["pattern_type"] for p in result.result["synthetic_knowledge"].get("patterns", [])],
+                        result.result["synthetic_knowledge"].get("relationships", [])
+                    )
+                    result.result["synthetic_knowledge"]["metadata"] = {
+                        "source_type": "text",
+                        "confidence_score": confidence_eval.confidence,
+                        "domain_relevance": confidence_eval.factors.context_relevance,
+                        "timestamp": datetime.now().isoformat(),
+                        "validation_status": "pending"
+                    }
+
+            return JoinDecision(
+                complete=complete,
+                thought=thought,
+                replan=replan,
+                feedback=feedback
+            )
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error joining task results")
+            return JoinDecision(
+                complete=False,
+                thought=f"Error joining results: {str(e)}",
+                replan=True,
+                feedback="Error occurred during join, retry tasks"
+            )
+
+    async def _update_state(self, task_results: List[TaskResult], state: Dict[str, Any]) -> Dict[str, Any]:
+        """Update state with task results."""
+        try:
+            # Process results
+            new_state = state.copy()
+            
+            for result in task_results:
+                if result.error or result.result is None:
+                    continue
+                    
+                if "patterns" in result.result:
+                    new_state["identified_patterns"] = result.result["patterns"]
+                elif "hypotheses" in result.result:
+                    new_state["generated_hypotheses"] = result.result["hypotheses"]
+                elif "relationships" in result.result:
+                    new_state["inferred_relationships"] = result.result["relationships"]
+                elif "synthetic_knowledge" in result.result:
+                    # Evaluate confidence
+                    confidence_eval = await self._evaluate_confidence(
+                        result.result["synthetic_knowledge"].get("content", ""),
+                        [p["pattern_type"] for p in result.result["synthetic_knowledge"].get("patterns", [])],
+                        result.result["synthetic_knowledge"].get("relationships", [])
+                    )
+                    result.result["synthetic_knowledge"]["metadata"] = {
+                        "source_type": "text",
+                        "confidence_score": confidence_eval.confidence,
+                        "domain_relevance": confidence_eval.factors.context_relevance,
+                        "timestamp": datetime.now().isoformat(),
+                        "validation_status": "pending"
+                    }
+                    new_state["synthetic_knowledge"] = result.result["synthetic_knowledge"]
+            
+            return new_state
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error updating state")
+            raise
+
+    async def _process_results(self, task_results: List[TaskResult]) -> Dict[str, Any]:
+        """Process task results."""
+        try:
+            # Process results
+            patterns = []
+            hypotheses = []
+            relationships = []
+            synthetic_knowledge = None
+
+            for result in task_results:
+                if result.error or result.result is None:
+                    continue
+
+                if "patterns" in result.result:
+                    patterns.extend(result.result["patterns"])
+                elif "hypotheses" in result.result:
+                    hypotheses.extend(result.result["hypotheses"])
+                elif "relationships" in result.result:
+                    relationships.extend(result.result["relationships"])
+                elif "synthetic_knowledge" in result.result:
+                    # Evaluate confidence
+                    confidence_eval = await self._evaluate_confidence(
+                        result.result["synthetic_knowledge"].get("content", ""),
+                        [p["pattern_type"] for p in result.result["synthetic_knowledge"].get("patterns", [])],
+                        result.result["synthetic_knowledge"].get("relationships", [])
+                    )
+                    result.result["synthetic_knowledge"]["metadata"] = {
+                        "source_type": "text",
+                        "confidence_score": confidence_eval.confidence,
+                        "domain_relevance": confidence_eval.factors.context_relevance,
+                        "timestamp": datetime.now().isoformat(),
+                        "validation_status": "pending"
+                    }
+                    synthetic_knowledge = result.result["synthetic_knowledge"]
+
+            return {
+                "patterns": patterns,
+                "hypotheses": hypotheses,
+                "relationships": relationships,
+                "synthetic_knowledge": synthetic_knowledge
+            }
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error processing results")
+            raise
+
+    async def _validate_results(self, task_results: List[TaskResult]) -> Dict[str, Any]:
+        """Validate task results."""
+        try:
+            validation_errors = []
+            validation_warnings = []
+
+            for result in task_results:
+                if result.error:
+                    validation_errors.append(f"Task {result.task_id} failed: {result.error}")
+                    continue
+
+                if result.result is None:
+                    validation_warnings.append(f"Task {result.task_id} returned no result")
+                    continue
+
+                # Validate patterns
+                if "patterns" in result.result:
+                    if not isinstance(result.result["patterns"], list):
+                        validation_errors.append(f"Task {result.task_id}: patterns must be a list")
+                    else:
+                        for pattern in result.result["patterns"]:
+                            if not all(k in pattern for k in ["pattern_type", "description", "supporting_evidence", "confidence"]):
+                                validation_errors.append(f"Task {result.task_id}: invalid pattern format")
+
+                # Validate hypotheses
+                elif "hypotheses" in result.result:
+                    if not isinstance(result.result["hypotheses"], list):
+                        validation_errors.append(f"Task {result.task_id}: hypotheses must be a list")
+                    else:
+                        for hypothesis in result.result["hypotheses"]:
+                            if not all(k in hypothesis for k in ["statement", "reasoning", "evidence", "confidence", "validation_status"]):
+                                validation_errors.append(f"Task {result.task_id}: invalid hypothesis format")
+
+                # Validate relationships
+                elif "relationships" in result.result:
+                    if not isinstance(result.result["relationships"], list):
+                        validation_errors.append(f"Task {result.task_id}: relationships must be a list")
+                    else:
+                        for relationship in result.result["relationships"]:
+                            if not all(k in relationship for k in ["source", "relation", "target"]):
+                                validation_errors.append(f"Task {result.task_id}: invalid relationship format")
+
+                # Validate synthetic knowledge
+                elif "synthetic_knowledge" in result.result:
+                    knowledge = result.result["synthetic_knowledge"]
+                    if not all(k in knowledge for k in ["content", "patterns", "hypotheses", "relationships", "confidence", "validation_status"]):
+                        validation_errors.append(f"Task {result.task_id}: invalid synthetic knowledge format")
+                    else:
+                        # Evaluate confidence for synthetic knowledge
+                        confidence_eval = await self._evaluate_confidence(
+                            knowledge.get("content", ""),
+                            [p["pattern_type"] for p in knowledge.get("patterns", [])],
+                            knowledge.get("relationships", [])
+                        )
+                        knowledge["metadata"] = {
+                            "source_type": "text",
+                            "confidence_score": confidence_eval.confidence,
+                            "domain_relevance": confidence_eval.factors.context_relevance,
+                            "timestamp": datetime.now().isoformat(),
+                            "validation_status": "pending"
+                        }
+
+            return {
+                "is_valid": len(validation_errors) == 0,
+                "errors": validation_errors,
+                "warnings": validation_warnings
+            }
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error validating results")
             raise 

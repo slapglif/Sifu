@@ -28,53 +28,47 @@
                     },
                     {
                         "name": "Treatment",
-                        "description": "Medical interventions and therapies",
+                        "description": "A medical intervention or therapy",
                         "parent_classes": [],
                         "properties": {
                             "type": "string",
-                            "duration": "string",
-                            "invasive": "boolean"
+                            "invasive": "boolean",
+                            "approved": "boolean"
                         },
-                        "allowed_relations": ["treats", "contraindicated_with", "requires"]
+                        "allowed_relations": ["treats", "prevents", "related_to"]
                     }
                 ],
                 "relations": [
                     {
-                        "name": "causes",
-                        "description": "Indicates that one entity causes another",
-                        "symmetric": false,
-                        "transitive": true,
-                        "inverse_of": "caused_by"
-                    },
-                    {
                         "name": "treats",
-                        "description": "Indicates that one entity is used to treat another",
+                        "description": "Treatment relationship",
                         "symmetric": false,
                         "transitive": false,
                         "inverse_of": "treated_by"
+                    },
+                    {
+                        "name": "causes",
+                        "description": "Causal relationship",
+                        "symmetric": false,
+                        "transitive": true,
+                        "inverse_of": "caused_by"
                     }
                 ],
                 "validation_rules": {
-                    "disease_naming": {
-                        "western": "Must use standardized medical terminology",
-                        "tcm": "Must use traditional Chinese medicine pattern nomenclature",
-                        "ayurvedic": "Must use Sanskrit terminology where applicable"
-                    },
-                    "relationship_evidence": {
-                        "clinical": "Requires clinical evidence",
-                        "research": "Must cite research papers",
-                        "traditional": "Must reference traditional texts"
+                    "medical_terms": {
+                        "standard": "Must use standard medical terminology",
+                        "sources": "Must cite reliable medical sources"
                     }
                 },
                 "confidence_thresholds": {
-                    "extraction": 0.7,
-                    "validation": 0.8,
-                    "relationship": 0.75
+                    "extraction": 0.8,
+                    "validation": 0.9,
+                    "relationship": 0.85
                 },
                 "search_strategies": [
-                    "pubmed_search",
-                    "clinical_guidelines",
-                    "medical_literature"
+                    "pubmed",
+                    "clinical_trials",
+                    "medical_journals"
                 ]
             },
             {
@@ -134,7 +128,8 @@
         },
         "chunk_size": 2000,
         "chunk_overlap": 400,
-        "max_tokens": 32000
+        "max_tokens": 32000,
+        "enable_web_search": true
     },
     "lora_training": {
         "model_name": "tiiuae/Falcon3-3B-Base",

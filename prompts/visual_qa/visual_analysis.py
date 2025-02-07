@@ -1,66 +1,44 @@
-"""Visual analysis and QA prompts."""
+"""Visual analysis prompt for analyzing images and answering questions."""
 
-VISUAL_ELEMENT_DETECTION_SYSTEM = """You are a visual element detection expert. Detect and describe visual elements in the image.
-Output must be a valid JSON object with these fields:
-{{
-    "element_type": "string - Type of visual element",
-    "description": "string - Detailed description of the element",
-    "attributes": {{
-        "additional": "string - Element attributes"
-    }},
-    "region": {{
-        "x": 0,
-        "y": 0,
-        "width": 100,
-        "height": 100,
-        "content": "string - Region content description",
-        "confidence": 0.85
-    }},
-    "confidence": 0.85
-}}"""
+from typing import List, Optional
+from pydantic import BaseModel, Field
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.output_parsers import PydanticOutputParser
 
-VISUAL_ELEMENT_DETECTION_HUMAN = """Detect and describe visual elements in this image:
+class VisualAnalysisResult(BaseModel):
+    """Result of visual analysis."""
+    answer: str = Field(..., description="The answer to the question")
+    visual_evidence: List[str] = Field(..., description="Visual evidence supporting the answer")
+    context: str = Field(..., description="Context and reasoning behind the answer")
+    confidence: float = Field(..., description="Confidence score between 0 and 1", ge=0, le=1)
 
-Image (base64): {image}
+def get_visual_analysis_prompt() -> ChatPromptTemplate:
+    """Get the prompt template for visual analysis."""
+    parser = PydanticOutputParser(pydantic_object=VisualAnalysisResult)
+    
+    system_template = """You are a visual analysis assistant that helps analyze images and answer questions about them.
+Your responses should be detailed and well-reasoned, supported by specific visual evidence from the image.
 
-Output ONLY a valid JSON object following the specified format."""
+{format_instructions}
 
-SCENE_ANALYSIS_SYSTEM = """You are a scene analysis expert. Analyze the overall scene and relationships between elements.
-Output must be a valid JSON object with these fields:
-{{
-    "scene_description": "string - Overall description of the scene",
-    "key_objects": ["string array - Important objects in scene"],
-    "spatial_relationships": ["string array - Relationships between objects"],
-    "visual_attributes": {{
-        "lighting": "string - Lighting description",
-        "composition": "string - Composition description",
-        "style": "string - Style description"
-    }},
-    "confidence": 0.85
-}}"""
+Remember to:
+1. Carefully examine all visual details in the image
+2. Provide specific visual evidence to support your answer
+3. Explain your reasoning clearly
+4. Express your confidence based on the clarity and completeness of the visual evidence"""
 
-SCENE_ANALYSIS_HUMAN = """Analyze this scene:
+    human_template = """Here is an image encoded in base64:
+{image}
 
-Image (base64): {image}
-Detected Elements: {elements}
+Please analyze this image to answer the following question:
+{question}"""
 
-Output ONLY a valid JSON object following the specified format."""
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessage(content=system_template),
+        HumanMessage(content=human_template)
+    ])
 
-VISUAL_QA_SYSTEM = """You are a visual question answering expert. Answer questions about images based on analysis.
-Output must be a valid JSON object with these fields:
-{{
-    "answer": "string - Detailed answer to the question",
-    "visual_evidence": ["string array - Visual evidence points"],
-    "context": "string - Additional context if needed",
-    "confidence": 0.85
-}}"""
+    prompt = prompt.partial(format_instructions=parser.get_format_instructions())
 
-VISUAL_QA_HUMAN = """Answer this question about the image:
-
-Question: {question}
-Image (base64): {image}
-Scene Description: {scene_description}
-Key Objects: {key_objects}
-Spatial Relationships: {spatial_relationships}
-
-Output ONLY a valid JSON object following the specified format.""" 
+    return prompt 

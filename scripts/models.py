@@ -38,6 +38,7 @@ class KnowledgeAcquisitionConfig(BaseModel):
     chunk_size: int = Field(default=2000, description="Size of text chunks for processing")
     chunk_overlap: int = Field(default=400, description="Overlap between text chunks")
     max_tokens: int = Field(default=32000, description="Maximum tokens for model context")
+    enable_web_search: bool = Field(default=False, description="Whether to enable web search enrichment")
 
     @validator("domains")
     def validate_domains(cls, v):

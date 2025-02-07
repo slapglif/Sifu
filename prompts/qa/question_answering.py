@@ -1,79 +1,103 @@
 """Question answering system prompts."""
+from typing import List, Literal
+from pydantic import BaseModel, Field
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
 
-QUESTION_GENERATION_SYSTEM = """You are a question generation expert. Generate specific, focused questions based on the content.
-Output must be a valid JSON array of question objects, where each object has these REQUIRED fields:
-{{
-    "question": "string - The generated question",
-    "topic": "string - The topic this question relates to",
-    "difficulty": 0.85,  # number between 0.0 and 1.0
-    "type": "string - must be one of: general, factual, conceptual, analytical, error",
-    "context": "string - Context that prompted this question"
-}}
+class Answer(BaseModel):
+    """Schema for generated answers"""
+    answer: str = Field(description="Detailed answer to the question")
+    sources: List[str] = Field(description="List of sources used")
+    confidence: float = Field(description="Confidence in the answer", ge=0.0, le=1.0)
+    reasoning: str = Field(description="Explanation of how the answer was derived")
+    validation_status: str = Field(description="Must be one of: pending, validated, failed")
 
-IMPORTANT RULES:
-1. All fields are required
-2. The difficulty field must be a number between 0.0 and 1.0
-3. Do not include comments in the JSON output
-4. Use proper JSON formatting with commas between objects
-5. All string values must be properly quoted
-6. Question type must be one of: general, factual, conceptual, analytical, error
-7. Generate questions that test understanding and critical thinking"""
+class KnowledgeGap(BaseModel):
+    """Schema for knowledge gaps"""
+    topic: str = Field(description="Topic where knowledge is missing")
+    context: str = Field(description="Context around the knowledge gap")
+    priority: float = Field(description="Priority score for filling this gap", ge=0.0, le=1.0)
+    suggested_questions: List[str] = Field(description="Questions to help fill the gap")
 
-QUESTION_GENERATION_HUMAN = """Generate {num_questions} questions based on this context and topic:
+class Question(BaseModel):
+    """Schema for generated questions"""
+    question: str = Field(description="The generated question")
+    topic: str = Field(description="The topic this question relates to")
+    difficulty: float = Field(description="Difficulty score between 0.0 and 1.0", ge=0.0, le=1.0)
+    type: Literal["general", "factual", "conceptual", "analytical", "error"] = Field(description="Type of question")
+    context: str = Field(description="Context that prompted this question")
 
-Context: {context}
-Topic: {topic}
-
-Output ONLY a valid JSON array of question objects following the specified format."""
-
-ANSWER_GENERATION_SYSTEM = """You are an answer generation expert. Generate comprehensive answers based on the provided context.
-Output must be a valid JSON object with these REQUIRED fields:
-{{
-    "answer": "string - Your detailed answer",
-    "sources": ["string array - List of sources used"],
-    "confidence": 0.85,  # number between 0.0 and 1.0
-    "reasoning": "string - Explanation of how you arrived at the answer",
-    "validation_status": "string - must be one of: pending, validated, failed"
-}}
+def get_answer_generation_prompt() -> ChatPromptTemplate:
+    """Get the answer generation prompt template."""
+    parser = PydanticOutputParser(pydantic_object=Answer)
+    format_instructions = parser.get_format_instructions()
+    
+    system_template = """You are an answer generation expert. Generate comprehensive answers based on the provided context.
+{format_instructions}
 
 IMPORTANT RULES:
 1. All fields are required
 2. The confidence field must be a number between 0.0 and 1.0
-3. Do not include comments in the JSON output
-4. Use proper JSON formatting with commas between fields
-5. All string values must be properly quoted
-6. Validation status must be one of: pending, validated, failed
-7. Provide detailed reasoning to support your answer"""
+3. validation_status must be one of: pending, validated, failed
+4. Provide detailed reasoning to support your answer"""
 
-ANSWER_GENERATION_HUMAN = """Answer this question based on the provided context:
+    human_template = """Answer this question based on the provided context:
 
-Question: {question}
-Context: {context}
+Question: {{question}}
+Context: {{context}}"""
 
-Output ONLY a valid JSON object following the specified format."""
+    return ChatPromptTemplate.from_messages([
+        SystemMessage(content=system_template),
+        HumanMessage(content=human_template)
+    ])
 
-KNOWLEDGE_GAP_SYSTEM = """You are a knowledge gap identification expert. Identify gaps in knowledge based on questions and answers.
-Output must be a valid JSON object with these REQUIRED fields:
-{{
-    "topic": "string - Topic where knowledge is missing",
-    "context": "string - Context around the knowledge gap",
-    "priority": 0.85,  # priority score between 0.0 and 1.0
-    "suggested_questions": ["string array - Questions to fill the gap"]
-}}
+def get_knowledge_gap_prompt() -> ChatPromptTemplate:
+    """Get the knowledge gap prompt template."""
+    parser = PydanticOutputParser(pydantic_object=KnowledgeGap)
+    format_instructions = parser.get_format_instructions()
+    
+    system_template = """You are a knowledge gap identification expert. Identify gaps in knowledge based on questions and answers.
+{format_instructions}
 
 IMPORTANT RULES:
 1. All fields are required
 2. The priority field must be a number between 0.0 and 1.0
-3. Do not include comments in the JSON output
-4. Use proper JSON formatting with commas between fields
-5. All string values must be properly quoted
-6. Suggested questions should help fill identified knowledge gaps"""
+3. Suggested questions should help fill identified knowledge gaps"""
 
-KNOWLEDGE_GAP_HUMAN = """Identify knowledge gaps based on:
+    human_template = """Identify knowledge gaps based on this Q&A:
 
-Question: {question}
-Answer: {answer}
-Confidence: {confidence}
-Context: {context}
+Question: {{question}}
+Answer: {{answer}}
+Context: {{context}}"""
 
-Output ONLY a valid JSON object following the specified format.""" 
+    return ChatPromptTemplate.from_messages([
+        SystemMessage(content=system_template),
+        HumanMessage(content=human_template)
+    ])
+
+def get_question_generation_prompt() -> ChatPromptTemplate:
+    """Get the question generation prompt template."""
+    parser = PydanticOutputParser(pydantic_object=Question)
+    format_instructions = parser.get_format_instructions()
+    
+    system_template = """You are a question generation expert. Generate specific, focused questions based on the content.
+{format_instructions}
+
+IMPORTANT RULES:
+1. All fields are required
+2. The difficulty field must be a number between 0.0 and 1.0
+3. Question type must be one of: general, factual, conceptual, analytical, error
+4. Generate questions that test understanding and critical thinking"""
+
+    human_template = """Answer this question based on the provided context:
+
+Question: {{question}}
+Context: {{context}}
+
+Output ONLY a valid JSON object following the format instructions."""
+
+    return ChatPromptTemplate.from_messages([
+        SystemMessage(content=system_template),
+        HumanMessage(content=human_template)
+    ]) 

@@ -24,6 +24,12 @@ from peft.peft_model import PeftModel
 import torch
 from loguru import logger
 from .logging_config import log_error_with_traceback
+from langchain_core.messages import SystemMessage, HumanMessage
+
+from prompts.lora import (
+    TrainingConfig,
+    get_training_config_prompt
+)
 
 if TYPE_CHECKING:
     BasePreTrainedModel = PreTrainedModel
@@ -63,25 +69,37 @@ class LoRATrainingConfig(BaseModel):
     inference_mode: bool = Field(description="Whether to use inference mode")
 
 class LoRATrainer:
-    """Trainer class for LoRA fine-tuning"""
-    def __init__(self, config: LoRATrainingConfig):
-        self.config = config
-        self.model: Optional[Union[BasePreTrainedModel, PeftModel]] = None
-        self.tokenizer: Optional[PreTrainedTokenizerBase] = None
-        self.trainer: Optional[Trainer] = None
-        self._setup_model()
-        
-    def _setup_model(self) -> None:
+    """LoRA training system."""
+
+    def __init__(self, llm):
+        """Initialize with language model."""
+        self.llm = llm
+
+    async def generate_config(self, task_description: str) -> TrainingConfig:
+        """Generate LoRA training configuration."""
+        try:
+            prompt = get_training_config_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=TrainingConfig)
+            result = await chain.ainvoke({
+                "task": task_description
+            })
+            return result
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error generating training config")
+            raise
+
+    def _setup_model(self, config: LoRATrainingConfig) -> None:
         """Setup model and tokenizer"""
         try:
             # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(self.config.model_name)
+            self.tokenizer = AutoTokenizer.from_pretrained(config.model_name)
             if self.tokenizer is None:
                 raise ValueError("Failed to load tokenizer")
             
             # Load model
             base_model = AutoModelForCausalLM.from_pretrained(
-                self.config.model_name,
+                config.model_name,
                 torch_dtype=torch.float16,
                 device_map="auto"
             )
@@ -93,11 +111,11 @@ class LoRATrainer:
             
             # Create LoRA config
             lora_config = LoraConfig(
-                r=self.config.r,
-                lora_alpha=self.config.lora_alpha,
-                target_modules=self.config.target_modules,
-                lora_dropout=self.config.lora_dropout,
-                bias=self.config.bias,
+                r=config.r,
+                lora_alpha=config.lora_alpha,
+                target_modules=config.target_modules,
+                lora_dropout=config.lora_dropout,
+                bias=config.bias,
                 task_type=TaskType.CAUSAL_LM,
             )
             
@@ -107,7 +125,7 @@ class LoRATrainer:
                 raise ValueError("Failed to create PEFT model")
             self.model = cast(PeftModel, peft_model)
             
-            logger.info(f"Model setup complete with config: {self.config}")
+            logger.info(f"Model setup complete with config: {config}")
             
         except Exception as e:
             logger.error(f"Error setting up model: {e}")
@@ -193,7 +211,7 @@ class LoRATrainer:
                 
             # Setup training arguments
             training_args = TrainingArguments(
-                output_dir=f"lora_adapters/{self.config.model_name}",
+                output_dir=f"lora_adapters/{self.model.model_name}",
                 num_train_epochs=num_train_epochs,
                 per_device_train_batch_size=per_device_train_batch_size,
                 learning_rate=learning_rate,

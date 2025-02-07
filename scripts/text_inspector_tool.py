@@ -1,34 +1,52 @@
 from typing import Optional, Dict, Any, List
-from pathlib import Path
-from pydantic import BaseModel, Field
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from langchain_core.documents import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import TextLoader
-from langgraph.graph import StateGraph
-from loguru import logger
+from pydantic import BaseModel, Field, validator
 
-from smolagents import Tool
-from smolagents.models import MessageRole, Model
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+from loguru import logger
+import json
 
 from .mdconvert import MarkdownConverter
+from scripts.logging_config import log_error_with_traceback
+from langchain_core.language_models.chat_models import BaseChatModel
+from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
 
+# Import only the prompt functions and use our own model definitions
+from prompts.text_inspection.text_analysis import get_text_analysis_prompt
+from prompts.text_inspection.text_inspector_prompts import (
+    get_plan_generation_prompt,
+    get_join_decision_prompt
+)
 
+# Local model definitions that match the schema but are independent
 class TextSegment(BaseModel):
     """Schema for text segments"""
-    content: str = Field(description="The text content")
-    start_char: int = Field(description="Starting character position")
-    end_char: int = Field(description="Ending character position")
+    content: str = Field(description="Segment text")
+    start_char: int = Field(description="Start character position")
+    end_char: int = Field(description="End character position")
     metadata: Dict = Field(description="Segment metadata")
+
+    @validator("content")
+    def validate_content(cls, v: Any) -> str:
+        if isinstance(v, str):
+            return v
+        if hasattr(v, "content"):
+            return str(v.content)
+        return str(v)
+
+class Entity(BaseModel):
+    """Schema for named entities"""
+    text: str = Field(description="Entity text")
+    title: str = Field(description="Entity title")
 
 class TextAnalysis(BaseModel):
     """Schema for text analysis results"""
-    segments: List[TextSegment] = Field(description="Analyzed text segments")
-    key_points: List[str] = Field(description="Key points from the text")
-    entities: List[Dict] = Field(description="Extracted entities")
-    relationships: List[Dict] = Field(description="Identified relationships")
+    content: str = Field(description="Original text content")
+    segments: List[TextSegment] = Field(description="Text segments")
+    key_points: List[str] = Field(description="Key points from text")
+    entities: List[Entity] = Field(description="Extracted entities")
+    relationships: List[str] = Field(description="Identified relationships")
     summary: str = Field(description="Text summary")
 
 class InspectionState(BaseModel):
@@ -38,187 +56,265 @@ class InspectionState(BaseModel):
     analysis: Optional[TextAnalysis] = None
     metadata: Dict = Field(default_factory=dict)
 
-class TextInspector:
-    def __init__(self, llm):
-        self.llm = llm
+class TextInspector(LLMCompiler):
+    """Text inspection system using LLMCompiler pattern"""
+    def __init__(self, llm: Optional[BaseChatModel] = None):
+        super().__init__(llm)
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
-            chunk_overlap=200
+            chunk_overlap=200,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
         )
-        self.workflow = self._create_workflow()
-        
-    def _create_workflow(self) -> StateGraph:
-        """Create the text inspection workflow"""
-        workflow = StateGraph(InspectionState)
-        
-        # Text segmentation node
-        def segment_text(state: InspectionState) -> InspectionState:
-            splits = self.text_splitter.split_text(state.text)
-            state.segments = [
-                TextSegment(
-                    content=split,
-                    start_char=state.text.find(split),
-                    end_char=state.text.find(split) + len(split),
-                    metadata={}
-                )
-                for split in splits
-            ]
-            return state
-            
-        workflow.add_node("segment_text", RunnableLambda(segment_text))
-        
-        # Key points extraction node
-        def extract_key_points(state: InspectionState) -> InspectionState:
-            template = ChatPromptTemplate.from_messages([
-                ("system", "Extract key points from the text segment."),
-                ("human", "Text: {text}")
-            ])
-            
-            key_points = []
-            for segment in state.segments:
-                response = template | self.llm
-                result = response.invoke({"text": segment.content})
-                points = [p.strip() for p in result.content.split("\n") if p.strip()]
-                key_points.extend(points)
-                
-            if not state.analysis:
-                state.analysis = TextAnalysis(
-                    segments=state.segments,
-                    key_points=key_points,
-                    entities=[],
-                    relationships=[],
-                    summary=""
-                )
-            else:
-                state.analysis.key_points = key_points
-                
-            return state
-            
-        workflow.add_node("extract_key_points", RunnableLambda(extract_key_points))
-        
-        # Entity extraction node
-        def extract_entities(state: InspectionState) -> InspectionState:
-            template = ChatPromptTemplate.from_messages([
-                ("system", "Extract entities and their attributes from the text."),
-                ("human", "Text: {text}")
-            ])
-            
-            entities = []
-            for segment in state.segments:
-                response = template | self.llm
-                result = response.invoke({"text": segment.content})
-                try:
-                    segment_entities = eval(result.content)
-                    entities.extend(segment_entities)
-                except:
-                    logger.warning(f"Failed to parse entities from: {result.content}")
-                    
-            if state.analysis:
-                state.analysis.entities = entities
-                
-            return state
-            
-        workflow.add_node("extract_entities", RunnableLambda(extract_entities))
-        
-        # Relationship extraction node
-        def extract_relationships(state: InspectionState) -> InspectionState:
-            template = ChatPromptTemplate.from_messages([
-                ("system", "Extract relationships between entities in the text."),
-                ("human", "Text: {text}\nEntities: {entities}")
-            ])
-            
-            relationships = []
-            for segment in state.segments:
-                response = template | self.llm
-                result = response.invoke({
-                    "text": segment.content,
-                    "entities": str(state.analysis.entities if state.analysis else [])
-                })
-                try:
-                    segment_relationships = eval(result.content)
-                    relationships.extend(segment_relationships)
-                except:
-                    logger.warning(f"Failed to parse relationships from: {result.content}")
-                    
-            if state.analysis:
-                state.analysis.relationships = relationships
-                
-            return state
-            
-        workflow.add_node("extract_relationships", RunnableLambda(extract_relationships))
-        
-        # Summarization node
-        def summarize_text(state: InspectionState) -> InspectionState:
-            template = ChatPromptTemplate.from_messages([
-                ("system", "Generate a comprehensive summary of the text."),
-                ("human", """
-                Text: {text}
-                Key Points: {key_points}
-                Entities: {entities}
-                Relationships: {relationships}
-                """)
-            ])
-            
-            response = template | self.llm
-            result = response.invoke({
-                "text": state.text,
-                "key_points": "\n".join(state.analysis.key_points) if state.analysis else "",
-                "entities": str(state.analysis.entities if state.analysis else []),
-                "relationships": str(state.analysis.relationships if state.analysis else [])
-            })
-            
-            if state.analysis:
-                state.analysis.summary = result.content
-                
-            return state
-            
-        workflow.add_node("summarize_text", RunnableLambda(summarize_text))
-        
-        # Define edges
-        workflow.add_edge("segment_text", "extract_key_points")
-        workflow.add_edge("extract_key_points", "extract_entities")
-        workflow.add_edge("extract_entities", "extract_relationships")
-        workflow.add_edge("extract_relationships", "summarize_text")
-        
-        workflow.set_entry_point("segment_text")
-        return workflow
-        
-    def inspect_text(self, text: str, metadata: Dict = None) -> TextAnalysis:
-        """Inspect text content"""
+
+    async def _generate_plan(self, state: CompilerState) -> Plan:
+        """Generate text inspection plan"""
         try:
-            initial_state = InspectionState(
-                text=text,
-                metadata=metadata or {}
-            )
-            
-            final_state = self.workflow.invoke(initial_state.dict())
-            return final_state.analysis
-            
+            prompt, parser = get_plan_generation_prompt()
+            chain = prompt | self.llm | parser
+            plan = await chain.ainvoke({"content": state.get('content', '')})
+            return plan
+
         except Exception as e:
-            logger.error(f"Error inspecting text: {e}")
-            raise
-            
-    def inspect_file(self, file_path: str, metadata: Dict = None) -> TextAnalysis:
-        """Inspect text file"""
-        try:
-            loader = TextLoader(file_path)
-            docs = loader.load()
-            text = "\n".join(doc.page_content for doc in docs)
-            
-            file_metadata = {
-                "source": file_path,
-                "type": "file",
-                **(metadata or {})
-            }
-            
-            return self.inspect_text(text, file_metadata)
-            
-        except Exception as e:
-            logger.error(f"Error inspecting file: {e}")
+            log_error_with_traceback(e, "Error generating inspection plan")
             raise
 
-def inspect_file_as_text(file_path: str, llm) -> Dict:
+    async def _execute_tasks(self, tasks: List[Task]) -> List[TaskResult]:
+        """Execute text inspection tasks"""
+        try:
+            results = []
+            for task in tasks:
+                try:
+                    # Check dependencies
+                    deps_met = all(
+                        any(r.task_id == dep and not r.error for r in results)
+                        for dep in task.dependencies
+                    )
+                    if not deps_met:
+                        continue
+
+                    # Execute task
+                    result = None
+                    if task.tool == "analyze_text":
+                        result = await self._analyze_text(task.args["content"])
+                    elif task.tool == "identify_segments":
+                        result = await self._identify_segments(task.args["content"])
+                    elif task.tool == "extract_entities":
+                        result = await self._extract_entities(task.args["content"])
+                    elif task.tool == "identify_relationships":
+                        result = await self._identify_relationships(task.args["content"])
+
+                    results.append(TaskResult(
+                        task_id=task.idx,
+                        result=result,
+                        error=None
+                    ))
+
+                except Exception as e:
+                    results.append(TaskResult(
+                        task_id=task.idx,
+                        result=None,
+                        error=str(e)
+                    ))
+
+            return results
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error executing inspection tasks")
+            raise
+
+    async def _make_join_decision(self, state: CompilerState) -> JoinDecision:
+        """Decide whether to complete or replan"""
+        try:
+            # Create join prompt
+            plan_json = "{}"
+            plan = state.get('plan')
+            if plan is not None:
+                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
+
+            results_json = "[]"
+            results = state.get('results')
+            if results:
+                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
+
+            prompt, parser = get_join_decision_prompt()
+            chain = prompt | self.llm | parser
+            decision = await chain.ainvoke({
+                "plan": plan_json,
+                "results": results_json
+            })
+            return decision
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error making join decision")
+            raise
+
+    async def _generate_final_result(self, state: CompilerState) -> TextAnalysis:
+        """Generate final text analysis result"""
+        try:
+            # Combine results into TextAnalysis
+            analysis = TextAnalysis(
+                content=state.get('content', ''),
+                segments=[],
+                key_points=[],
+                entities=[],
+                relationships=[],
+                summary=""
+            )
+
+            # Extract results from tasks
+            for result in state.get('results', []):
+                if result and result.result:
+                    if isinstance(result.result, dict):
+                        if 'segments' in result.result:
+                            analysis.segments.extend(result.result['segments'])
+                        if 'key_points' in result.result:
+                            analysis.key_points.extend(result.result['key_points'])
+                        if 'entities' in result.result:
+                            analysis.entities.extend(result.result['entities'])
+                        if 'relationships' in result.result:
+                            analysis.relationships.extend(result.result['relationships'])
+                        if 'summary' in result.result:
+                            analysis.summary = result.result['summary']
+
+            return analysis
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error generating final result")
+            raise
+
+    async def inspect_text(self, text: str) -> TextAnalysis:
+        """Inspect text content and extract structured information"""
+        try:
+            # Create initial state
+            state = {
+                "content": text,
+                "plan": None,
+                "results": [],
+                "join_decision": None,
+                "final_result": None
+            }
+
+            # Run LLMCompiler workflow
+            result = await self.run(state)
+            return result if isinstance(result, TextAnalysis) else TextAnalysis(
+                content=text,
+                segments=[TextSegment(
+                    content=text,
+                    start_char=0,
+                    end_char=len(text),
+                    metadata={}
+                )],
+                key_points=[],
+                entities=[],
+                relationships=[],
+                summary=""
+            )
+
+        except Exception as e:
+            log_error_with_traceback(e, "Error inspecting text")
+            raise
+
+    async def inspect_file(self, file_path: str) -> TextAnalysis:
+        """Inspect a file and extract structured information"""
+        try:
+            # Read file content
+            with open(file_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+            
+            # Extract metadata from file path
+            file_metadata = {
+                "file_path": file_path,
+                "file_type": file_path.split('.')[-1] if '.' in file_path else 'unknown'
+            }
+            
+            return await self.inspect_text(text)
+            
+        except Exception as e:
+            log_error_with_traceback(e, f"Error inspecting file: {file_path}")
+            return TextAnalysis(
+                content="",
+                segments=[TextSegment(
+                    content="",
+                    start_char=0,
+                    end_char=0,
+                    metadata={}
+                )],
+                key_points=[],
+                entities=[],
+                relationships=[],
+                summary=f"Failed to analyze file: {file_path}"
+            )
+
+    async def _analyze_text(self, content: str) -> Dict[str, Any]:
+        """Analyze text content"""
+        try:
+            prompt, parser = get_text_analysis_prompt()
+            chain = prompt | self.llm | parser
+            result = await chain.ainvoke({"text": content})
+            return result.model_dump()
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error analyzing text")
+            raise
+
+    async def _identify_segments(self, content: str) -> Dict[str, Any]:
+        """Identify logical segments in text"""
+        try:
+            # Split text into segments
+            segments = []
+            current_pos = 0
+            
+            # Use text splitter to get chunks
+            chunks = self.text_splitter.split_text(content)
+            
+            # Convert chunks to segments
+            for chunk in chunks:
+                start_pos = content.find(chunk, current_pos)
+                if start_pos != -1:
+                    segments.append(TextSegment(
+                        content=chunk,
+                        start_char=start_pos,
+                        end_char=start_pos + len(chunk),
+                        metadata={
+                            "type": "chunk",
+                            "length": len(chunk)
+                        }
+                    ))
+                    current_pos = start_pos + len(chunk)
+            
+            return {"segments": [s.model_dump() for s in segments]}
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error identifying segments")
+            raise
+
+    async def _extract_entities(self, content: str) -> Dict[str, Any]:
+        """Extract named entities from text"""
+        try:
+            prompt, parser = get_text_analysis_prompt()
+            chain = prompt | self.llm | parser
+            result = await chain.ainvoke({"text": content})
+            return {"entities": [e.model_dump() for e in result.entities]}
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error extracting entities")
+            raise
+
+    async def _identify_relationships(self, content: str) -> Dict[str, Any]:
+        """Identify relationships between concepts"""
+        try:
+            prompt, parser = get_text_analysis_prompt()
+            chain = prompt | self.llm | parser
+            result = await chain.ainvoke({"text": content})
+            return {"relationships": result.relationships}
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error identifying relationships")
+            raise
+
+async def inspect_file_as_text(file_path: str, llm) -> Dict:
     """Convenience function for file inspection"""
     inspector = TextInspector(llm)
-    result = inspector.inspect_file(file_path)
-    return result.dict()
+    result = await inspector.inspect_file(file_path)
+    return result.model_dump()

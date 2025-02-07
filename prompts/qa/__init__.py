@@ -1,10 +1,32 @@
 """Question answering prompts package."""
 
-from .question_answering import (
-    QUESTION_GENERATION_SYSTEM,
-    QUESTION_GENERATION_HUMAN,
-    ANSWER_GENERATION_SYSTEM,
-    ANSWER_GENERATION_HUMAN,
-    KNOWLEDGE_GAP_SYSTEM,
-    KNOWLEDGE_GAP_HUMAN
-) 
+from .qa_prompt import (
+    QAResponse,
+    get_qa_prompt
+)
+
+from .question_generation import (
+    Question,
+    get_question_generation_prompt
+)
+
+from .answer_generation import (
+    Answer,
+    get_answer_generation_prompt
+)
+
+from .knowledge_gap import (
+    KnowledgeGap,
+    get_knowledge_gap_prompt
+)
+
+__all__ = [
+    'QAResponse',
+    'get_qa_prompt',
+    'Question',
+    'get_question_generation_prompt',
+    'Answer',
+    'get_answer_generation_prompt',
+    'KnowledgeGap',
+    'get_knowledge_gap_prompt'
+]
