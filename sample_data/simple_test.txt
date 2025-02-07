@@ -1,4 +1,45 @@
- "Multi-modal AI - vision-language models, audio processing, sensor fusion",
+This is a sample test file for the research agent.
+
+Topic: Machine Learning
+Machine learning is a branch of artificial intelligence that focuses on building systems that can learn from and make decisions based on data. It uses various algorithms and statistical models to enable computers to improve their performance on a specific task through experience.
+
+Key Concepts:
+1. Supervised Learning: Training with labeled data
+2. Unsupervised Learning: Finding patterns in unlabeled data
+3. Reinforcement Learning: Learning through trial and error with rewards
+
+Applications:
+- Image Recognition
+- Natural Language Processing
+- Recommendation Systems
+- Autonomous Vehicles
+
+Best Practices:
+- Data preprocessing and cleaning
+- Feature engineering
+- Model validation and testing
+- Regular model updates and maintenance
+
+Common Algorithms:
+1. Linear Regression
+2. Decision Trees
+3. Neural Networks
+4. Support Vector Machines
+5. Random Forests
+
+Challenges:
+- Data quality and quantity
+- Model interpretability
+- Computational resources
+- Ethical considerations
+
+Future Trends:
+- AutoML
+- Edge Computing
+- Federated Learning
+- Explainable AI
+
+"Multi-modal AI - vision-language models, audio processing, sensor fusion",
     "Automated Reasoning - theorem proving, constraint satisfaction, planning",
     "Meta-learning - few-shot learning, transfer learning, continual learning",
     "Advanced Agent Architectures - LATS, self-discover agents, recursive agents",
@@ -226,5 +267,4 @@ TOPICS_MED = [
     "Melatonin for GERD prevention (LES pressure increase, gastric acid inhibition)",
     "Acupuncture for reflux management",
     "Osteopathic manipulation for GERD relief",
-    "Transient lower esophageal sphincter relaxation modulation for reflux control",
-    "Visceral hypersensitivity network modulation for digestive comfort"
+    "Transient lower esophageal sphincter relaxation modulation for reflux control"

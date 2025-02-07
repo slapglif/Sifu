@@ -53,7 +53,7 @@ The JSON object MUST EXACTLY match this structure:
     {
       "idx": <integer>,
       "tool": <string>,
-      "args": <object/dictionary>,
+      "args": <object with string keys and any valid JSON values>,
       "dependencies": <array of integers>
     },
     ...more tasks...
@@ -61,15 +61,37 @@ The JSON object MUST EXACTLY match this structure:
   "thought": <string>
 }
 
-Available tools:
-- research_topics: Research topics from sources
-  args: {"domain": <string>}
-- synthesize_knowledge: Synthesize knowledge from sources
-  args: {"sources": <array>}
-- generate_examples: Generate training examples from knowledge
-  args: {"knowledge": <array>}
-- train_model: Train model on examples
-  args: {"examples": <array>}
+Available tools and their required args:
+- research_topics: {"domain": <string>} (must be a valid domain name)
+- synthesize_knowledge: {"sources": [{"id": <integer>}]} (must reference research results)
+- generate_examples: {"knowledge": [{"id": <integer>}]} (must reference synthesis results)
+- train_model: {"examples": [{"data": {"value": <string>}}]} (must reference example results)
+
+CRITICAL TASK ORDER AND DEPENDENCY RULES:
+1. Tasks MUST be in this exact order:
+   a. research_topics (idx: 0, no dependencies)
+   b. synthesize_knowledge (idx: 1, depends on research_topics)
+   c. generate_examples (idx: 2, depends on synthesize_knowledge)
+   d. train_model (idx: 3, depends on generate_examples)
+2. Each task must have a unique integer index starting from 0
+3. Tasks can only depend on tasks with lower indices
+4. Dependencies must be an array of task indices
+5. Dependencies must be valid task indices that exist in the plan
+6. Dependencies must reflect the logical flow of data:
+   - synthesize_knowledge needs results from research_topics
+   - generate_examples needs results from synthesize_knowledge
+   - train_model needs results from generate_examples
+
+CRITICAL ARGUMENT RULES:
+1. Each task MUST have the correct argument structure:
+   a. research_topics: {"domain": "test_domain"}
+   b. synthesize_knowledge: {"sources": [{"id": 0}]}
+   c. generate_examples: {"knowledge": [{"id": 0}]}
+   d. train_model: {"examples": [{"data": {"value": "example"}}]}
+2. Arguments MUST be valid JSON objects
+3. DO NOT use empty objects {} for arguments
+4. Use the exact argument names and structure shown above
+5. Use valid values for all arguments
 
 CRITICAL FORMATTING RULES:
 1. Use ONLY double quotes (") for strings and property names
@@ -86,6 +108,22 @@ CRITICAL FORMATTING RULES:
 12. No extra quotes around the entire JSON object
 13. No extra quotes around individual fields
 14. No extra quotes around arrays or objects
+15. The "args" field MUST be an object/dictionary, not an array
+16. Each task MUST have all required fields: idx, tool, args, dependencies
+17. The "thought" field MUST be included and MUST be a string
+18. DO NOT include any duplicate fields
+19. DO NOT wrap the JSON in extra quotes
+20. DO NOT include any explanatory comments in the JSON
+21. DO NOT include any debugging or validation fields
+22. The response MUST be parseable as a single valid JSON object
+23. Each task MUST be a valid Task object with exactly these fields:
+    - idx: integer
+    - tool: string
+    - args: object with required structure
+    - dependencies: array of integers
+24. The tasks array MUST be in order by idx starting from 0
+25. Dependencies MUST be an array of integers, not an object or string
+26. DO NOT include extra dependencies fields
 
 Example valid response:
 {
@@ -121,30 +159,53 @@ Example valid response:
 {format_instructions}
 
 Remember:
-1. Break down complex tasks into the available tools
-2. Consider dependencies between tasks
-3. Use only the available tools with their exact names
-4. Explain your planning logic
-5. MOST IMPORTANTLY: Return ONLY valid JSON with the EXACT structure shown above
-6. No text before or after the JSON
-7. No explanation, just the JSON object
-8. Double-check your JSON is valid and properly formatted
-9. Do not wrap the JSON in extra quotes
-10. Do not quote individual fields that should not be quoted"""
+1. Return ONLY valid JSON with the EXACT structure shown above
+2. No text before or after the JSON
+3. No explanation, just the JSON object
+4. Always include all required fields
+5. The "args" field MUST be an object/dictionary with required structure
+6. Follow the tool-specific args format exactly
+7. Double-check your JSON is valid and properly formatted
+8. Do not wrap the JSON in extra quotes
+9. Do not quote individual fields that should not be quoted
+10. The "thought" field MUST be included
+11. DO NOT include any duplicate fields
+12. DO NOT include any debugging or validation fields
+13. Tasks MUST have proper dependencies based on data flow
+14. Task indices MUST be sequential starting from 0
+15. Each task MUST be a valid Task object
+16. Dependencies MUST be an array of integers
+17. Tasks MUST be in the exact order specified above
+18. Arguments MUST have the exact structure specified above"""
 
-    human_template = """Please generate an execution plan for this state:
-{state}
+    human_template = """Generate a plan to process this state:
 
-Remember to respond with ONLY the JSON object, no other text."""
+{{state}}
 
-    prompt = ChatPromptTemplate.from_messages([
+Remember:
+1. Return ONLY valid JSON with the EXACT structure shown above
+2. No text before or after the JSON
+3. No explanation, just the JSON object
+4. Always include all required fields
+5. The "args" field MUST be an object/dictionary with required structure
+6. Follow the tool-specific args format exactly
+7. Double-check your JSON is valid and properly formatted
+8. Do not wrap the JSON in extra quotes
+9. Do not quote individual fields that should not be quoted
+10. The "thought" field MUST be included
+11. DO NOT include any duplicate fields
+12. DO NOT include any debugging or validation fields
+13. Tasks MUST have proper dependencies based on data flow
+14. Task indices MUST be sequential starting from 0
+15. Each task MUST be a valid Task object
+16. Dependencies MUST be an array of integers
+17. Tasks MUST be in the exact order specified above
+18. Arguments MUST have the exact structure specified above"""
+
+    return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
     ])
-
-    prompt = prompt.partial(format_instructions=parser.get_format_instructions())
-
-    return prompt
 
 def get_task_execution_prompt() -> ChatPromptTemplate:
     """Get the prompt template for task execution."""

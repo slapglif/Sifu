@@ -431,6 +431,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def process_source(self, content: str) -> ExtractedKnowledge:
         """Process content to extract knowledge"""
         if not self.llm:
+            log_warning_with_context("LLM not initialized, initializing now", "Knowledge Processing")
             await self.initialize()
 
         try:
@@ -444,122 +445,116 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                 # Create tasks for tracking
                 extraction_task = progress.add_task("[cyan]Extracting knowledge...", total=4)
                 
-                # Run text analysis first
-                inspector = TextInspector(self.llm)
-                analysis: TextAnalysis = await inspector.inspect_text(content)
-                progress.update(extraction_task, advance=1)
-                
-                # Extract knowledge using knowledge extraction prompt
-                prompt = get_knowledge_extraction_prompt()
-                chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ExtractedKnowledge)
-                initial_knowledge = await chain.ainvoke({
-                    "text": content,
-                    "analysis": analysis.model_dump() if hasattr(analysis, "model_dump") else analysis
-                })
-                progress.update(extraction_task, advance=1)
-                
-                # Run entity extraction, relationship extraction, and metadata generation in parallel
-                tasks = [
-                    self._extract_entities(content),
-                    self._extract_relationships(content),
-                    self._generate_metadata(content)
-                ]
-                
-                log_info_with_context("Starting parallel knowledge extraction", "Knowledge Processing")
-                entities, relationships, metadata = await asyncio.gather(*tasks)
-                progress.update(extraction_task, advance=1)
+                try:
+                    # Run text analysis first
+                    log_info_with_context("Starting text analysis", "Knowledge Processing")
+                    inspector = TextInspector(self.llm)
+                    analysis: TextAnalysis = await inspector.inspect_text(content)
+                    progress.update(extraction_task, advance=1)
+                    
+                    # Extract knowledge using knowledge extraction prompt
+                    log_info_with_context("Extracting initial knowledge", "Knowledge Processing")
+                    prompt = get_knowledge_extraction_prompt()
+                    chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ExtractedKnowledge)
+                    initial_knowledge = await chain.ainvoke({
+                        "text": content,
+                        "analysis": analysis.model_dump() if hasattr(analysis, "model_dump") else analysis
+                    })
+                    progress.update(extraction_task, advance=1)
+                    
+                    # Run entity extraction, relationship extraction, and metadata generation in parallel
+                    log_info_with_context("Starting parallel knowledge extraction", "Knowledge Processing")
+                    tasks = [
+                        self._extract_entities(content),
+                        self._extract_relationships(content),
+                        self._generate_metadata(content)
+                    ]
+                    
+                    entities, relationships, metadata = await asyncio.gather(*tasks)
+                    progress.update(extraction_task, advance=1)
 
-                # Evaluate confidence with factors
-                confidence_eval = await self._evaluate_confidence(content, entities, relationships)
-                factors = confidence_eval.factors
-                
-                # Optionally enrich with web search
-                web_context = None
-                if self.config.enable_web_search:
-                    try:
-                        search_results = await web_search(content)
-                        if search_results and not search_results.startswith("Error"):
-                            web_context = search_results
-                    except Exception as e:
-                        log_error_with_traceback(e, "Error in web search enrichment")
-                
-                progress.update(extraction_task, advance=1)
+                    # Evaluate confidence with factors
+                    log_info_with_context("Evaluating confidence", "Knowledge Processing")
+                    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+                    factors = confidence_eval.factors
+                    
+                    # Optionally enrich with web search
+                    web_context = None
+                    if self.config.enable_web_search:
+                        try:
+                            log_info_with_context("Enriching with web search", "Knowledge Processing")
+                            search_results = await web_search(content)
+                            if search_results and not search_results.startswith("Error"):
+                                web_context = search_results
+                                log_info_with_context("Web search enrichment successful", "Knowledge Processing")
+                            else:
+                                log_warning_with_context("Web search returned no results", "Knowledge Processing")
+                        except Exception as e:
+                            log_error_with_traceback(e, "Error in web search enrichment")
+                    
+                    progress.update(extraction_task, advance=1)
 
-                # Create final knowledge object
-                knowledge = ExtractedKnowledge(
-                    content=content,
-                    entities=entities,
-                    relationships=relationships,
-                    confidence=confidence_eval.confidence,
-                    metadata=SourceMetadata(
-                        source_type="text",
-                        confidence_score=confidence_eval.confidence,
-                        domain_relevance=confidence_eval.factors.context_relevance,
-                        timestamp=datetime.now().isoformat(),
-                        validation_status="pending",
-                        domain="knowledge"
+                    # Create final knowledge object
+                    knowledge = ExtractedKnowledge(
+                        content=content,
+                        entities=entities,
+                        relationships=relationships,
+                        confidence=confidence_eval.confidence,
+                        metadata=SourceMetadata(
+                            source_type="text",
+                            confidence_score=confidence_eval.confidence,
+                            domain_relevance=confidence_eval.factors.context_relevance,
+                            timestamp=datetime.now().isoformat(),
+                            validation_status="pending",
+                            domain="knowledge"
+                        )
                     )
-                )
-                
-                # Log extraction results
-                log_extraction_results(knowledge)
-                return knowledge
+                    
+                    # Log extraction results
+                    log_extraction_results(knowledge)
+                    log_info_with_context(
+                        f"Knowledge extraction complete - Confidence: {knowledge.confidence:.2f}",
+                        "Knowledge Processing"
+                    )
+                    return knowledge
+                    
+                except Exception as e:
+                    log_error_with_traceback(e, "Error in knowledge extraction process")
+                    raise
                 
         except Exception as e:
-            log_error_with_traceback(e, "Error in process_source")
+            log_error_with_traceback(e, "Fatal error in process_source")
             raise
-
-    async def _generate_embeddings(self, content: str) -> Optional[List[float]]:
-        """Generate embeddings with proper error handling"""
-        if not self.embeddings:
-            await self.initialize()
-            
-        try:
-            log_info_with_context("Generating embeddings", "Embeddings")
-            
-            # Use a safe wrapper to handle the None case
-            def generate_embeddings(text: str) -> Optional[List[List[float]]]:
-                if self.embeddings:
-                    return self.embeddings.embed_documents([text])
-                return None
-                
-            embeddings = await asyncio.to_thread(generate_embeddings, content)
-            if embeddings and isinstance(embeddings, list):
-                log_info_with_context("Successfully generated embeddings", "Embeddings")
-                return embeddings[0]
-            
-            log_warning_with_context("Failed to generate embeddings", "Embeddings")
-            return None
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Error generating embeddings")
-            return None
 
     async def _extract_entities(self, content: str) -> List[str]:
         """Extract entities from content"""
-        await self._ensure_initialized()
-        if not self.llm:
-            return []
-        
         try:
+            log_info_with_context("Starting entity extraction", "Knowledge Processing")
+            await self._ensure_initialized()
+            if not self.llm:
+                raise ValueError("LLM not initialized")
+            
             prompt = get_entity_extraction_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=EntityResponse)
             result = await chain.ainvoke({
                 "content": content
             })
+            
+            log_info_with_context(f"Extracted {len(result.entities)} entities", "Knowledge Processing")
             return result.entities
             
         except Exception as e:
             log_error_with_traceback(e, "Error extracting entities")
-            return []
+            raise
 
     async def _extract_relationships(self, content: str) -> List[Relationship]:
         """Extract relationships from content"""
-        await self._ensure_initialized()
-        if not self.llm:
-            return []
-        
         try:
+            log_info_with_context("Starting relationship extraction", "Knowledge Processing")
+            await self._ensure_initialized()
+            if not self.llm:
+                raise ValueError("LLM not initialized")
+            
             prompt = get_relationship_extraction_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=RelationshipResponse)
             result = await chain.ainvoke({
@@ -574,24 +569,29 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                     relation=rel["relation"],
                     target=rel["target"]
                 ))
+                
+            log_info_with_context(f"Extracted {len(relationships)} relationships", "Knowledge Processing")
             return relationships
             
         except Exception as e:
             log_error_with_traceback(e, "Error extracting relationships")
-            return []
+            raise
 
     async def _generate_metadata(self, content: str) -> SourceMetadata:
         """Generate metadata for content"""
-        await self._ensure_initialized()
-        if not self.llm:
-            return self._create_default_metadata()
-        
         try:
+            log_info_with_context("Starting metadata generation", "Knowledge Processing")
+            await self._ensure_initialized()
+            if not self.llm:
+                raise ValueError("LLM not initialized")
+            
             prompt = get_metadata_generation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=MetadataResponse)
             result = await chain.ainvoke({
                 "content": content
             })
+            
+            log_info_with_context("Metadata generation complete", "Knowledge Processing")
             return result.metadata
             
         except Exception as e:
@@ -721,4 +721,36 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             return result
         except Exception as e:
             log_error_with_traceback(e, "Error evaluating confidence")
+            raise
+
+    async def _generate_embeddings(self, content: str) -> Optional[List[float]]:
+        """Generate embeddings with proper error handling"""
+        try:
+            log_info_with_context("Starting embeddings generation", "Embeddings")
+            if not self.embeddings:
+                log_warning_with_context("Embeddings not initialized, initializing now", "Embeddings")
+                await self.initialize()
+                if not self.embeddings:
+                    raise ValueError("Failed to initialize embeddings")
+            
+            # Use a safe wrapper to handle the None case
+            def generate_embeddings(text: str) -> Optional[List[List[float]]]:
+                if self.embeddings:
+                    try:
+                        return self.embeddings.embed_documents([text])
+                    except Exception as e:
+                        log_error_with_traceback(e, "Error in embed_documents call")
+                        return None
+                return None
+                
+            embeddings = await asyncio.to_thread(generate_embeddings, content)
+            if embeddings and isinstance(embeddings, list):
+                log_info_with_context(f"Successfully generated embeddings of length {len(embeddings[0])}", "Embeddings")
+                return embeddings[0]
+            
+            log_warning_with_context("Failed to generate embeddings - returned None or empty list", "Embeddings")
+            return None
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Fatal error generating embeddings")
             raise

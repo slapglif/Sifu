@@ -100,43 +100,128 @@ class LLMCompiler:
             }
             
             # Get response from LLM
-            response = await chain.ainvoke(formatted_state)
+            response = await chain.ainvoke({"state": formatted_state})
             
-            # Handle double-encoded JSON
+            # Handle JSON parsing
             if isinstance(response, str):
                 try:
-                    log_info_with_context("Parsing double-encoded JSON response", "Planning")
-                    # First try to parse as JSON string
-                    parsed = json.loads(response)
-                    if isinstance(parsed, str):
-                        # If still a string, try parsing again
-                        parsed = json.loads(parsed)
-                    if isinstance(parsed, dict):
-                        # If the dict has a tasks key that's a string, parse that too
-                        if isinstance(parsed.get("tasks"), str):
-                            parsed["tasks"] = json.loads(parsed["tasks"])
-                        # If the dict is wrapped in an extra layer, unwrap it
-                        if len(parsed) == 1 and next(iter(parsed.keys())).startswith("{"):
-                            parsed = json.loads(next(iter(parsed.keys())))
-                        response = parsed
-                except json.JSONDecodeError:
-                    log_warning_with_context("Failed to parse JSON response", "Planning")
-                
-            # Convert tasks to Task objects if needed
-            if isinstance(response, dict):
-                tasks = []
-                for task in response["tasks"]:
-                    if isinstance(task, str):
-                        task = json.loads(task)
-                    tasks.append(Task(**task))
-                plan = Plan(
-                    tasks=tasks,
-                    thought=response["thought"]
-                )
+                    log_info_with_context("Parsing JSON response", "Planning")
+                    
+                    # Clean up response
+                    response = response.strip()
+                    # Remove any extra quotes around the entire JSON
+                    while response.startswith('"') and response.endswith('"'):
+                        response = response[1:-1]
+                    # Remove any extra quotes around the JSON object
+                    while response.startswith('"{') and response.endswith('}"'):
+                        response = response[1:-1]
+                    # Remove any escaped quotes
+                    response = response.replace('\\"', '"')
+                    # Replace single quotes with double quotes
+                    response = response.replace("'", '"')
+                    # Replace Python literals with JSON literals
+                    response = response.replace('None', 'null')
+                    response = response.replace('True', 'true')
+                    response = response.replace('False', 'false')
+                    
+                    # Try to parse JSON
+                    try:
+                        parsed = json.loads(response)
+                    except json.JSONDecodeError as e:
+                        log_error_with_traceback(e, "Failed to parse initial JSON")
+                        raise ValueError(f"Invalid JSON format: {str(e)}")
+                    
+                    # Validate required fields
+                    if not isinstance(parsed, dict):
+                        raise ValueError("Response must be a dictionary")
+                    if "tasks" not in parsed:
+                        raise ValueError("Response missing 'tasks' field")
+                    if "thought" not in parsed:
+                        raise ValueError("Response missing 'thought' field")
+                        
+                    # Remove any duplicate fields
+                    if len(parsed.keys()) > 2:  # Should only have tasks and thought
+                        parsed = {"tasks": parsed["tasks"], "thought": parsed["thought"]}
+                        
+                    # Validate tasks array
+                    if not isinstance(parsed["tasks"], list):
+                        raise ValueError("'tasks' must be an array")
+                        
+                    # Validate and fix each task
+                    for task in parsed["tasks"]:
+                        if not isinstance(task, dict):
+                            raise ValueError("Each task must be a dictionary")
+                            
+                        # Validate required task fields
+                        required_fields = ["idx", "tool", "args", "dependencies"]
+                        for field in required_fields:
+                            if field not in task:
+                                raise ValueError(f"Task missing required field: {field}")
+                                
+                        # Remove any extra fields
+                        task_clean = {
+                            "idx": task["idx"],
+                            "tool": task["tool"],
+                            "args": task["args"],
+                            "dependencies": task["dependencies"]
+                        }
+                        task.clear()
+                        task.update(task_clean)
+                                
+                        # Ensure args is a dictionary
+                        if not isinstance(task["args"], dict):
+                            if isinstance(task["args"], list) and len(task["args"]) == 1:
+                                # Try to convert single-item list to dict
+                                try:
+                                    task["args"] = json.loads(task["args"][0])
+                                except:
+                                    raise ValueError(f"Invalid args format for task {task['idx']}")
+                            else:
+                                raise ValueError(f"Args must be a dictionary for task {task['idx']}")
+                                
+                        # Ensure dependencies is a list
+                        if not isinstance(task["dependencies"], list):
+                            raise ValueError(f"Dependencies must be a list for task {task['idx']}")
+                            
+                        # Validate dependencies
+                        for dep in task["dependencies"]:
+                            if not isinstance(dep, int):
+                                raise ValueError(f"Dependencies must be integers for task {task['idx']}")
+                            if dep >= task["idx"]:
+                                raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
+                            if dep < 0:
+                                raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
+                            
+                    # Validate task order and dependencies
+                    task_ids = set()
+                    for task in parsed["tasks"]:
+                        task_ids.add(task["idx"])
+                        # Ensure all dependencies exist
+                        for dep in task["dependencies"]:
+                            if dep not in task_ids:
+                                raise ValueError(f"Task {task['idx']} depends on non-existent task {dep}")
+                            
+                    # Ensure sequential task IDs starting from 0
+                    expected_ids = set(range(len(parsed["tasks"])))
+                    if task_ids != expected_ids:
+                        raise ValueError(f"Task IDs must be sequential starting from 0. Found {task_ids}, expected {expected_ids}")
+                            
+                    # Create Plan object
+                    plan = Plan(
+                        tasks=[Task(**task) for task in parsed["tasks"]],
+                        thought=parsed["thought"]
+                    )
+                    
+                except json.JSONDecodeError as e:
+                    log_error_with_traceback(e, "Invalid JSON format")
+                    raise ValueError(f"Invalid JSON format: {str(e)}")
+                except Exception as e:
+                    log_error_with_traceback(e, "Error parsing response")
+                    raise ValueError(f"Error parsing response: {str(e)}")
             elif isinstance(response, Plan):
                 plan = response
             else:
-                raise ValueError(f"Invalid response format: {response}")
+                raise ValueError(f"Invalid response type: {type(response)}")
             
             # Log the generated plan
             log_info_with_context(f"Generated plan with {len(plan.tasks)} tasks", "Planning")

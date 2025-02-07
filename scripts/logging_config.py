@@ -55,7 +55,8 @@ def setup_logging(log_file: str = "debug.log"):
         level="INFO",
         backtrace=True,
         diagnose=True,
-        colorize=True
+        colorize=True,
+        catch=True  # Catch exceptions in the handlers
     )
     
     # Add file handler with detailed format
@@ -67,7 +68,23 @@ def setup_logging(log_file: str = "debug.log"):
         diagnose=True,
         rotation="1 day",
         retention="7 days",
-        compression="zip"
+        compression="zip",
+        catch=True,  # Catch exceptions in the handlers
+        enqueue=True  # Thread-safe logging
+    )
+    
+    # Add error file handler for critical errors
+    logger.add(
+        "error.log",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}",
+        level="ERROR",
+        backtrace=True,
+        diagnose=True,
+        rotation="1 day",
+        retention="30 days",
+        compression="zip",
+        catch=True,
+        enqueue=True
     )
 
 def log_error_with_traceback(e: Exception, context: str = ""):
@@ -87,14 +104,29 @@ def log_error_with_traceback(e: Exception, context: str = ""):
         title="[red]Full Traceback[/red]",
         border_style="red"
     ))
+    
+    # Log full exception info to error log
+    logger.opt(exception=True).error(f"""
+    Error Context: {context}
+    Error Type: {type(e).__name__}
+    Error Message: {str(e)}
+    Stack Trace:
+    {e.__traceback__}
+    """)
 
 def log_warning_with_context(msg: str, context: str = ""):
     """Log warning with context"""
     logger.warning(f"{context}: {msg}")
+    console.print(f"[yellow]WARNING[/yellow] [{context}] {msg}")
 
 def log_info_with_context(msg: str, context: str = ""):
     """Log info with context"""
     logger.info(f"{context}: {msg}")
+    console.print(f"[cyan]INFO[/cyan] [{context}] {msg}")
+
+def log_debug_with_context(msg: str, context: str = ""):
+    """Log debug with context"""
+    logger.debug(f"{context}: {msg}")
 
 def log_extraction_results(knowledge: Any):
     """Log knowledge extraction results"""
