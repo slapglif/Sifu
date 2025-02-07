@@ -1,0 +1,25 @@
+{
+    "name": "tech_companies",
+    "entity_types": [
+        "Company",
+        "Product",
+        "Person",
+        "Technology"
+    ],
+    "relation_types": [
+        "CREATED_BY",
+        "WORKS_FOR",
+        "USES",
+        "COMPETES_WITH"
+    ],
+    "validation_rules": {
+        "min_confidence": 0.7,
+        "require_sources": true,
+        "max_relation_distance": 3
+    },
+    "search_strategies": {
+        "use_web_search": true,
+        "use_archive": true,
+        "max_search_results": 5
+    }
+} 

@@ -1,0 +1,128 @@
+{
+    "name": "holistic_medical_comorbidities",
+    "entity_types": [
+        "Disease",
+        "Condition",
+        "Symptom",
+        "Treatment",
+        "Medication",
+        "Organ",
+        "BodySystem",
+        "RiskFactor",
+        "Biomarker",
+        "TCM_Pattern",
+        "TCM_Meridian",
+        "TCM_Element",
+        "Ayurvedic_Dosha",
+        "Ayurvedic_Dhatu",
+        "Ayurvedic_Srotas",
+        "Energy_System",
+        "Emotional_Pattern",
+        "Lifestyle_Factor",
+        "Environmental_Factor",
+        "Nutritional_Element",
+        "Herbal_Medicine",
+        "Energy_Medicine",
+        "Mind_Body_Practice"
+    ],
+    "relationship_types": [
+        "COMORBID_WITH",
+        "CAUSES",
+        "AFFECTS",
+        "TREATED_BY",
+        "INCREASES_RISK_OF",
+        "DECREASES_RISK_OF",
+        "INTERACTS_WITH",
+        "PART_OF",
+        "MEASURED_BY",
+        "BALANCES",
+        "IMBALANCES",
+        "HARMONIZES_WITH",
+        "SUPPORTS",
+        "DEPLETES",
+        "TRANSFORMS",
+        "MOVES",
+        "STAGNATES",
+        "NOURISHES",
+        "CLEANSES",
+        "TONIFIES",
+        "SEDATES",
+        "REGULATES"
+    ],
+    "validation_rules": {
+        "disease_naming": {
+            "western": "Must use standardized medical terminology",
+            "tcm": "Must use traditional Chinese medicine pattern nomenclature",
+            "ayurvedic": "Must use Sanskrit terminology where applicable",
+            "holistic": "Must include both traditional and modern terminology"
+        },
+        "relationship_evidence": {
+            "western": "Requires clinical evidence or research citation",
+            "tcm": "Must reference classical texts or established practice",
+            "ayurvedic": "Must cite traditional texts and modern applications",
+            "holistic": "Should demonstrate integration of multiple systems"
+        },
+        "confidence_scoring": {
+            "research_backed": 1.0,
+            "clinical_observation": 0.9,
+            "traditional_knowledge": 0.85,
+            "practitioner_consensus": 0.8,
+            "theoretical_model": 0.7
+        },
+        "cross_system_validation": {
+            "required": true,
+            "min_systems": 2,
+            "conflict_resolution": "documented_synthesis"
+        },
+        "temporal_validity": {
+            "modern_research": "Must be dated within last 10 years",
+            "traditional_knowledge": "Must reference historical validity",
+            "synthesis_required": "Must show historical-modern integration"
+        }
+    },
+    "search_strategies": [
+        "pubmed_search",
+        "clinical_guidelines",
+        "medical_literature",
+        "case_studies",
+        "meta_analyses",
+        "traditional_texts",
+        "practitioner_databases",
+        "herbal_pharmacopoeia",
+        "energy_medicine_research",
+        "mind_body_studies",
+        "nutritional_research",
+        "environmental_health",
+        "psychoneuroimmunology"
+    ],
+    "confidence_thresholds": {
+        "relationship_creation": 0.7,
+        "knowledge_synthesis": 0.8,
+        "contradiction_override": 0.9,
+        "fact_validation": 0.85,
+        "source_credibility": 0.75,
+        "traditional_knowledge": 0.8,
+        "cross_system_validation": 0.85,
+        "holistic_integration": 0.9
+    },
+    "synthesis_rules": {
+        "cross_validation": {
+            "required_perspectives": ["western", "tcm", "ayurvedic", "holistic"],
+            "minimum_overlap": 2,
+            "conflict_resolution": "documented_synthesis"
+        },
+        "evidence_hierarchy": [
+            "systematic_reviews",
+            "clinical_trials",
+            "traditional_texts",
+            "practitioner_observation",
+            "theoretical_models"
+        ],
+        "integration_requirements": {
+            "pattern_matching": true,
+            "mechanism_bridging": true,
+            "outcome_validation": true,
+            "safety_assessment": true
+        }
+    }
+} 

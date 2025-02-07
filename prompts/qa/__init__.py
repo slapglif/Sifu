@@ -1,0 +1,10 @@
+"""Question answering prompts package."""
+
+from .question_answering import (
+    QUESTION_GENERATION_SYSTEM,
+    QUESTION_GENERATION_HUMAN,
+    ANSWER_GENERATION_SYSTEM,
+    ANSWER_GENERATION_HUMAN,
+    KNOWLEDGE_GAP_SYSTEM,
+    KNOWLEDGE_GAP_HUMAN
+) 

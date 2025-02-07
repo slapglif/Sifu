@@ -1,0 +1,79 @@
+{
+    "queries": [
+        {
+            "id": "diabetes_comorbidities",
+            "query": "What are the most common comorbidities associated with diabetes and their mechanisms?",
+            "category": "metabolic"
+        },
+        {
+            "id": "cardio_respiratory",
+            "query": "How do cardiovascular diseases interact with respiratory conditions as comorbidities?",
+            "category": "cardiopulmonary"
+        },
+        {
+            "id": "elderly_hypertension",
+            "query": "What are the key comorbidities in elderly patients with hypertension?",
+            "category": "geriatric"
+        },
+        {
+            "id": "obesity_comorbidities",
+            "query": "Explain the relationship between obesity and its common comorbid conditions.",
+            "category": "metabolic"
+        },
+        {
+            "id": "ckd_interactions",
+            "query": "How does chronic kidney disease affect and interact with other medical conditions?",
+            "category": "renal"
+        },
+        {
+            "id": "pain_mental_health",
+            "query": "What are the mental health comorbidities commonly seen with chronic pain conditions?",
+            "category": "mental_health"
+        },
+        {
+            "id": "autoimmune_patterns",
+            "query": "Describe the comorbidity patterns in patients with autoimmune disorders.",
+            "category": "immunology"
+        },
+        {
+            "id": "sleep_disorders",
+            "query": "How do sleep disorders contribute to other medical conditions as comorbidities?",
+            "category": "neurological"
+        },
+        {
+            "id": "copd_comorbidities",
+            "query": "What are the typical comorbidities associated with COPD?",
+            "category": "respiratory"
+        },
+        {
+            "id": "depression_anxiety",
+            "query": "Explain the relationship between depression and anxiety as comorbid conditions.",
+            "category": "mental_health"
+        },
+        {
+            "id": "elderly_arthritis",
+            "query": "How does arthritis interact with other chronic conditions in elderly patients?",
+            "category": "geriatric"
+        },
+        {
+            "id": "liver_comorbidities",
+            "query": "What are the common comorbidities in patients with liver disease?",
+            "category": "hepatic"
+        },
+        {
+            "id": "thyroid_endocrine",
+            "query": "Describe the relationship between thyroid disorders and other endocrine conditions.",
+            "category": "endocrine"
+        },
+        {
+            "id": "neurological_systems",
+            "query": "How do neurological conditions affect other body systems leading to comorbidities?",
+            "category": "neurological"
+        },
+        {
+            "id": "gi_systemic",
+            "query": "What are the gastrointestinal comorbidities commonly seen with systemic diseases?",
+            "category": "gastroenterology"
+        }
+    ]
+} 

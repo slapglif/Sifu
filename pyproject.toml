@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research_agents"
+version = "0.1.0"
+description = "Research agents for knowledge acquisition and synthesis"
+requires-python = ">=3.8"
+dependencies = [
+    "langchain",
+    "langchain-core",
+    "langchain-community",
+    "langchain-ollama",
+    "langchain-chroma",
+    "langgraph",
+    "pydantic",
+    "loguru",
+    "rich",
+    "neo4j",
+    "python-dotenv",
+    "pillow"
+]
+
+[tool.setuptools]
+packages = ["scripts", "prompts"] 

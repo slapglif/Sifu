@@ -1,0 +1,155 @@
+{
+    "domain_name": "test_domain",
+    "llm": {
+        "model_name": "MFDoom/deepseek-r1-tool-calling:1.5b",
+        "temperature": 0.7
+    },
+    "neo4j": {
+        "url": "bolt://localhost:7687",
+        "username": "neo4j",
+        "password": "password"
+    },
+    "knowledge_acquisition": {
+        "domains": [
+            {
+                "name": "medical",
+                "description": "Medical domain knowledge including diseases, treatments, and healthcare concepts",
+                "classes": [
+                    {
+                        "name": "Disease",
+                        "description": "A medical condition or pathology",
+                        "parent_classes": [],
+                        "properties": {
+                            "icd_code": "string",
+                            "severity": "string",
+                            "chronic": "boolean"
+                        },
+                        "allowed_relations": ["causes", "treats", "related_to", "has_symptom"]
+                    },
+                    {
+                        "name": "Treatment",
+                        "description": "Medical interventions and therapies",
+                        "parent_classes": [],
+                        "properties": {
+                            "type": "string",
+                            "duration": "string",
+                            "invasive": "boolean"
+                        },
+                        "allowed_relations": ["treats", "contraindicated_with", "requires"]
+                    }
+                ],
+                "relations": [
+                    {
+                        "name": "causes",
+                        "description": "Indicates that one entity causes another",
+                        "symmetric": false,
+                        "transitive": true,
+                        "inverse_of": "caused_by"
+                    },
+                    {
+                        "name": "treats",
+                        "description": "Indicates that one entity is used to treat another",
+                        "symmetric": false,
+                        "transitive": false,
+                        "inverse_of": "treated_by"
+                    }
+                ],
+                "validation_rules": {
+                    "disease_naming": {
+                        "western": "Must use standardized medical terminology",
+                        "tcm": "Must use traditional Chinese medicine pattern nomenclature",
+                        "ayurvedic": "Must use Sanskrit terminology where applicable"
+                    },
+                    "relationship_evidence": {
+                        "clinical": "Requires clinical evidence",
+                        "research": "Must cite research papers",
+                        "traditional": "Must reference traditional texts"
+                    }
+                },
+                "confidence_thresholds": {
+                    "extraction": 0.7,
+                    "validation": 0.8,
+                    "relationship": 0.75
+                },
+                "search_strategies": [
+                    "pubmed_search",
+                    "clinical_guidelines",
+                    "medical_literature"
+                ]
+            },
+            {
+                "name": "tech",
+                "description": "Technology and software development domain",
+                "classes": [
+                    {
+                        "name": "Technology",
+                        "description": "Technical concepts and tools",
+                        "parent_classes": [],
+                        "properties": {
+                            "type": "string",
+                            "maturity": "string",
+                            "open_source": "boolean"
+                        },
+                        "allowed_relations": ["depends_on", "implements", "related_to"]
+                    }
+                ],
+                "relations": [
+                    {
+                        "name": "depends_on",
+                        "description": "Indicates a dependency relationship",
+                        "symmetric": false,
+                        "transitive": true,
+                        "inverse_of": "required_by"
+                    }
+                ],
+                "validation_rules": {
+                    "tech_naming": {
+                        "standard": "Must use industry standard terminology",
+                        "version": "Must include version information where applicable"
+                    }
+                },
+                "confidence_thresholds": {
+                    "extraction": 0.7,
+                    "validation": 0.8,
+                    "relationship": 0.75
+                },
+                "search_strategies": [
+                    "tech_docs",
+                    "github",
+                    "stack_overflow"
+                ]
+            }
+        ],
+        "default_domain": "tech",
+        "source_types": ["text", "pdf", "web", "api", "database"],
+        "validation_rules": {
+            "min_confidence": 0.7,
+            "require_evidence": true,
+            "max_relationship_depth": 5
+        },
+        "confidence_thresholds": {
+            "extraction": 0.7,
+            "validation": 0.8,
+            "relationship": 0.75
+        },
+        "chunk_size": 2000,
+        "chunk_overlap": 400,
+        "max_tokens": 32000
+    },
+    "lora_training": {
+        "model_name": "tiiuae/Falcon3-3B-Base",
+        "lora_alpha": 32,
+        "lora_dropout": 0.1,
+        "r": 8,
+        "bias": "none",
+        "task_type": "CAUSAL_LM",
+        "target_modules": ["q_proj", "v_proj"],
+        "inference_mode": false
+    },
+    "knowledge_sources": [
+        {
+            "path": "sample_data/simple_test.txt",
+            "type": "text"
+        }
+    ]
+} 

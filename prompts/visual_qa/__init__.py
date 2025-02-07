@@ -1,0 +1,10 @@
+"""Visual QA prompts package."""
+
+from .visual_analysis import (
+    VISUAL_ELEMENT_DETECTION_SYSTEM,
+    VISUAL_ELEMENT_DETECTION_HUMAN,
+    SCENE_ANALYSIS_SYSTEM,
+    SCENE_ANALYSIS_HUMAN,
+    VISUAL_QA_SYSTEM,
+    VISUAL_QA_HUMAN
+) 

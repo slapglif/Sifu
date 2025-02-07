@@ -1,0 +1,55 @@
+DEBUG    PIL.PngImagePlugin:PngImagePlugin.py:198 STREAM b'IHDR' 16 13
+DEBUG    PIL.PngImagePlugin:PngImagePlugin.py:198 STREAM b'IDAT' 41 1074
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001E9A6450AD0>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.complete
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.complete
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Thu, 06 Feb 2025 02:42:49 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.complete
+DEBUG    httpcore.http11:_trace.py:47 response_closed.started
+DEBUG    httpcore.http11:_trace.py:47 response_closed.complete
+T'), (b'Transfer-Encoding', b'chunked')])
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.complete
+DEBUG    httpcore.http11:_trace.py:47 response_closed.started
+DEBUG    httpcore.http11:_trace.py:47 response_closed.complete
+age.py:405 Importing PcxImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing PdfImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing PixarImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing PngImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing PpmImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing PsdImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing QoiImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing SgiImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing SpiderImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing SunImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing TgaImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing TiffImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing WebPImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing WmfImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing XbmImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing XpmImagePlugin
+DEBUG    PIL.Image:Image.py:405 Importing XVThumbImagePlugin
+DEBUG    PIL.PngImagePlugin:PngImagePlugin.py:198 STREAM b'IHDR' 16 13
+DEBUG    PIL.PngImagePlugin:PngImagePlugin.py:198 STREAM b'IDAT' 41 65536
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000021D0A4AE660>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.complete
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.complete
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/x-ndjson'), (b'Date', b'Thu, 06 Feb 2025 02:42:59 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.complete
+DEBUG    httpcore.http11:_trace.py:47 response_closed.started
+DEBUG    httpcore.http11:_trace.py:47 response_closed.complete
+2025-02-05 21:43:05.646 | INFO     | __main__:main:45 - All tests passed successfully!
+2025-02-05 21:43:05.647 | INFO     | __main__:main:49 - Test results have been saved to test_results.log

@@ -1,0 +1,32 @@
+cons / state of ai development:
+
+AI as a tool, not a replacement: Many commenters agree that AI is a powerful tool for experienced developers, helping with boilerplate, syntax, and exploring unfamiliar libraries. However, it's not a replacement for human understanding, reasoning, and problem-solving skills.
+
+"No Silver Bullet": Several users draw parallels to previous hyped technologies (4GLs, CASE tools, etc.) that promised to revolutionize programming but ultimately only addressed "accidental complexity" (e.g., syntax) rather than "essential complexity" (design, architecture).
+
+The "70% problem": AI excels at generating code that looks correct on the surface but often contains subtle bugs, performance issues, and security vulnerabilities. This necessitates careful review and often significant rework by a human developer.
+
+The "junior developer" analogy: AI is frequently compared to a junior developer – eager, fast, but lacking experience and prone to making mistakes. This requires senior developers to spend time reviewing and correcting the AI's output.
+
+The "leaky abstraction" problem: AI adds another layer of abstraction to the development process, but it's a "leaky" one. Developers still need to understand the underlying code to debug and maintain it, which can be challenging when the AI introduces unexpected complexities.
+
+Impact on learning: Some express concern that over-reliance on AI will hinder the development of fundamental programming skills, especially for junior developers.
+
+Focus on the wrong tasks: Some argue that AI is being applied to the wrong problems, like generating art instead of automating mundane tasks like cleaning and doing laundry.
+
+Potential for job displacement: While most agree that AI won't replace programmers entirely, there's concern that it could lead to a decrease in demand for junior developers and potentially lower salaries overall.
+
+
+pros:
+
+Significant productivity gains: Some developers report significant productivity improvements, especially when using AI for tasks like writing tests, generating boilerplate, or exploring new languages and frameworks.
+
+AI as a learning tool: Others argue that AI can be a valuable learning tool, providing explanations, alternative solutions, and helping developers learn new concepts faster.
+
+The future is bright: Some believe that the current limitations of AI are temporary and that future advancements will lead to more capable and reliable AI coding tools.
+
+UX is the bottleneck: A few suggest that the main limitation is not the AI itself but the user interface. Better integration with IDEs and development workflows could unlock greater productivity gains.
+
+AI for non-coding tasks: Some point out that AI can be helpful for other development tasks like documentation, design discussions, and even debugging.
+
+Increased demand for software: One argument is that AI will not eliminate jobs but increase the demand for software, meaning that even with AI, more developers will be needed.
