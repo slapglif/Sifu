@@ -19,19 +19,23 @@ install_rich_traceback(show_locals=True, width=120, word_wrap=True)
 console = Console()
 
 # Create a single shared progress instance
-_shared_progress = Progress(
-    SpinnerColumn(),
-    TextColumn("[progress.description]{task.description}"),
-    BarColumn(complete_style="green", finished_style="bright_green"),
-    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-    TimeRemainingColumn(),
-    console=console,
-    auto_refresh=False,
-    expand=True
-)
+_shared_progress = None
 
 def create_progress() -> Progress:
-    """Get the shared progress instance"""
+    """Create a new progress instance"""
+    global _shared_progress
+    if _shared_progress is None:
+        _shared_progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(complete_style="green", finished_style="bright_green"),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeRemainingColumn(),
+            console=console,
+            expand=True,
+            refresh_per_second=10  # Increase refresh rate
+        )
+        _shared_progress.start()
     return _shared_progress
 
 def setup_logging(log_file: str = "debug.log"):
@@ -49,116 +53,77 @@ def setup_logging(log_file: str = "debug.log"):
         )),
         format="<level>{message}</level>",
         level="INFO",
+        backtrace=True,
+        diagnose=True,
         colorize=True
     )
     
-    # Add file handler with detailed format including tracebacks
+    # Add file handler with detailed format
     logger.add(
         log_file,
-        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | {message}",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}",
         level="DEBUG",
-        rotation="1 day",
-        retention="7 days",
         backtrace=True,
         diagnose=True,
-        enqueue=True,
-        catch=True
+        rotation="1 day",
+        retention="7 days",
+        compression="zip"
     )
-    
-    # Start the shared progress
-    _shared_progress.start()
 
 def log_error_with_traceback(e: Exception, context: str = ""):
-    """Log an error with full traceback and context using both loguru and rich"""
-    if context:
-        error_panel = Panel(
-            f"[red bold]{context}[/red bold]\n[white]{str(e)}[/white]",
-            title="[red]Error[/red]",
-            border_style="red"
-        )
-    else:
-        error_panel = Panel(
-            f"[white]{str(e)}[/white]",
-            title="[red]Error[/red]",
-            border_style="red"
-        )
+    """Log error with full traceback"""
+    logger.opt(exception=True).error(f"{context}: {str(e)}")
     
-    console.print(error_panel)
-    logger.opt(depth=1).error(str(e))
-    logger.opt(depth=1).debug("Full traceback:", exc_info=e)
-    console.print_exception(show_locals=True, width=120, word_wrap=True)
+    # Also print rich traceback
+    console.print()
+    console.print(Panel(
+        Syntax(
+            str(e.__traceback__),
+            "python",
+            theme="monokai",
+            line_numbers=True,
+            word_wrap=True
+        ),
+        title="[red]Full Traceback[/red]",
+        border_style="red"
+    ))
 
 def log_warning_with_context(msg: str, context: str = ""):
-    """Log a warning with context"""
-    warning_panel = Panel(
-        f"[yellow]{msg}[/yellow]",
-        title=f"[yellow]Warning: {context}[/yellow]" if context else "[yellow]Warning[/yellow]",
-        border_style="yellow"
-    )
-    console.print(warning_panel)
-    if context:
-        logger.opt(depth=1).warning(f"{context}: {msg}")
-    else:
-        logger.opt(depth=1).warning(msg)
+    """Log warning with context"""
+    logger.warning(f"{context}: {msg}")
 
 def log_info_with_context(msg: str, context: str = ""):
-    """Log an info message with context"""
-    info_panel = Panel(
-        f"[cyan]{msg}[/cyan]",
-        title=f"[blue]Info: {context}[/blue]" if context else "[blue]Info[/blue]",
-        border_style="blue"
-    )
-    console.print(info_panel)
-    if context:
-        logger.opt(depth=1).info(f"{context}: {msg}")
-    else:
-        logger.opt(depth=1).info(msg)
+    """Log info with context"""
+    logger.info(f"{context}: {msg}")
 
 def log_extraction_results(knowledge: Any):
-    """Log knowledge extraction results in a beautiful format"""
-    # Create a tree for visualization
-    tree = Tree("[bold blue]Extracted Knowledge[/bold blue]")
-    
-    # Add content
-    content_tree = tree.add("[bold cyan]Content[/bold cyan]")
-    content_tree.add(knowledge.content[:200] + "..." if len(knowledge.content) > 200 else knowledge.content)
+    """Log knowledge extraction results"""
+    if not knowledge:
+        return
+        
+    # Create tree view of results
+    tree = Tree("Knowledge Extraction Results")
     
     # Add entities
-    entities_tree = tree.add("[bold green]Entities[/bold green]")
-    for entity in knowledge.entities:
-        entities_tree.add(f"[green]• {entity}[/green]")
-    
+    entities = tree.add("Entities")
+    for entity in getattr(knowledge, "entities", []):
+        entities.add(f"[cyan]{entity}[/cyan]")
+        
     # Add relationships
-    relationships_tree = tree.add("[bold yellow]Relationships[/bold yellow]")
-    for rel in knowledge.relationships:
-        relationships_tree.add(f"[yellow]{rel.source} → {rel.relation} → {rel.target}[/yellow]")
-    
+    relationships = tree.add("Relationships")
+    for rel in getattr(knowledge, "relationships", []):
+        rel_str = f"[yellow]{rel.source}[/yellow] -> [green]{rel.relation}[/green] -> [yellow]{rel.target}[/yellow]"
+        relationships.add(rel_str)
+        
     # Add metadata
-    if knowledge.metadata:
-        metadata_tree = tree.add("[bold magenta]Metadata[/bold magenta]")
-        for key, value in knowledge.metadata.dict().items():
-            metadata_tree.add(f"[magenta]{key}: {value}[/magenta]")
-    
-    # Create stats table
-    stats_table = Table(
-        title="[bold]Extraction Statistics[/bold]",
-        box=box.ROUNDED,
-        show_header=True,
-        header_style="bold"
-    )
-    stats_table.add_column("Metric", style="cyan")
-    stats_table.add_column("Value", style="green")
-    
-    stats_table.add_row("Content Length", str(len(knowledge.content)))
-    stats_table.add_row("Entity Count", str(len(knowledge.entities)))
-    stats_table.add_row("Relationship Count", str(len(knowledge.relationships)))
-    stats_table.add_row("Confidence", f"{knowledge.confidence:.2f}")
-    
-    # Print results
-    console.print("\n")
-    console.print(Panel(tree, title="[bold]Knowledge Extraction Results[/bold]", border_style="blue"))
-    console.print(stats_table)
-    console.print("\n")
+    if hasattr(knowledge, "metadata"):
+        metadata = tree.add("Metadata")
+        for k, v in knowledge.metadata.dict().items():
+            metadata.add(f"[blue]{k}[/blue]: {v}")
+            
+    # Print tree
+    console.print()
+    console.print(Panel(tree, title="Extraction Results", border_style="cyan"))
 
 def log_confidence_evaluation(result: Dict):
     """Log confidence evaluation results in a beautiful format"""

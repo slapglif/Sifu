@@ -226,7 +226,10 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         llm = ChatOllama(
             model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b"),
             format="json",
-            temperature=0.7
+            temperature=0.7,
+            mirostat=2,
+            mirostat_eta=0.1,
+            mirostat_tau=5.0
         )
         super().__init__(llm)
         
