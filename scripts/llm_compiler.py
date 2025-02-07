@@ -85,12 +85,12 @@ class LLMCompiler:
         """Generate execution plan."""
         try:
             log_info_with_context("Starting plan generation", "Planning")
-            console.print("\n[bold cyan]Generating Execution Plan...[/bold cyan]")
+            console.print("\n[bold cyan]Generating Plan...[/bold cyan]")
             
             prompt = get_plan_generation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
             
-            # Format state for LLM
+            # Format state for LLM using direct attribute access
             formatted_state = {
                 "content": state.content,
                 "plan": state.plan.model_dump() if state.plan else None,
@@ -100,109 +100,13 @@ class LLMCompiler:
             }
             
             # Get response from LLM
-            response = await chain.ainvoke({
-                "state": json.dumps(formatted_state, indent=2)
-            })
+            response = await chain.ainvoke(formatted_state)
             
             # Handle response
             if isinstance(response, Plan):
                 plan = response
             elif isinstance(response, dict) and "tasks" in response and "thought" in response:
-                # Validate tasks
-                for task in response["tasks"]:
-                    if not isinstance(task, dict):
-                        raise ValueError("Each task must be a dictionary")
-                    
-                    # Validate required task fields
-                    required_fields = ["idx", "tool", "args", "dependencies"]
-                    for field in required_fields:
-                        if field not in task:
-                            raise ValueError(f"Task missing required field: {field}")
-                    
-                    # Remove any extra fields
-                    task_clean = {
-                        "idx": task["idx"],
-                        "tool": task["tool"],
-                        "args": task["args"],
-                        "dependencies": task["dependencies"]
-                    }
-                    task.clear()
-                    task.update(task_clean)
-                    
-                    # Ensure args is a dictionary
-                    if not isinstance(task["args"], dict):
-                        raise ValueError(f"Args must be a dictionary for task {task['idx']}")
-                    
-                    # Ensure dependencies is a list
-                    if not isinstance(task["dependencies"], list):
-                        raise ValueError(f"Dependencies must be a list for task {task['idx']}")
-                    
-                    # Validate dependencies
-                    for dep in task["dependencies"]:
-                        if not isinstance(dep, int):
-                            raise ValueError(f"Dependencies must be integers for task {task['idx']}")
-                        if dep >= task["idx"]:
-                            raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
-                        if dep < 0:
-                            raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
-                
-                # Create Plan object
-                plan = Plan(
-                    tasks=[Task(**task) for task in response["tasks"]],
-                    thought=response["thought"]
-                )
-            elif isinstance(response, str):
-                try:
-                    # Try parsing JSON response
-                    parsed = json.loads(response)
-                    if isinstance(parsed, dict) and "tasks" in parsed and "thought" in parsed:
-                        # Validate tasks
-                        for task in parsed["tasks"]:
-                            if not isinstance(task, dict):
-                                raise ValueError("Each task must be a dictionary")
-                            
-                            # Validate required task fields
-                            required_fields = ["idx", "tool", "args", "dependencies"]
-                            for field in required_fields:
-                                if field not in task:
-                                    raise ValueError(f"Task missing required field: {field}")
-                            
-                            # Remove any extra fields
-                            task_clean = {
-                                "idx": task["idx"],
-                                "tool": task["tool"],
-                                "args": task["args"],
-                                "dependencies": task["dependencies"]
-                            }
-                            task.clear()
-                            task.update(task_clean)
-                            
-                            # Ensure args is a dictionary
-                            if not isinstance(task["args"], dict):
-                                raise ValueError(f"Args must be a dictionary for task {task['idx']}")
-                            
-                            # Ensure dependencies is a list
-                            if not isinstance(task["dependencies"], list):
-                                raise ValueError(f"Dependencies must be a list for task {task['idx']}")
-                            
-                            # Validate dependencies
-                            for dep in task["dependencies"]:
-                                if not isinstance(dep, int):
-                                    raise ValueError(f"Dependencies must be integers for task {task['idx']}")
-                                if dep >= task["idx"]:
-                                    raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
-                                if dep < 0:
-                                    raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
-                        
-                        # Create Plan object
-                        plan = Plan(
-                            tasks=[Task(**task) for task in parsed["tasks"]],
-                            thought=parsed["thought"]
-                        )
-                    else:
-                        raise ValueError(f"Invalid response format: {response}")
-                except json.JSONDecodeError:
-                    raise ValueError(f"Invalid response format: {response}")
+                plan = Plan(**response)
             else:
                 raise ValueError(f"Invalid response type: {type(response)}")
             
@@ -289,7 +193,7 @@ class LLMCompiler:
             prompt = get_join_decision_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=JoinDecision)
             
-            # Format state for LLM
+            # Format state for LLM using direct attribute access
             formatted_state = {
                 "content": state.content,
                 "plan": state.plan.model_dump() if state.plan else None,
@@ -299,32 +203,18 @@ class LLMCompiler:
             }
             
             # Get response from LLM
-            response = await chain.ainvoke({
-                "state": json.dumps(formatted_state, indent=2)
-            })
+            response = await chain.ainvoke(formatted_state)
             
             # Handle response
             if isinstance(response, JoinDecision):
-                self._log_join_decision(response)
-                return response
+                decision = response
             elif isinstance(response, dict) and "complete" in response and "thought" in response:
                 decision = JoinDecision(**response)
-                self._log_join_decision(decision)
-                return decision
-            elif isinstance(response, str):
-                try:
-                    # Try parsing JSON response
-                    parsed = json.loads(response)
-                    if isinstance(parsed, dict) and "complete" in parsed and "thought" in parsed:
-                        decision = JoinDecision(**parsed)
-                        self._log_join_decision(decision)
-                        return decision
-                    else:
-                        raise ValueError(f"Invalid response format: {response}")
-                except json.JSONDecodeError:
-                    raise ValueError(f"Invalid response format: {response}")
             else:
                 raise ValueError(f"Invalid response type: {type(response)}")
+            
+            self._log_join_decision(decision)
+            return decision
             
         except Exception as e:
             log_error_with_traceback(e, "Error making join decision")
@@ -333,13 +223,13 @@ class LLMCompiler:
     async def run(self, initial_state: Dict[str, Any]) -> Any:
         """Run the LLM compiler workflow."""
         try:
-            # Initialize state
+            # Initialize state with direct attribute access
             state = CompilerState(
-                content=initial_state.get("content", ""),
-                plan=initial_state.get("plan"),
-                results=initial_state.get("results", []),
-                join_decision=initial_state.get("join_decision"),
-                final_result=initial_state.get("final_result")
+                content=initial_state["content"],
+                plan=None,
+                results=[],
+                join_decision=None,
+                final_result=None
             )
 
             log_info_with_context("Starting LLM compiler workflow", "Compiler")
@@ -401,10 +291,10 @@ class LLMCompiler:
                     if state.join_decision.complete:
                         log_info_with_context("Workflow completed successfully", "Compiler")
                         
-                        # Combine results into final state
-                        final_state = await self._generate_final_result(state)
-                        if final_state:
-                            state.final_result = final_state
+                        # Generate final result
+                        final_result = await self._generate_final_result(state)
+                        if final_result:
+                            state.final_result = final_result
                             return state.final_result
                         else:
                             log_warning_with_context("No valid results produced", "Compiler")

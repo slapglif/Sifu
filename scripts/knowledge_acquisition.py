@@ -1,6 +1,8 @@
 from typing import List, Dict, Optional, Any, TypedDict, Protocol
 from datetime import datetime
 import json
+import os
+import asyncio
 from pydantic import BaseModel, Field, validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_ollama import ChatOllama, OllamaEmbeddings
@@ -14,7 +16,13 @@ from langchain_chroma import Chroma
 from langchain_neo4j import Neo4jGraph
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
-from scripts.models import KnowledgeAcquisitionConfig, ExtractedKnowledge, Relationship, SourceMetadata
+from scripts.models import (
+    KnowledgeAcquisitionConfig,
+    ExtractedKnowledge,
+    Relationship,
+    SourceMetadata,
+    Entity
+)
 from scripts.logging_config import (
     log_error_with_traceback,
     log_warning_with_context,
@@ -28,9 +36,6 @@ from scripts.mdconvert import MarkdownConverter
 from scripts.visual_qa import VisualAnalyzer
 from scripts.text_inspector_tool import TextInspector, TextAnalysis
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
-import os
-from loguru import logger
-import asyncio
 from prompts.knowledge_acquisition import (
     ExtractedKnowledge,
     Relationship,
@@ -233,20 +238,31 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         )
         super().__init__(llm)
         
+        # Initialize state
+        self.state = ProcessingState()
+        
         # Initialize other components
         self.config = config
-        self.embeddings = OllamaEmbeddings(model='bge-m3', base_url='http://localhost:11434')
+        self.embeddings = None
         self.vector_store = None
+        self.web_browser = None
+        self.text_inspector = None
+        self.visual_analyzer = None
         self.graph = None
+        
+        # Initialize text splitter
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=config.chunk_size,
-            chunk_overlap=config.chunk_overlap,
-            length_function=len,
+            chunk_size=self.config.chunk_size,
+            chunk_overlap=self.config.chunk_overlap,
             separators=["\n\n", "\n", " ", ""]
         )
+        
+        # Initialize parsers
         self.entity_parser = PydanticOutputParser(pydantic_object=EntityResponse)
         self.relationship_parser = PydanticOutputParser(pydantic_object=RelationshipResponse)
         self.metadata_parser = PydanticOutputParser(pydantic_object=MetadataResponse)
+        
+        log_info_with_context("Knowledge acquisition system initialized", "Initialization")
 
     async def _generate_plan(self, state: CompilerState) -> Plan:
         """Generate knowledge acquisition plan"""
@@ -254,7 +270,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             prompt = get_plan_generation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
             plan = await chain.ainvoke({
-                "content": state.get('content', '')
+                "content": state.content
             })
             return plan
 
@@ -313,24 +329,25 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def _make_join_decision(self, state: CompilerState) -> JoinDecision:
         """Decide whether to complete or replan"""
         try:
-            # Create join prompt
-            plan_json = "{}"
-            plan = state.get('plan')
-            if plan is not None:
-                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
+            # Format state for LLM using direct attribute access
+            formatted_state = {
+                "plan": state.plan.model_dump() if state.plan else None,
+                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
+                "current_progress": {
+                    "knowledge_sources": len(self.state.tasks),
+                    "synthetic_knowledge": len(self.state.completed),
+                    "training_examples": len(self.state.errors),
+                    "has_metrics": bool(self.state.errors)
+                }
+            }
 
-            results_json = "[]"
-            results = state.get('results')
-            if results:
-                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
-
+            # Get decision from LLM using join decision prompt
             prompt = get_join_decision_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=JoinDecision)
-            decision = await chain.ainvoke({
-                "plan": plan_json,
-                "results": results_json
+            result = await chain.ainvoke({
+                "state": json.dumps(formatted_state, indent=2)
             })
-            return decision
+            return result
 
         except Exception as e:
             log_error_with_traceback(e, "Error making join decision")
@@ -340,7 +357,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         """Generate final documents from results"""
         try:
             documents = []
-            for result in state.get('results', []):
+            for result in state.results:  # Access results directly
                 if result and result.result and isinstance(result.result, Document):
                     documents.append(result.result)
             return documents
@@ -350,35 +367,85 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             raise
 
     async def add_source(self, source_path: str, source_type: str) -> List[Document]:
-        """Add a knowledge source using the LLMCompiler pattern"""
+        """Add a source to the knowledge base"""
         try:
-            # Load and split source
-            chunks = await self._load_chunks(source_path, source_type)
-            if not chunks:
+            log_info_with_context(f"Processing source: {source_path}", "Knowledge Processing")
+            
+            # Load source content
+            docs = []
+            if source_type == "text":
+                loader = TextLoader(source_path)
+                docs = await asyncio.to_thread(loader.load)
+            elif source_type == "pdf":
+                loader = PyPDFLoader(source_path)
+                docs = await asyncio.to_thread(loader.load)
+            elif source_type == "web":
+                # Use web browser to fetch content
+                content = await self.web_browser.get_content(source_path)
+                if content:
+                    docs = [Document(
+                        page_content=content,
+                        metadata={"source": source_path, "type": "web"}
+                    )]
+            else:
+                raise ValueError(f"Unsupported source type: {source_type}")
+                
+            if not docs:
+                log_warning_with_context(f"No content extracted from source: {source_path}", "Knowledge Processing")
                 return []
-
+                
+            # Split documents
+            split_docs = await asyncio.to_thread(
+                self.text_splitter.split_documents,
+                docs
+            )
+            
+            # Generate embeddings and add to vector store
+            if self.vector_store:
+                try:
+                    await asyncio.to_thread(
+                        self.vector_store.add_documents,
+                        split_docs
+                    )
+                    log_info_with_context(f"Added {len(split_docs)} documents to vector store", "Knowledge Processing")
+                except Exception as e:
+                    log_error_with_traceback(e, "Error adding documents to vector store")
+                    
             # Process each chunk
-            all_docs = []
-            for chunk in chunks:
-                # Create initial state with proper typing
-                state: Dict[str, Any] = {
-                    "content": str(chunk),
-                    "plan": None,
-                    "results": [],
-                    "join_decision": None,
-                    "final_result": None
-                }
-
-                # Run LLMCompiler workflow
-                docs = await self.run(state)
-                if docs:
-                    all_docs.extend(docs)
-
-            return all_docs
-
+            processed_docs = []
+            for doc in split_docs:
+                try:
+                    # Extract knowledge
+                    knowledge = await self.process_source(doc.page_content)
+                    if knowledge and knowledge.confidence >= self.config.confidence_thresholds["extraction"]:
+                        # Add metadata
+                        doc.metadata.update({
+                            "knowledge_extracted": True,
+                            "confidence": knowledge.confidence,
+                            "entities": [e.name for e in knowledge.entities],
+                            "relationships": [r.model_dump() for r in knowledge.relationships],
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        processed_docs.append(doc)
+                        
+                        # Add to graph database
+                        if self.graph:
+                            try:
+                                await self._add_to_graph(knowledge)
+                                log_info_with_context("Added knowledge to graph database", "Knowledge Processing")
+                            except Exception as e:
+                                log_error_with_traceback(e, "Error adding to graph database")
+                                
+                except Exception as e:
+                    log_error_with_traceback(e, f"Error processing document chunk: {e}")
+                    continue
+                    
+            log_info_with_context(f"Successfully processed {len(processed_docs)} documents", "Knowledge Processing")
+            return processed_docs
+            
         except Exception as e:
-            log_error_with_traceback(e, f"Error adding source {source_path}")
-            return []
+            log_error_with_traceback(e, "Error adding source")
+            raise
 
     async def _add_to_graph(self, knowledge: ExtractedKnowledge) -> None:
         """Add extracted knowledge to Neo4j graph"""
@@ -526,11 +593,10 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             log_error_with_traceback(e, "Fatal error in process_source")
             raise
 
-    async def _extract_entities(self, content: str) -> List[str]:
+    async def _extract_entities(self, content: str) -> List[Entity]:
         """Extract entities from content"""
         try:
             log_info_with_context("Starting entity extraction", "Knowledge Processing")
-            await self._ensure_initialized()
             if not self.llm:
                 raise ValueError("LLM not initialized")
             
@@ -540,8 +606,16 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                 "content": content
             })
             
-            log_info_with_context(f"Extracted {len(result.entities)} entities", "Knowledge Processing")
-            return result.entities
+            # Convert string entities to Entity objects
+            entities = []
+            for entity_str in result.entities:
+                entities.append(Entity(
+                    name=entity_str,
+                    type="unknown",
+                    confidence=0.7
+                ))
+            
+            return entities
             
         except Exception as e:
             log_error_with_traceback(e, "Error extracting entities")
@@ -684,18 +758,32 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             return []
 
     async def initialize(self) -> "KnowledgeAcquisitionSystem":
-        """Async initialization of components"""
+        """Initialize the system"""
         try:
+            # Initialize embeddings
+            self.embeddings = OllamaEmbeddings(
+                model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b")
+            )
+            
             # Initialize vector store
             self.vector_store = Chroma(
-                collection_name="knowledge_base",
+                collection_name="knowledge_store",
                 embedding_function=self.embeddings,
                 persist_directory="./data/vector_store"
             )
             
-            # Initialize graph database
+            # Initialize web browser for crawling
+            self.web_browser = SimpleTextBrowser()
+            
+            # Initialize text inspector
+            self.text_inspector = TextInspector()
+            
+            # Initialize visual analyzer
+            self.visual_analyzer = VisualAnalyzer()
+            
+            # Initialize Neo4j connection
             self.graph = Neo4jGraph(
-                url=os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+                url=os.getenv("NEO4J_URL", "bolt://localhost:7687"),
                 username=os.getenv("NEO4J_USERNAME", "neo4j"),
                 password=os.getenv("NEO4J_PASSWORD", "password")
             )

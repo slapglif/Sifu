@@ -8,7 +8,7 @@ from loguru import logger
 import json
 
 from .mdconvert import MarkdownConverter
-from scripts.logging_config import log_error_with_traceback
+from scripts.logging_config import log_error_with_traceback, log_info_with_context
 from langchain_core.language_models.chat_models import BaseChatModel
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
 
@@ -41,13 +41,14 @@ class Entity(BaseModel):
     title: str = Field(description="Entity title")
 
 class TextAnalysis(BaseModel):
-    """Schema for text analysis results"""
-    content: str = Field(description="Original text content")
-    segments: List[TextSegment] = Field(description="Text segments")
-    key_points: List[str] = Field(description="Key points from text")
-    entities: List[Entity] = Field(description="Extracted entities")
-    relationships: List[str] = Field(description="Identified relationships")
-    summary: str = Field(description="Text summary")
+    """Result of text analysis."""
+    word_count: int = Field(description="Number of words")
+    sentence_count: int = Field(description="Number of sentences")
+    avg_word_length: float = Field(description="Average word length")
+    avg_sentence_length: float = Field(description="Average sentence length")
+    unique_words: int = Field(description="Number of unique words")
+    readability_score: float = Field(description="Readability score")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 class InspectionState(BaseModel):
     """State for text inspection workflow"""

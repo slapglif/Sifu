@@ -432,10 +432,9 @@ class ResearchAgent(LLMCompiler):
         """Decide whether to complete or replan"""
         try:
             # Format state for LLM
-            plan = state.get('plan')
             formatted_state = {
-                "plan": plan.dict() if plan else None,
-                "results": [r.dict() for r in state.get('results', [])],
+                "plan": state.plan.model_dump() if state.plan else None,
+                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
                 "current_progress": {
                     "knowledge_sources": len(self.state.knowledge_sources),
                     "synthetic_knowledge": len(self.state.synthetic_knowledge),
@@ -460,7 +459,7 @@ class ResearchAgent(LLMCompiler):
         """Generate final system state."""
         try:
             # Update state with results
-            for result in state.get('results', []):
+            for result in state.results:
                 if result and result.result:
                     if isinstance(result.result, dict):
                         if 'knowledge_sources' in result.result:
@@ -538,7 +537,7 @@ class ResearchAgent(LLMCompiler):
                                     if added > 0:
                                         log_info_with_context(f"Found {added} related documents", "Research")
                                         console.print(f"[green]✓ Found {added} related documents[/green]")
-                                            
+                                
                                 if self.qa_system:
                                     # Generate follow-up questions
                                     questions = await self.qa_system.generate_questions(
@@ -559,14 +558,14 @@ class ResearchAgent(LLMCompiler):
                                             }
                                             for q in questions
                                         ])
-                                    
+                                        
                                         # Research each question
                                         question_progress = create_progress()
                                         question_task = question_progress.add_task(
                                             "[yellow]Researching questions...",
                                             total=len(questions)
                                         )
-                                    
+                                        
                                         for question in questions:
                                             try:
                                                 answer = await self.qa_system.process_question(question.question)
@@ -601,7 +600,7 @@ class ResearchAgent(LLMCompiler):
                                                         if added > 0:
                                                             log_info_with_context(f"Found {added} documents related to answer", "Research")
                                                             console.print(f"[green]✓ Found {added} related documents[/green]")
-                                            
+                                                            
                                                 question_progress.update(question_task, advance=1)
                                             except Exception as e:
                                                 log_error_with_traceback(e, f"Error researching question: {question.question}")
@@ -619,7 +618,7 @@ class ResearchAgent(LLMCompiler):
                     log_error_with_traceback(e, f"Error processing source {source['path']}")
                     console.print(f"[red]✗ Failed to process source: {source['path']}[/red]")
                     continue
-            
+                
             log_info_with_context(f"Research completed with {len(all_docs)} total documents", "Research")
             console.print(Panel(f"[bold green]Research Complete[/bold green]\nTotal Documents: {len(all_docs)}"))
             
@@ -718,7 +717,7 @@ class ResearchAgent(LLMCompiler):
                 return {"training_examples": []}
             
             examples = []
-            
+                
             # Create progress tracking
             progress = create_progress()
             example_task = progress.add_task(
@@ -726,40 +725,40 @@ class ResearchAgent(LLMCompiler):
                 total=len(knowledge)
             )
             progress.update(example_task, description="Processing knowledge items...")
-            
-            # Generate from synthetic knowledge
+                
+                # Generate from synthetic knowledge
             for k in knowledge:
                 try:
                     log_info_with_context(f"Processing knowledge from {k.get('source', 'unknown')}", "Training Data")
                     
-                    # Generate examples for pattern recognition
+                        # Generate examples for pattern recognition
                     for pattern in k.get("patterns", []):
-                        examples.append(TrainingExample(
-                            input_text=f"Identify patterns in this context: {pattern['supporting_evidence']}",
-                            output_text=pattern["description"],
+                            examples.append(TrainingExample(
+                                input_text=f"Identify patterns in this context: {pattern['supporting_evidence']}",
+                                output_text=pattern["description"],
                             metadata={
                                 "type": "pattern_recognition",
                                 "source": k.get("source", "unknown"),
                                 "topic": k.get("topic", "general"),
                                 "domain": k.get("domain", "unknown")
                             },
-                            quality_score=pattern["confidence"]
-                        ))
-                        
-                        # Generate examples for hypothesis validation
+                                quality_score=pattern["confidence"]
+                            ))
+                            
+                            # Generate examples for hypothesis validation
                         for hypothesis in k.get("hypotheses", []):
-                            examples.append(TrainingExample(
-                                input_text=f"Validate this hypothesis: {hypothesis['statement']}\nEvidence: {hypothesis['evidence']}",
-                                output_text=hypothesis["reasoning"],
+                                examples.append(TrainingExample(
+                                    input_text=f"Validate this hypothesis: {hypothesis['statement']}\nEvidence: {hypothesis['evidence']}",
+                                    output_text=hypothesis["reasoning"],
                                 metadata={
                                     "type": "hypothesis_validation",
                                     "source": k.get("source", "unknown"),
                                     "topic": k.get("topic", "general"),
                                     "domain": k.get("domain", "unknown")
                                 },
-                                quality_score=hypothesis["confidence"]
-                            ))
-                            
+                                    quality_score=hypothesis["confidence"]
+                                ))
+                                
                         # Generate examples for relationship inference
                         for relationship in k.get("relationships", []):
                             examples.append(TrainingExample(
@@ -778,15 +777,15 @@ class ResearchAgent(LLMCompiler):
                 except Exception as e:
                     log_error_with_traceback(e, "Error generating examples from knowledge")
                     console.print("[red]✗ Failed to generate examples from knowledge[/red]")
-                    continue
-            
-            # Filter and validate examples
-            valid_examples = []
-            for example in examples:
-                if example.quality_score >= 0.7 and len(example.input_text.split()) >= 10:
-                    valid_examples.append(example)
-            
-            log_info_with_context(f"Generated {len(valid_examples)} valid training examples", "Training Data")
+                        continue
+                
+                # Filter and validate examples
+                valid_examples = []
+                for example in examples:
+                    if example.quality_score >= 0.7 and len(example.input_text.split()) >= 10:
+                        valid_examples.append(example)
+                
+                log_info_with_context(f"Generated {len(valid_examples)} valid training examples", "Training Data")
             
             # Log example statistics
             table = Table(title="[bold]Training Examples[/bold]", box=box.ROUNDED)
@@ -818,16 +817,16 @@ class ResearchAgent(LLMCompiler):
             raise
 
     async def _train_model(self, examples: List[TrainingExample]) -> Dict[str, Any]:
-        """Train LoRA adapter"""
+                """Train LoRA adapter"""
         try:
-            if not self.lora_trainer:
-                raise ValueError("LoRA trainer not initialized")
-                
+                if not self.lora_trainer:
+                    raise ValueError("LoRA trainer not initialized")
+                    
             log_info_with_context("Starting model training", "Training")
             console.print("\n[bold cyan]Training Model...[/bold cyan]")
                 
             if not examples:
-                log_warning_with_context("No training examples available", "Training")
+                    log_warning_with_context("No training examples available", "Training")
                 console.print("[yellow]Warning: No training examples available[/yellow]")
                 return {"model_metrics": {}}
                 
@@ -839,12 +838,12 @@ class ResearchAgent(LLMCompiler):
             )
             progress.update(train_task, description="Preparing training data...")
                 
-            # Prepare datasets
+                    # Prepare datasets
             console.print("[cyan]Preparing datasets...[/cyan]")
             dataset = self.lora_trainer.prepare_training_data(examples)
-            train_size = int(0.8 * len(dataset))
-            train_dataset = dataset.select(range(train_size))
-            eval_dataset = dataset.select(range(train_size, len(dataset)))
+                    train_size = int(0.8 * len(dataset))
+                    train_dataset = dataset.select(range(train_size))
+                    eval_dataset = dataset.select(range(train_size, len(dataset)))
             
             # Log dataset statistics
             table = Table(title="[bold]Dataset Statistics[/bold]", box=box.ROUNDED)
@@ -856,22 +855,22 @@ class ResearchAgent(LLMCompiler):
             
             console.print(table)
             progress.update(train_task, advance=1)
-            
-            # Train model
+                    
+                    # Train model
             console.print("[cyan]Training model...[/cyan]")
-            metrics = self.lora_trainer.train(
-                train_dataset=train_dataset,
-                eval_dataset=eval_dataset
-            )
+                    metrics = self.lora_trainer.train(
+                        train_dataset=train_dataset,
+                        eval_dataset=eval_dataset
+                    )
             progress.update(train_task, advance=1)
-            
-            # Save adapter
+                    
+                    # Save adapter
             console.print("[cyan]Saving adapter...[/cyan]")
             adapter_path = f"results/{self.state.domain_name}/lora_adapter"
-            self.lora_trainer.save_adapter(
+                    self.lora_trainer.save_adapter(
                 adapter_path,
-                "domain_adaptation"
-            )
+                        "domain_adaptation"
+                    )
             progress.update(train_task, advance=1)
             
             # Log training metrics
@@ -933,18 +932,18 @@ class ResearchAgent(LLMCompiler):
             progress.update(training_task, description="Training model...")
                 
             # Initialize state
-            initial_state = {
-                "content": f"Research domain: {self.state.domain_name}\nKnowledge sources: {len(self.config.get('knowledge_sources', []))} sources\nTask: Generate research plan and execute workflow.",
-                "plan": None,
-                "results": [],
-                "join_decision": None,
-                "final_result": None
-            }
+            initial_state = CompilerState(
+                content=f"Research domain: {self.state.domain_name}\nKnowledge sources: {len(self.config.get('knowledge_sources', []))} sources\nTask: Generate research plan and execute workflow.",
+                plan=None,
+                results=[],
+                join_decision=None,
+                final_result=None
+            )
             
             log_info_with_context("Starting research workflow", "Research")
             
             # Run LLM compiler workflow
-            result = await super().run(initial_state)
+            result = await super().run(dict(initial_state.model_dump()))
             
             # Update progress based on results
             if result and isinstance(result, SystemState):
@@ -1026,7 +1025,7 @@ class ResearchAgent(LLMCompiler):
                     log_info_with_context("Results saved successfully", "Research")
                     console.print(Panel("[bold green]All Results Saved Successfully[/bold green]"))
                     
-                except Exception as e:
+            except Exception as e:
                     log_error_with_traceback(e, "Error saving results")
                     console.print("[red]✗ Failed to save some results[/red]")
             else:
@@ -1050,16 +1049,16 @@ async def main():
         log_info_with_context("Starting research agent", "Main")
         
         try:
-            # Initialize and run agent
-            log_info_with_context("Initializing research agent", "Main")
-            agent = ResearchAgent(args.config)
-            await agent.initialize()
-            
-            log_info_with_context("Starting research agent", "Main")
-            await agent.run()
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Fatal error in research agent")
+        # Initialize and run agent
+        log_info_with_context("Initializing research agent", "Main")
+        agent = ResearchAgent(args.config)
+        await agent.initialize()
+        
+        log_info_with_context("Starting research agent", "Main")
+        await agent.run()
+        
+    except Exception as e:
+        log_error_with_traceback(e, "Fatal error in research agent")
             console.print("[red]Research agent failed with error:[/red]")
             console.print(Panel(str(e), title="Error", border_style="red"))
             sys.exit(1)
@@ -1074,14 +1073,14 @@ async def main():
         # Ensure all logs are written
         if 'logger' in globals():
             logger.complete()
-            
+
 if __name__ == "__main__":
     # Set up argparse at module level
     import argparse
     
     try:
-        # Run main with asyncio
-        asyncio.run(main())
+    # Run main with asyncio
+    asyncio.run(main())
     except KeyboardInterrupt:
         log_info_with_context("Research agent stopped by user", "Main")
         sys.exit(0)

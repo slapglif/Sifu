@@ -1,4 +1,4 @@
-from typing import List, Dict, Literal, Optional
+from typing import List, Dict, Literal, Optional, Any
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 
@@ -152,4 +152,20 @@ class DocumentProcessingInput(BaseModel):
     """Input for document processing"""
     source_path: str = Field(description="Path to source document")
     source_type: str = Field(description="Type of source")
-    domain: str = Field(default="knowledge", description="Domain for processing") 
+    domain: str = Field(default="knowledge", description="Domain for processing")
+
+class Entity(BaseModel):
+    """Entity extracted from text."""
+    name: str = Field(description="Entity name")
+    type: str = Field(description="Entity type")
+    confidence: float = Field(description="Confidence score", ge=0.0, le=1.0)
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+    def model_dump(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "name": self.name,
+            "type": self.type,
+            "confidence": self.confidence,
+            "metadata": self.metadata
+        } 
