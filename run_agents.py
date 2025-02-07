@@ -934,7 +934,7 @@ class ResearchAgent(LLMCompiler):
                 
             # Initialize state
             initial_state = {
-                "domain_name": self.state.domain_name,
+                "content": f"Research domain: {self.state.domain_name}\nKnowledge sources: {len(self.config.get('knowledge_sources', []))} sources\nTask: Generate research plan and execute workflow.",
                 "plan": None,
                 "results": [],
                 "join_decision": None,

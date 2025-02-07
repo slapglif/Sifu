@@ -92,134 +92,117 @@ class LLMCompiler:
             
             # Format state for LLM
             formatted_state = {
-                "content": state["content"],
-                "plan": state["plan"].dict() if state["plan"] else None,
-                "results": [r.dict() for r in state["results"]] if state["results"] else [],
-                "join_decision": state["join_decision"].dict() if state["join_decision"] else None,
-                "final_result": state["final_result"]
+                "content": state.content,
+                "plan": state.plan.model_dump() if state.plan else None,
+                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
+                "join_decision": state.join_decision.model_dump() if state.join_decision else None,
+                "final_result": state.final_result
             }
             
             # Get response from LLM
-            response = await chain.ainvoke({"state": formatted_state})
+            response = await chain.ainvoke({
+                "state": json.dumps(formatted_state, indent=2)
+            })
             
-            # Handle JSON parsing
-            if isinstance(response, str):
-                try:
-                    log_info_with_context("Parsing JSON response", "Planning")
-                    
-                    # Clean up response
-                    response = response.strip()
-                    # Remove any extra quotes around the entire JSON
-                    while response.startswith('"') and response.endswith('"'):
-                        response = response[1:-1]
-                    # Remove any extra quotes around the JSON object
-                    while response.startswith('"{') and response.endswith('}"'):
-                        response = response[1:-1]
-                    # Remove any escaped quotes
-                    response = response.replace('\\"', '"')
-                    # Replace single quotes with double quotes
-                    response = response.replace("'", '"')
-                    # Replace Python literals with JSON literals
-                    response = response.replace('None', 'null')
-                    response = response.replace('True', 'true')
-                    response = response.replace('False', 'false')
-                    
-                    # Try to parse JSON
-                    try:
-                        parsed = json.loads(response)
-                    except json.JSONDecodeError as e:
-                        log_error_with_traceback(e, "Failed to parse initial JSON")
-                        raise ValueError(f"Invalid JSON format: {str(e)}")
-                    
-                    # Validate required fields
-                    if not isinstance(parsed, dict):
-                        raise ValueError("Response must be a dictionary")
-                    if "tasks" not in parsed:
-                        raise ValueError("Response missing 'tasks' field")
-                    if "thought" not in parsed:
-                        raise ValueError("Response missing 'thought' field")
-                        
-                    # Remove any duplicate fields
-                    if len(parsed.keys()) > 2:  # Should only have tasks and thought
-                        parsed = {"tasks": parsed["tasks"], "thought": parsed["thought"]}
-                        
-                    # Validate tasks array
-                    if not isinstance(parsed["tasks"], list):
-                        raise ValueError("'tasks' must be an array")
-                        
-                    # Validate and fix each task
-                    for task in parsed["tasks"]:
-                        if not isinstance(task, dict):
-                            raise ValueError("Each task must be a dictionary")
-                            
-                        # Validate required task fields
-                        required_fields = ["idx", "tool", "args", "dependencies"]
-                        for field in required_fields:
-                            if field not in task:
-                                raise ValueError(f"Task missing required field: {field}")
-                                
-                        # Remove any extra fields
-                        task_clean = {
-                            "idx": task["idx"],
-                            "tool": task["tool"],
-                            "args": task["args"],
-                            "dependencies": task["dependencies"]
-                        }
-                        task.clear()
-                        task.update(task_clean)
-                                
-                        # Ensure args is a dictionary
-                        if not isinstance(task["args"], dict):
-                            if isinstance(task["args"], list) and len(task["args"]) == 1:
-                                # Try to convert single-item list to dict
-                                try:
-                                    task["args"] = json.loads(task["args"][0])
-                                except:
-                                    raise ValueError(f"Invalid args format for task {task['idx']}")
-                            else:
-                                raise ValueError(f"Args must be a dictionary for task {task['idx']}")
-                                
-                        # Ensure dependencies is a list
-                        if not isinstance(task["dependencies"], list):
-                            raise ValueError(f"Dependencies must be a list for task {task['idx']}")
-                            
-                        # Validate dependencies
-                        for dep in task["dependencies"]:
-                            if not isinstance(dep, int):
-                                raise ValueError(f"Dependencies must be integers for task {task['idx']}")
-                            if dep >= task["idx"]:
-                                raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
-                            if dep < 0:
-                                raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
-                            
-                    # Validate task order and dependencies
-                    task_ids = set()
-                    for task in parsed["tasks"]:
-                        task_ids.add(task["idx"])
-                        # Ensure all dependencies exist
-                        for dep in task["dependencies"]:
-                            if dep not in task_ids:
-                                raise ValueError(f"Task {task['idx']} depends on non-existent task {dep}")
-                            
-                    # Ensure sequential task IDs starting from 0
-                    expected_ids = set(range(len(parsed["tasks"])))
-                    if task_ids != expected_ids:
-                        raise ValueError(f"Task IDs must be sequential starting from 0. Found {task_ids}, expected {expected_ids}")
-                            
-                    # Create Plan object
-                    plan = Plan(
-                        tasks=[Task(**task) for task in parsed["tasks"]],
-                        thought=parsed["thought"]
-                    )
-                    
-                except json.JSONDecodeError as e:
-                    log_error_with_traceback(e, "Invalid JSON format")
-                    raise ValueError(f"Invalid JSON format: {str(e)}")
-                except Exception as e:
-                    log_error_with_traceback(e, "Error parsing response")
-                    raise ValueError(f"Error parsing response: {str(e)}")
-            elif isinstance(response, Plan):
+            # Handle response
+            if isinstance(response, Plan):
                 plan = response
+            elif isinstance(response, dict) and "tasks" in response and "thought" in response:
+                # Validate tasks
+                for task in response["tasks"]:
+                    if not isinstance(task, dict):
+                        raise ValueError("Each task must be a dictionary")
+                    
+                    # Validate required task fields
+                    required_fields = ["idx", "tool", "args", "dependencies"]
+                    for field in required_fields:
+                        if field not in task:
+                            raise ValueError(f"Task missing required field: {field}")
+                    
+                    # Remove any extra fields
+                    task_clean = {
+                        "idx": task["idx"],
+                        "tool": task["tool"],
+                        "args": task["args"],
+                        "dependencies": task["dependencies"]
+                    }
+                    task.clear()
+                    task.update(task_clean)
+                    
+                    # Ensure args is a dictionary
+                    if not isinstance(task["args"], dict):
+                        raise ValueError(f"Args must be a dictionary for task {task['idx']}")
+                    
+                    # Ensure dependencies is a list
+                    if not isinstance(task["dependencies"], list):
+                        raise ValueError(f"Dependencies must be a list for task {task['idx']}")
+                    
+                    # Validate dependencies
+                    for dep in task["dependencies"]:
+                        if not isinstance(dep, int):
+                            raise ValueError(f"Dependencies must be integers for task {task['idx']}")
+                        if dep >= task["idx"]:
+                            raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
+                        if dep < 0:
+                            raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
+                
+                # Create Plan object
+                plan = Plan(
+                    tasks=[Task(**task) for task in response["tasks"]],
+                    thought=response["thought"]
+                )
+            elif isinstance(response, str):
+                try:
+                    # Try parsing JSON response
+                    parsed = json.loads(response)
+                    if isinstance(parsed, dict) and "tasks" in parsed and "thought" in parsed:
+                        # Validate tasks
+                        for task in parsed["tasks"]:
+                            if not isinstance(task, dict):
+                                raise ValueError("Each task must be a dictionary")
+                            
+                            # Validate required task fields
+                            required_fields = ["idx", "tool", "args", "dependencies"]
+                            for field in required_fields:
+                                if field not in task:
+                                    raise ValueError(f"Task missing required field: {field}")
+                            
+                            # Remove any extra fields
+                            task_clean = {
+                                "idx": task["idx"],
+                                "tool": task["tool"],
+                                "args": task["args"],
+                                "dependencies": task["dependencies"]
+                            }
+                            task.clear()
+                            task.update(task_clean)
+                            
+                            # Ensure args is a dictionary
+                            if not isinstance(task["args"], dict):
+                                raise ValueError(f"Args must be a dictionary for task {task['idx']}")
+                            
+                            # Ensure dependencies is a list
+                            if not isinstance(task["dependencies"], list):
+                                raise ValueError(f"Dependencies must be a list for task {task['idx']}")
+                            
+                            # Validate dependencies
+                            for dep in task["dependencies"]:
+                                if not isinstance(dep, int):
+                                    raise ValueError(f"Dependencies must be integers for task {task['idx']}")
+                                if dep >= task["idx"]:
+                                    raise ValueError(f"Task {task['idx']} cannot depend on future task {dep}")
+                                if dep < 0:
+                                    raise ValueError(f"Task {task['idx']} has invalid negative dependency {dep}")
+                        
+                        # Create Plan object
+                        plan = Plan(
+                            tasks=[Task(**task) for task in parsed["tasks"]],
+                            thought=parsed["thought"]
+                        )
+                    else:
+                        raise ValueError(f"Invalid response format: {response}")
+                except json.JSONDecodeError:
+                    raise ValueError(f"Invalid response format: {response}")
             else:
                 raise ValueError(f"Invalid response type: {type(response)}")
             
@@ -250,49 +233,46 @@ class LLMCompiler:
             )
             
             for task in tasks:
-                log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
-                # Get response from LLM
-                response = await chain.ainvoke({
-                    "task": task
-                })
-                
-                # Handle double-encoded JSON
-                if isinstance(response, str):
-                    try:
-                        log_info_with_context("Parsing double-encoded JSON response", "Execution")
-                        # First try to parse as JSON string
-                        parsed = json.loads(response)
-                        if isinstance(parsed, str):
-                            # If still a string, try parsing again
-                            parsed = json.loads(parsed)
-                        if isinstance(parsed, dict):
-                            # If any field is a string that looks like JSON, parse it
-                            for key, value in parsed.items():
-                                if isinstance(value, str) and value.startswith("{"):
-                                    try:
-                                        parsed[key] = json.loads(value)
-                                    except json.JSONDecodeError:
-                                        pass
-                            response = parsed
-                    except json.JSONDecodeError:
-                        # If we can't parse as JSON, treat as TaskResult object
-                        if isinstance(response, TaskResult):
-                            results.append(response)
-                            self._log_task_result(response)
-                            progress.update(task_progress, advance=1)
-                            continue
-                        raise ValueError(f"Invalid response format: {response}")
-                        
-                if isinstance(response, dict) and "task_id" in response:
-                    response = TaskResult(**response)
+                try:
+                    log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
+                    # Get response from LLM
+                    response = await chain.ainvoke({
+                        "task": task.model_dump() if hasattr(task, "model_dump") else task
+                    })
                     
-                if isinstance(response, TaskResult):
-                    results.append(response)
-                    self._log_task_result(response)
-                else:
-                    raise ValueError(f"Invalid response format: {response}")
-                
-                progress.update(task_progress, advance=1)
+                    # Handle response
+                    if isinstance(response, TaskResult):
+                        results.append(response)
+                        self._log_task_result(response)
+                    elif isinstance(response, dict) and "task_id" in response:
+                        result = TaskResult(**response)
+                        results.append(result)
+                        self._log_task_result(result)
+                    elif isinstance(response, str):
+                        try:
+                            # Try parsing JSON response
+                            parsed = json.loads(response)
+                            if isinstance(parsed, dict) and "task_id" in parsed:
+                                result = TaskResult(**parsed)
+                                results.append(result)
+                                self._log_task_result(result)
+                            else:
+                                raise ValueError(f"Invalid response format: {response}")
+                        except json.JSONDecodeError:
+                            raise ValueError(f"Invalid response format: {response}")
+                    else:
+                        raise ValueError(f"Invalid response type: {type(response)}")
+                    
+                except Exception as e:
+                    log_error_with_traceback(e, f"Error executing task {task.idx}")
+                    results.append(TaskResult(
+                        task_id=task.idx,
+                        result=None,
+                        error=str(e)
+                    ))
+                finally:
+                    progress.update(task_progress, advance=1)
+                    progress.refresh()
                     
             return results
             
@@ -311,53 +291,40 @@ class LLMCompiler:
             
             # Format state for LLM
             formatted_state = {
-                "content": state["content"],
-                "plan": state["plan"].dict() if state["plan"] else None,
-                "results": [r.dict() for r in state["results"]] if state["results"] else [],
-                "join_decision": state["join_decision"].dict() if state["join_decision"] else None,
-                "final_result": state["final_result"]
+                "content": state.content,
+                "plan": state.plan.model_dump() if state.plan else None,
+                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
+                "join_decision": state.join_decision.model_dump() if state.join_decision else None,
+                "final_result": state.final_result
             }
             
             # Get response from LLM
             response = await chain.ainvoke({
-                "state": formatted_state
+                "state": json.dumps(formatted_state, indent=2)
             })
             
-            # Handle double-encoded JSON
-            if isinstance(response, str):
-                try:
-                    log_info_with_context("Parsing double-encoded JSON response", "Decision")
-                    # First try to parse as JSON string
-                    parsed = json.loads(response)
-                    if isinstance(parsed, str):
-                        # If still a string, try parsing again
-                        parsed = json.loads(parsed)
-                    if isinstance(parsed, dict):
-                        # If any field is a string that looks like JSON, parse it
-                        for key, value in parsed.items():
-                            if isinstance(value, str) and value.startswith("{"):
-                                try:
-                                    parsed[key] = json.loads(value)
-                                except json.JSONDecodeError:
-                                    pass
-                        response = parsed
-                except json.JSONDecodeError:
-                    # If we can't parse as JSON, treat as JoinDecision object
-                    if isinstance(response, JoinDecision):
-                        self._log_join_decision(response)
-                        return response
-                    raise ValueError(f"Invalid response format: {response}")
-                    
-            if isinstance(response, dict) and "complete" in response and "thought" in response:
-                decision = JoinDecision(**response)
-                self._log_join_decision(decision)
-                return decision
-                
+            # Handle response
             if isinstance(response, JoinDecision):
                 self._log_join_decision(response)
                 return response
-                
-            raise ValueError(f"Invalid response format: {response}")
+            elif isinstance(response, dict) and "complete" in response and "thought" in response:
+                decision = JoinDecision(**response)
+                self._log_join_decision(decision)
+                return decision
+            elif isinstance(response, str):
+                try:
+                    # Try parsing JSON response
+                    parsed = json.loads(response)
+                    if isinstance(parsed, dict) and "complete" in parsed and "thought" in parsed:
+                        decision = JoinDecision(**parsed)
+                        self._log_join_decision(decision)
+                        return decision
+                    else:
+                        raise ValueError(f"Invalid response format: {response}")
+                except json.JSONDecodeError:
+                    raise ValueError(f"Invalid response format: {response}")
+            else:
+                raise ValueError(f"Invalid response type: {type(response)}")
             
         except Exception as e:
             log_error_with_traceback(e, "Error making join decision")
@@ -369,10 +336,10 @@ class LLMCompiler:
             # Initialize state
             state = CompilerState(
                 content=initial_state.get("content", ""),
-                plan=None,
-                results=[],
-                join_decision=None,
-                final_result=None
+                plan=initial_state.get("plan"),
+                results=initial_state.get("results", []),
+                join_decision=initial_state.get("join_decision"),
+                final_result=initial_state.get("final_result")
             )
 
             log_info_with_context("Starting LLM compiler workflow", "Compiler")
@@ -386,21 +353,21 @@ class LLMCompiler:
             while True:
                 try:
                     # Generate plan if needed
-                    if not state["plan"]:
+                    if not state.plan:
                         log_info_with_context("Generating execution plan", "Planning")
-                        state["plan"] = await self.generate_plan(state)
+                        state.plan = await self.generate_plan(state)
                         progress.update(plan_task, advance=1)
                         progress.refresh()
-                        log_info_with_context(f"Generated plan with {len(state['plan'].tasks)} tasks", "Planning")
+                        log_info_with_context(f"Generated plan with {len(state.plan.tasks)} tasks", "Planning")
 
                     # Execute tasks
-                    if not state["results"]:
+                    if not state.results:
                         log_info_with_context("Executing planned tasks", "Execution")
-                        progress.update(exec_task, total=len(state["plan"].tasks))
+                        progress.update(exec_task, total=len(state.plan.tasks))
                         progress.refresh()
                         
                         results = []
-                        for idx, task in enumerate(state["plan"].tasks):
+                        for idx, task in enumerate(state.plan.tasks):
                             try:
                                 log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
                                 result = await self.execute_tasks([task])
@@ -418,39 +385,39 @@ class LLMCompiler:
                                 progress.update(exec_task, advance=1)
                                 progress.refresh()
                         
-                        state["results"] = results
+                        state.results = results
 
                     # Make join decision
                     log_info_with_context("Making join decision", "Decision")
-                    state["join_decision"] = await self.make_join_decision(state)
+                    state.join_decision = await self.make_join_decision(state)
                     progress.update(join_task, advance=1)
                     progress.refresh()
                     log_info_with_context(
-                        f"Join decision: complete={state['join_decision'].complete}, replan={state['join_decision'].replan}",
+                        f"Join decision: complete={state.join_decision.complete}, replan={state.join_decision.replan}",
                         "Decision"
                     )
 
                     # Check completion
-                    if state["join_decision"].complete:
+                    if state.join_decision.complete:
                         log_info_with_context("Workflow completed successfully", "Compiler")
                         
                         # Combine results into final state
                         final_state = await self._generate_final_result(state)
                         if final_state:
-                            state["final_result"] = final_state
-                            return state["final_result"]
+                            state.final_result = final_state
+                            return state.final_result
                         else:
                             log_warning_with_context("No valid results produced", "Compiler")
                             return None
 
                     # Check replanning
-                    if state["join_decision"].replan:
+                    if state.join_decision.replan:
                         log_info_with_context(
-                            f"Replanning required: {state['join_decision'].feedback}",
+                            f"Replanning required: {state.join_decision.feedback}",
                             "Planning"
                         )
-                        state["plan"] = None
-                        state["results"] = []
+                        state.plan = None
+                        state.results = []
                         # Reset progress for new iteration
                         progress.update(plan_task, completed=0)
                         progress.update(exec_task, completed=0)
@@ -481,7 +448,7 @@ class LLMCompiler:
             }
             
             # Process each task result
-            for result in state.get("results", []):
+            for result in state.results:
                 if result.error or not result.result:
                     continue
                     

@@ -31,41 +31,208 @@ class JoinDecision(BaseModel):
     replan: bool = Field(..., description="Whether replanning is needed")
     feedback: Optional[str] = Field(None, description="Feedback for replanning")
 
-class CompilerState(TypedDict):
+class CompilerState(BaseModel):
     """State for LLM compiler workflow."""
-    content: str
-    plan: Optional[Plan]
-    results: List[TaskResult]
-    join_decision: Optional[JoinDecision]
-    final_result: Optional[Any]
+    content: str = Field(..., description="Input content")
+    plan: Optional[Plan] = Field(None, description="Current execution plan")
+    results: List[TaskResult] = Field(default_factory=list, description="Task execution results")
+    join_decision: Optional[JoinDecision] = Field(None, description="Current join decision")
+    final_result: Optional[Any] = Field(None, description="Final workflow result")
 
 def get_plan_generation_prompt() -> ChatPromptTemplate:
     """Get the prompt template for plan generation."""
     parser = PydanticOutputParser(pydantic_object=Plan)
+    format_instructions = parser.get_format_instructions()
     
     system_template = """You are a planning expert that generates execution plans.
 Your plans should be efficient and well-organized.
 
-CRITICAL: You MUST respond with ONLY a valid JSON object, no other text or explanation.
-The JSON object MUST EXACTLY match this structure:
+{{{{format_instructions}}}}
+
+IMPORTANT:
+1. You MUST output a valid JSON object with BOTH of these fields:
+   - tasks: array of Task objects
+   - thought: string explaining the plan
+
+2. Each task in the tasks array must be a valid Task object with:
+   - idx: integer index starting from 0
+   - tool: one of [research_topics, synthesize_knowledge, generate_examples, train_model]
+   - args: dictionary with required arguments
+   - dependencies: array of integers referencing previous task indices
+
+3. Tasks must be ordered by idx
+4. Dependencies must refer to valid task indices
+5. Tool names must match exactly
+6. Args must be valid JSON objects with actual data, not placeholders
+
+Example valid response:
 {
   "tasks": [
     {
-      "idx": <integer>,
-      "tool": <string>,
-      "args": <object with string keys and any valid JSON values>,
-      "dependencies": <array of integers>
+      "idx": 0,
+      "tool": "research_topics",
+      "args": {
+        "domain": "test_domain",
+        "content": "research content"
+      },
+      "dependencies": []
     },
-    ...more tasks...
+    {
+      "idx": 1,
+      "tool": "synthesize_knowledge",
+      "args": {
+        "sources": [
+          {
+            "content": "research findings",
+            "metadata": {
+              "source": "research",
+              "confidence": 0.8
+            }
+          }
+        ]
+      },
+      "dependencies": [0]
+    }
   ],
-  "thought": <string>
+  "thought": "First research topics, then synthesize knowledge from the research"
 }
 
 Available tools and their required args:
-- research_topics: {"domain": <string>} (must be a valid domain name)
-- synthesize_knowledge: {"sources": [{"id": <integer>}]} (must reference research results)
-- generate_examples: {"knowledge": [{"id": <integer>}]} (must reference synthesis results)
-- train_model: {"examples": [{"data": {"value": <string>}}]} (must reference example results)
+- research_topics:
+  - domain: string (name of the domain)
+  - content: string (description of what to research)
+- synthesize_knowledge:
+  - sources: array of source objects with content and metadata
+- generate_examples:
+  - knowledge: array of knowledge objects with content, patterns, hypotheses, and relationships
+- train_model:
+  - examples: array of example objects with input_text, output_text, and metadata
+
+Remember:
+1. Use proper JSON formatting with double quotes
+2. Both tasks and thought fields are required at the root level
+3. Do not include any text before or after the JSON
+4. Args must contain actual data, not placeholders
+5. Dependencies must be valid task indices
+6. DO NOT wrap the response in a "state" object
+7. DO NOT include any fields other than tasks and thought at the root level
+8. DO NOT use "task" instead of "tool" in the tasks array
+9. Each task MUST have idx, tool, args, and dependencies fields
+10. The idx field MUST be an integer starting from 0
+11. The tool field MUST be one of the allowed values
+12. The args field MUST be a dictionary with the required structure
+13. The dependencies field MUST be an array of integers
+
+CRITICAL: You MUST respond with ONLY a valid JSON object that has EXACTLY this structure:
+{
+  "tasks": [
+    {
+      "idx": 0,
+      "tool": "research_topics",
+      "args": {
+        "domain": "test_domain",
+        "content": "research content"
+      },
+      "dependencies": []
+    },
+    {
+      "idx": 1,
+      "tool": "synthesize_knowledge",
+      "args": {
+        "sources": [
+          {
+            "content": "research findings",
+            "metadata": {
+              "source": "research",
+              "confidence": 0.8
+            }
+          }
+        ]
+      },
+      "dependencies": [0]
+    }
+  ],
+  "thought": "First research topics, then synthesize knowledge from the research"
+}
+
+IMPORTANT:
+1. The response MUST be a valid JSON object with EXACTLY two fields:
+   - tasks: array of Task objects
+   - thought: string explaining the plan
+
+2. Each task in the tasks array MUST have EXACTLY these fields with EXACTLY these names:
+   - idx: integer index starting from 0
+   - tool: one of [research_topics, synthesize_knowledge, generate_examples, train_model]
+   - args: dictionary with required arguments
+   - dependencies: array of integers referencing previous task indices
+
+3. The args field for each tool MUST have this structure:
+   - research_topics:
+     {
+       "domain": string (name of the domain),
+       "content": string (description of what to research)
+     }
+   - synthesize_knowledge:
+     {
+       "sources": [
+         {
+           "content": string,
+           "metadata": {
+             "source": string,
+             "confidence": number
+           }
+         }
+       ]
+     }
+   - generate_examples:
+     {
+       "knowledge": [
+         {
+           "content": string,
+           "patterns": array,
+           "hypotheses": array,
+           "relationships": array
+         }
+       ]
+     }
+   - train_model:
+     {
+       "examples": [
+         {
+           "input_text": string,
+           "output_text": string,
+           "metadata": object
+         }
+       ]
+     }
+
+4. Tasks MUST be ordered by idx starting from 0
+5. Dependencies MUST refer to valid task indices
+6. Tool names MUST match exactly
+7. Args MUST contain actual data, not placeholders
+8. The response MUST be valid JSON with double quotes
+9. DO NOT include any text before or after the JSON object
+10. DO NOT include comments in the JSON
+11. DO NOT use "id" or "name" - use "idx" and "tool" instead
+12. DO NOT add extra fields - use ONLY the fields shown in the example
+13. DO NOT include any fields from the input state - use ONLY the fields shown in the example
+14. DO NOT include any fields from the task description - use ONLY the fields shown in the example
+15. DO NOT include any fields from the task arguments - use ONLY the fields shown in the example
+16. DO NOT include any fields from the task metadata - use ONLY the fields shown in the example
+17. DO NOT include any fields from the task dependencies - use ONLY the fields shown in the example
+18. DO NOT include any fields from the task results - use ONLY the fields shown in the example
+19. DO NOT include any fields from the task errors - use ONLY the fields shown in the example
+20. DO NOT include any fields from the task warnings - use ONLY the fields shown in the example
+21. DO NOT include any fields from the task progress - use ONLY the fields shown in the example
+22. DO NOT include any fields from the task status - use ONLY the fields shown in the example
+23. DO NOT include any fields from the task validation - use ONLY the fields shown in the example
+24. DO NOT include any fields from the task execution - use ONLY the fields shown in the example
+25. DO NOT include any fields from the task completion - use ONLY the fields shown in the example
+26. DO NOT include any fields from the task cancellation - use ONLY the fields shown in the example
+27. DO NOT include any fields from the task timeout - use ONLY the fields shown in the example
+28. DO NOT include any fields from the task failure - use ONLY the fields shown in the example
+29. DO NOT include any fields from the task success - use ONLY the fields shown in the example
+30. DO NOT include any fields from the task state - use ONLY the fields shown in the example
 
 CRITICAL TASK ORDER AND DEPENDENCY RULES:
 1. Tasks MUST be in this exact order:
@@ -76,7 +243,7 @@ CRITICAL TASK ORDER AND DEPENDENCY RULES:
 2. Each task must have a unique integer index starting from 0
 3. Tasks can only depend on tasks with lower indices
 4. Dependencies must be an array of task indices
-5. Dependencies must be valid task indices that exist in the plan
+5. Dependencies must be valid task indices
 6. Dependencies must reflect the logical flow of data:
    - synthesize_knowledge needs results from research_topics
    - generate_examples needs results from synthesize_knowledge
@@ -84,123 +251,42 @@ CRITICAL TASK ORDER AND DEPENDENCY RULES:
 
 CRITICAL ARGUMENT RULES:
 1. Each task MUST have the correct argument structure:
-   a. research_topics: {"domain": "test_domain"}
-   b. synthesize_knowledge: {"sources": [{"id": 0}]}
-   c. generate_examples: {"knowledge": [{"id": 0}]}
-   d. train_model: {"examples": [{"data": {"value": "example"}}]}
+   a. research_topics: {"domain": <actual domain name from state>, "content": <description of what to research>}
+   b. synthesize_knowledge: {"sources": [{"content": <string>, "metadata": <object>}]}
+   c. generate_examples: {"knowledge": [{"content": <string>, "patterns": [], "hypotheses": [], "relationships": []}]}
+   d. train_model: {"examples": [{"input_text": <string>, "output_text": <string>, "metadata": <object>}]}
 2. Arguments MUST be valid JSON objects
 3. DO NOT use empty objects {} for arguments
 4. Use the exact argument names and structure shown above
 5. Use valid values for all arguments
 
-CRITICAL FORMATTING RULES:
-1. Use ONLY double quotes (") for strings and property names
-2. Arrays must be comma-separated and enclosed in square brackets []
-3. Objects must be comma-separated and enclosed in curly braces {}
-4. No trailing commas after the last item in arrays or objects
-5. No comments or explanatory text
-6. No JavaScript/Python syntax - ONLY valid JSON
-7. No extra fields or properties beyond what is specified
-8. No malformed JSON or syntax errors
-9. No single quotes (') - use double quotes (") only
-10. No unescaped newlines in strings
-11. No extra whitespace or indentation
-12. No extra quotes around the entire JSON object
-13. No extra quotes around individual fields
-14. No extra quotes around arrays or objects
-15. The "args" field MUST be an object/dictionary, not an array
-16. Each task MUST have all required fields: idx, tool, args, dependencies
-17. The "thought" field MUST be included and MUST be a string
-18. DO NOT include any duplicate fields
-19. DO NOT wrap the JSON in extra quotes
-20. DO NOT include any explanatory comments in the JSON
-21. DO NOT include any debugging or validation fields
-22. The response MUST be parseable as a single valid JSON object
-23. Each task MUST be a valid Task object with exactly these fields:
-    - idx: integer
-    - tool: string
-    - args: object with required structure
-    - dependencies: array of integers
-24. The tasks array MUST be in order by idx starting from 0
-25. Dependencies MUST be an array of integers, not an object or string
-26. DO NOT include extra dependencies fields
+CRITICAL FIELD RULES:
+1. The "idx" field MUST be an integer starting from 0
+2. The "tool" field MUST be one of: research_topics, synthesize_knowledge, generate_examples, train_model
+3. The "args" field MUST be a dictionary with the required structure for each tool
+4. The "dependencies" field MUST be an array of integers
+5. DO NOT use "task" instead of "tool"
+6. DO NOT use "id" instead of "idx"
+7. DO NOT use "name" instead of "tool"
+8. DO NOT use "arguments" instead of "args"
+9. DO NOT use "deps" instead of "dependencies"
+10. DO NOT add any other fields to the tasks"""
 
-Example valid response:
-{
-  "tasks": [
-    {
-      "idx": 0,
-      "tool": "research_topics",
-      "args": {"domain": "test_domain"},
-      "dependencies": []
-    },
-    {
-      "idx": 1,
-      "tool": "synthesize_knowledge",
-      "args": {"sources": [{"id": 0}]},
-      "dependencies": [0]
-    },
-    {
-      "idx": 2,
-      "tool": "generate_examples",
-      "args": {"knowledge": [{"id": 0}]},
-      "dependencies": [1]
-    },
-    {
-      "idx": 3,
-      "tool": "train_model",
-      "args": {"examples": [{"data": {"value": "example"}}]},
-      "dependencies": [2]
-    }
-  ],
-  "thought": "First research topics to gather sources, then synthesize knowledge from those sources, generate training examples from the knowledge, and finally train the model on those examples"
-}
-
-{format_instructions}
-
-Remember:
-1. Return ONLY valid JSON with the EXACT structure shown above
-2. No text before or after the JSON
-3. No explanation, just the JSON object
-4. Always include all required fields
-5. The "args" field MUST be an object/dictionary with required structure
-6. Follow the tool-specific args format exactly
-7. Double-check your JSON is valid and properly formatted
-8. Do not wrap the JSON in extra quotes
-9. Do not quote individual fields that should not be quoted
-10. The "thought" field MUST be included
-11. DO NOT include any duplicate fields
-12. DO NOT include any debugging or validation fields
-13. Tasks MUST have proper dependencies based on data flow
-14. Task indices MUST be sequential starting from 0
-15. Each task MUST be a valid Task object
-16. Dependencies MUST be an array of integers
-17. Tasks MUST be in the exact order specified above
-18. Arguments MUST have the exact structure specified above"""
-
-    human_template = """Generate a plan to process this state:
+    human_template = """Generate a plan for this state:
 
 {{state}}
 
 Remember:
-1. Return ONLY valid JSON with the EXACT structure shown above
-2. No text before or after the JSON
-3. No explanation, just the JSON object
-4. Always include all required fields
-5. The "args" field MUST be an object/dictionary with required structure
-6. Follow the tool-specific args format exactly
-7. Double-check your JSON is valid and properly formatted
-8. Do not wrap the JSON in extra quotes
-9. Do not quote individual fields that should not be quoted
-10. The "thought" field MUST be included
-11. DO NOT include any duplicate fields
-12. DO NOT include any debugging or validation fields
-13. Tasks MUST have proper dependencies based on data flow
-14. Task indices MUST be sequential starting from 0
-15. Each task MUST be a valid Task object
-16. Dependencies MUST be an array of integers
-17. Tasks MUST be in the exact order specified above
-18. Arguments MUST have the exact structure specified above"""
+1. Output ONLY a valid JSON object with tasks and thought fields
+2. DO NOT wrap the response in a "state" object
+3. DO NOT include any fields other than tasks and thought at the root level
+4. Follow the format instructions exactly
+5. Each task MUST have idx, tool, args, and dependencies fields
+6. DO NOT use "task" instead of "tool"
+7. The idx field MUST be an integer starting from 0
+8. The tool field MUST be one of the allowed values
+9. The args field MUST be a dictionary with the required structure
+10. The dependencies field MUST be an array of integers"""
 
     return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
