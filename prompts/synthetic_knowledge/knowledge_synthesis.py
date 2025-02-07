@@ -47,9 +47,9 @@ IMPORTANT RULES:
 
     human_template = """Synthesize knowledge from:
 
-Patterns: {{patterns}}
-Hypotheses: {{hypotheses}}
-Relationships: {{relationships}}
+Patterns: {patterns}
+Hypotheses: {hypotheses}
+Relationships: {relationships}
 
 Focus on creating a coherent understanding of the domain.
 Output ONLY a valid JSON object following the format instructions."""

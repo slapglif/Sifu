@@ -25,7 +25,7 @@ IMPORTANT RULES:
 
     human_template = """Infer meaningful relationships from these hypotheses:
 
-{{hypotheses}}
+{hypotheses}
 
 Focus on identifying relationships that reveal the domain's structure.
 Output ONLY a valid JSON object following the format instructions."""

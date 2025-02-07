@@ -48,28 +48,28 @@ Your plans should be efficient and well-organized.
 
 CRITICAL: You MUST respond with ONLY a valid JSON object, no other text or explanation.
 The JSON object MUST EXACTLY match this structure:
-{
+{{
   "tasks": [
-    {
+    {{
       "idx": <integer>,
       "tool": <string>,
       "args": <object with string keys and any valid JSON values>,
       "dependencies": <array of integers>
-    }
+    }},
   ],
   "thought": <string>
-}
+}}
 
 Available tools and their required args:
-- research_topics: {"domain": <string>} (MUST use state.domain_name for the domain value)
-- synthesize_knowledge: {"sources": <array>}
-- generate_examples: {"knowledge": <array>}
-- train_model: {"examples": <array>}
+- research_topics: {{"domain": <string>}} (MUST use state.domain_name for the domain value)
+- synthesize_knowledge: {{"sources": <array>}}
+- generate_examples: {{"knowledge": <array>}}
+- train_model: {{"examples": <array>}}
 
 CRITICAL FORMATTING RULES:
 1. Use ONLY double quotes (") for strings and property names
 2. Arrays must be comma-separated and enclosed in square brackets []
-3. Objects must be comma-separated and enclosed in curly braces {}
+3. Objects must be comma-separated and enclosed in curly braces {{}}
 4. No trailing commas after the last item in arrays or objects
 5. No comments or explanatory text
 6. No JavaScript/Python syntax - ONLY valid JSON
@@ -85,37 +85,38 @@ CRITICAL FORMATTING RULES:
 16. Each task MUST have all required fields: idx, tool, args, dependencies
 17. The "thought" field MUST be included and MUST be a string
 18. For research_topics tool, you MUST use state.domain_name as the domain value
+19. For research_topics tool, args MUST ONLY contain the "domain" field
 
 Example valid response:
-{
+{{
   "tasks": [
-    {
+    {{
       "idx": 0,
       "tool": "research_topics",
-      "args": {"domain": "test_domain"},
+      "args": {{"domain": "test_domain"}},
       "dependencies": []
-    },
-    {
+    }},
+    {{
       "idx": 1,
       "tool": "synthesize_knowledge",
-      "args": {"sources": [{"id": 0}]},
+      "args": {{"sources": [{{"id": 0}}]}},
       "dependencies": [0]
-    },
-    {
+    }},
+    {{
       "idx": 2,
       "tool": "generate_examples",
-      "args": {"knowledge": [{"id": 0}]},
+      "args": {{"knowledge": [{{"id": 0}}]}},
       "dependencies": [1]
-    },
-    {
+    }},
+    {{
       "idx": 3,
       "tool": "train_model",
-      "args": {"examples": [{"data": {"value": "example"}}]},
+      "args": {{"examples": [{{"data": {{"value": "example"}}]}}]}},
       "dependencies": [2]
-    }
+    }}
   ],
   "thought": "First research topics to gather sources, then synthesize knowledge from those sources, generate training examples from the knowledge, and finally train the model on those examples"
-}
+}}
 
 {format_instructions}
 
@@ -130,10 +131,11 @@ Remember:
 8. Do not wrap the JSON in extra quotes
 9. Do not quote individual fields that should not be quoted
 10. The "thought" field MUST be included
-11. For research_topics tool, you MUST use state.domain_name as the domain value"""
+11. For research_topics tool, you MUST use state.domain_name as the domain value
+12. For research_topics tool, args MUST ONLY contain the "domain" field"""
 
     human_template = """Please generate an execution plan for this state:
-{{state}}
+{state}
 
 Remember to respond with ONLY the JSON object, no other text."""
 
@@ -224,10 +226,18 @@ CRITICAL FORMATTING RULES:
 15. ALWAYS include both task_id and result fields
 16. NEVER return just a task_id without a result
 17. If execution fails, set result=null and include error message
+18. task_id MUST match the idx field from the task being executed
+19. Dependencies MUST be checked - if any dependency task failed, this task should fail with "Dependencies not met"
+20. The result field MUST match the tool-specific format exactly
+21. The result field MUST be null if there is an error
+22. The error field MUST be null if there is a result
+23. NEVER include any text before or after the JSON object
+24. NEVER include any comments or explanations
+25. NEVER include any extra fields or properties
 
 Example valid response for success:
 {{
-  "task_id": 1,
+  "task_id": 0,
   "result": {{
     "knowledge_sources": [
       {{
@@ -245,12 +255,12 @@ Example valid response for success:
 
 Example valid response for failure:
 {{
-  "task_id": 2,
+  "task_id": 1,
   "result": null,
-  "error": "Failed to process input: invalid format"
+  "error": "Dependencies not met - task 0 failed"
 }}
 
-{format_instructions} <--
+{format_instructions}
 
 Remember:
 1. Return ONLY valid JSON with the EXACT structure shown above
@@ -259,10 +269,25 @@ Remember:
 4. Always include all required fields
 5. Set error=null for successful execution
 6. Follow the tool-specific result format exactly
-7. NEVER return just a task_id without a result"""
+7. NEVER return just a task_id without a result
+8. task_id MUST match the idx field from the task being executed
+9. Dependencies MUST be checked - if any dependency task failed, this task should fail with "Dependencies not met"
+10. The result field MUST match the tool-specific format exactly
+11. The result field MUST be null if there is an error
+12. The error field MUST be null if there is a result
+13. NEVER include any text before or after the JSON object
+14. NEVER include any comments or explanations
+15. NEVER include any extra fields or properties"""
 
     human_template = """Please execute this task:
-{{task}}
+
+Task:
+{{
+  "idx": {task.idx},
+  "tool": "{task.tool}",
+  "args": {task.args},
+  "dependencies": {task.dependencies}
+}}
 
 Remember to respond with ONLY the JSON object, no other text."""
 
@@ -298,6 +323,10 @@ The response MUST:
    - "thought": string explaining your decision reasoning
    - "replan": true/false indicating if replanning is needed
    - "feedback": string with feedback for replanning, or null if no feedback
+3. Set complete=true ONLY if ALL tasks succeeded (no errors and valid results)
+4. Set replan=true if ANY task failed but can be retried
+5. If replan=true, feedback MUST explain what needs to be fixed
+6. Check task dependencies - if a task failed due to dependencies, replan=true
 
 Example valid response for success case:
 {{
@@ -315,17 +344,20 @@ Example valid response for failure case:
   "feedback": "Need to add data gathering task before task 2"
 }}
 
-{{format_instructions}}
+{format_instructions}
 
 Remember:
 1. Return ONLY valid JSON with the EXACT structure shown above
 2. No text before or after the JSON
 3. No explanation, just the JSON object
 4. Either complete=true OR replan=true must be true (both cannot be false)
-5. If replan=true, feedback must be a non-null string"""
+5. If replan=true, feedback must be a non-null string
+6. Check ALL task results and dependencies before deciding
+7. Set complete=true ONLY if ALL tasks succeeded
+8. Set replan=true if ANY task can be retried"""
 
     human_template = """Please evaluate this execution state and make a join decision:
-{{state}}
+{state}
 
 Remember to respond with ONLY the JSON object, no other text."""
 

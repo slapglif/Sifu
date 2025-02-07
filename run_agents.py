@@ -24,6 +24,9 @@ from langchain_core.globals import set_debug
 from langchain.output_parsers import PydanticOutputParser
 from prompts.compiler.compiler_prompts import get_join_decision_prompt
 from pathlib import Path
+from prompts.knowledge_acquisition.extraction import get_key_terms_prompt, KeyTermsResponse
+from langchain_community.embeddings import OllamaEmbeddings
+from scripts.text_web_browser import SimpleTextBrowser, web_search
 
 set_debug(True)
 # Load environment variables
@@ -104,7 +107,7 @@ class ResearchAgent(LLMCompiler):
         llm = ChatOllama(
             model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b"),
             format="json",
-            temperature=0.7,
+            temperature=0.1,
             mirostat=2,
             mirostat_eta=0.1,
             mirostat_tau=5.0
@@ -120,6 +123,8 @@ class ResearchAgent(LLMCompiler):
         self.qa_system: Optional[QASystem] = None
         self.knowledge_generator: Optional[SyntheticKnowledgeGenerator] = None
         self.lora_trainer: Optional[LoRATrainer] = None
+        self.text_browser: Optional[SimpleTextBrowser] = None
+        self.embeddings = OllamaEmbeddings(model='bge-m3', base_url='http://localhost:11434')
         
         log_info_with_context("Research agent initialized", "Research")
         console.print(Panel("[bold green]Research Agent Initialized[/bold green]"))
@@ -191,7 +196,7 @@ class ResearchAgent(LLMCompiler):
             
             # Create progress tracking
             progress = create_progress()
-            init_progress = progress.add_task("[cyan]Initialization...", total=5)
+            init_progress = progress.add_task("[cyan]Initialization...", total=6)
             
             # Load config first
             self.config = await self._load_config(self.config_path)
@@ -204,6 +209,13 @@ class ResearchAgent(LLMCompiler):
             # Initialize core components
             self.graph = await self._init_neo4j()
             progress.update(init_progress, advance=1, description="[cyan]Connecting to Neo4j...")
+            
+            # Initialize text browser
+            self.text_browser = SimpleTextBrowser(
+                viewport_size=5120,
+                downloads_folder="downloads"
+            )
+            progress.update(init_progress, advance=1, description="[cyan]Initializing text browser...")
             
             # Initialize subsystems
             if "knowledge_acquisition" not in self.config:
@@ -477,11 +489,20 @@ class ResearchAgent(LLMCompiler):
                     # Use vector store to find related knowledge
                     for doc in docs:
                         try:
+                            # Generate embeddings for the document
+                            console.print("[cyan]Generating embeddings for document...[/cyan]")
+                            doc_embedding = await asyncio.to_thread(
+                                self.embeddings.embed_documents,
+                                [doc.page_content]
+                            )
+                            console.print("[green]✓ Generated embeddings[/green]")
+                            
                             # Search for related content
-                            if self.knowledge_system.vector_store:
+                            if self.knowledge_system.vector_store and doc_embedding:
+                                console.print("[cyan]Searching vector store for related content...[/cyan]")
                                 similar_docs = await asyncio.to_thread(
-                                    self.knowledge_system.vector_store.similarity_search,
-                                    doc.page_content,
+                                    self.knowledge_system.vector_store.similarity_search_by_vector,
+                                    doc_embedding[0],
                                     k=5
                                 )
                                 
@@ -494,9 +515,53 @@ class ResearchAgent(LLMCompiler):
                                 if added > 0:
                                     log_info_with_context(f"Found {added} related documents", "Research")
                                     console.print(f"[green]✓ Found {added} related documents[/green]")
-                                    
+                            
+                            # Use text browser to search for additional information
+                            if self.text_browser:
+                                # Extract key terms for search
+                                console.print("[cyan]Extracting key search terms...[/cyan]")
+                                key_terms = await self._extract_key_terms(doc.page_content)
+                                console.print(f"[green]✓ Extracted key terms:[/green] {', '.join(key_terms)}")
+                                
+                                for term in key_terms:
+                                    try:
+                                        # Search for term
+                                        console.print(f"[cyan]Performing web search for term:[/cyan] {term}")
+                                        search_results = await web_search(term)
+                                        if search_results:
+                                            # Visit each result URL
+                                            for result in search_results.split("\n"):
+                                                if result.startswith("URL: "):
+                                                    url = result[5:].strip()
+                                                    try:
+                                                        console.print(f"[cyan]Visiting URL:[/cyan] {url}")
+                                                        content = await self.text_browser.visit(url)
+                                                        if content and content != "No content found on page":
+                                                            # Create new document
+                                                            web_doc = Document(
+                                                                page_content=content,
+                                                                metadata={
+                                                                    "source": url,
+                                                                    "type": "web",
+                                                                    "term": term,
+                                                                    "domain": domain
+                                                                }
+                                                            )
+                                                            all_docs.append(web_doc)
+                                                            log_info_with_context(f"Added web content for term: {term}", "Research")
+                                                            console.print(f"[green]✓ Added web content from:[/green] {url}")
+                                                    except Exception as e:
+                                                        log_error_with_traceback(e, f"Error visiting URL: {url}")
+                                                        console.print(f"[red]✗ Failed to visit URL:[/red] {url}")
+                                                        continue
+                                    except Exception as e:
+                                        log_error_with_traceback(e, f"Error searching for term: {term}")
+                                        console.print(f"[red]✗ Failed to search for term:[/red] {term}")
+                                        continue
+                            
                             if self.qa_system:
                                 # Generate follow-up questions
+                                console.print("[cyan]Generating follow-up questions...[/cyan]")
                                 questions = await self.qa_system.generate_questions(
                                     topic=doc.metadata.get("topic", "general"),
                                     num_questions=5
@@ -525,6 +590,7 @@ class ResearchAgent(LLMCompiler):
                                     
                                     for question in questions:
                                         try:
+                                            console.print(f"[cyan]Researching question:[/cyan] {question.question}")
                                             answer = await self.qa_system.process_question(question.question)
                                             if answer and answer.confidence > 0.7:
                                                 # Add new knowledge to stores
@@ -542,13 +608,23 @@ class ResearchAgent(LLMCompiler):
                                                 log_info_with_context(f"Added answer with confidence {answer.confidence}", "Research")
                                                 console.print(f"[green]✓ Added answer with {answer.confidence:.2f} confidence[/green]")
                                                 
+                                                # Generate embeddings for the answer
+                                                console.print("[cyan]Generating embeddings for answer...[/cyan]")
+                                                answer_embedding = await asyncio.to_thread(
+                                                    self.embeddings.embed_documents,
+                                                    [answer.answer]
+                                                )
+                                                console.print("[green]✓ Generated embeddings for answer[/green]")
+                                                
                                                 # Search for related content to the answer
-                                                if self.knowledge_system.vector_store:
+                                                if self.knowledge_system.vector_store and answer_embedding:
+                                                    console.print("[cyan]Searching for content related to answer...[/cyan]")
                                                     answer_related = await asyncio.to_thread(
-                                                        self.knowledge_system.vector_store.similarity_search,
-                                                        answer.answer,
+                                                        self.knowledge_system.vector_store.similarity_search_by_vector,
+                                                        answer_embedding[0],
                                                         k=5
                                                     )
+                                                    
                                                     added = 0
                                                     for rel_doc in answer_related:
                                                         if rel_doc not in all_docs:
@@ -556,12 +632,12 @@ class ResearchAgent(LLMCompiler):
                                                             added += 1
                                                     if added > 0:
                                                         log_info_with_context(f"Found {added} documents related to answer", "Research")
-                                                        console.print(f"[green]✓ Found {added} related documents[/green]")
-                                            
+                                                        console.print(f"[green]✓ Found {added} documents related to answer[/green]")
+                                                        
                                             question_progress.update(question_task, advance=1)
                                         except Exception as e:
                                             log_error_with_traceback(e, f"Error researching question: {question.question}")
-                                            console.print(f"[red]✗ Failed to research question: {question.question}[/red]")
+                                            console.print(f"[red]✗ Failed to research question:[/red] {question.question}")
                                             continue
                         except Exception as e:
                             log_error_with_traceback(e, f"Error generating questions from document: {e}")
@@ -574,7 +650,7 @@ class ResearchAgent(LLMCompiler):
                     
                 except Exception as e:
                     log_error_with_traceback(e, f"Error processing source {source['path']}")
-                    console.print(f"[red]✗ Failed to process source: {source['path']}[/red]")
+                    console.print(f"[red]✗ Failed to process source:[/red] {source['path']}")
                     continue
             
             log_info_with_context(f"Research completed with {len(all_docs)} total documents", "Research")
@@ -583,11 +659,24 @@ class ResearchAgent(LLMCompiler):
             # Save documents to state
             self.state.knowledge_sources.extend(all_docs)
             
-            return {"knowledge_sources": all_docs}
+            return {"knowledge_sources": [doc.model_dump() for doc in all_docs]}
             
         except Exception as e:
             log_error_with_traceback(e, "Error in research topics")
             raise
+
+    async def _extract_key_terms(self, text: str) -> List[str]:
+        """Extract key terms from text for web search."""
+        try:
+            # Use key terms prompt from prompts directory
+            prompt = get_key_terms_prompt()
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=KeyTermsResponse)
+            result = await chain.ainvoke({"text": text})
+            return result.terms if hasattr(result, 'terms') else []
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error extracting key terms")
+            return []
 
     async def _synthesize_knowledge(self, sources: List[Document]) -> Dict[str, Any]:
         """Synthesize knowledge from sources"""

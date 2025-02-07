@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
 
 class Relationship(BaseModel):
     """Schema for knowledge relationships"""
@@ -29,6 +30,10 @@ class ExtractedKnowledge(BaseModel):
     confidence: float = Field(description="Overall confidence in the extraction", ge=0.0, le=1.0)
     metadata: SourceMetadata = Field(description="Source metadata")
 
+class KeyTermsResponse(BaseModel):
+    """Schema for key terms extraction response"""
+    terms: List[str] = Field(description="List of key search terms")
+
 def get_knowledge_extraction_prompt() -> ChatPromptTemplate:
     """Get the knowledge extraction prompt template."""
     parser = PydanticOutputParser(pydantic_object=ExtractedKnowledge)
@@ -53,7 +58,7 @@ IMPORTANT RULES:
 
     human_template = """Extract structured knowledge from this text:
 
-{{text}}
+{text}
 
 Focus on identifying:
 1. Key concepts and entities
@@ -68,4 +73,45 @@ Output ONLY a valid JSON object following the format instructions."""
         ("human", human_template)
     ])
     
+    return prompt
+
+def get_key_terms_prompt() -> ChatPromptTemplate:
+    """Get the key terms extraction prompt template."""
+    parser = PydanticOutputParser(pydantic_object=KeyTermsResponse)
+    format_instructions = parser.get_format_instructions()
+    
+    system_template = """Extract 3-5 key search terms from the text.
+{format_instructions}
+
+IMPORTANT:
+1. The terms field is required and must be an array of strings
+2. Each term should be specific and focused on a single concept
+3. Terms should be meaningful for web search
+4. Do not include any text before or after the JSON
+5. Use proper JSON formatting with double quotes
+
+Example response:
+{{
+    "terms": [
+        "machine learning algorithms",
+        "neural network architectures",
+        "deep learning frameworks"
+    ]
+}}"""
+
+    human_template = """Extract key search terms from this text:
+
+{text}
+
+Remember:
+1. Return 3-5 specific, focused terms
+2. Make terms suitable for web search
+3. Output ONLY a valid JSON object following the format instructions."""
+
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessage(content=system_template),
+        HumanMessage(content=human_template)
+    ])
+    
+    prompt = prompt.partial(format_instructions=format_instructions)
     return prompt

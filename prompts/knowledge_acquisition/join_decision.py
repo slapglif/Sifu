@@ -18,7 +18,7 @@ def get_join_decision_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Analyze the results and decide whether to complete or replan.
-{{{{format_instructions}}}}
+{format_instructions}
 
 IMPORTANT:
 1. All fields are required except feedback
@@ -30,8 +30,8 @@ IMPORTANT:
 
     human_template = """Analyze these results:
 
-Plan: {{plan}}
-Results: {{results}}
+Plan: {plan}
+Results: {results}
 
 Decide whether to:
 1. Complete - if all tasks succeeded

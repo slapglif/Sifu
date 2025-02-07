@@ -15,7 +15,7 @@ def get_entity_extraction_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Extract entities from the given text. Return in JSON format.
-{{{{format_instructions}}}}
+{format_instructions}
 
 IMPORTANT:
 1. The entities field is required and must be an array of strings
@@ -25,7 +25,7 @@ IMPORTANT:
 
     human_template = """Extract entities from this text:
 
-{{content}}
+{content}
 
 Output ONLY a valid JSON object following the format instructions."""
 

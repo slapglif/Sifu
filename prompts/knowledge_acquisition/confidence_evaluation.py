@@ -37,13 +37,13 @@ Provide detailed reasoning for your confidence assessment."""
 
     human_template = """Evaluate confidence for this extracted knowledge:
 
-Content: {{content}}
+Content: {content}
 
-Entities: {{entities}}
+Entities: {entities}
 
-Relationships: {{relationships}}
+Relationships: {relationships}
 
-Source Type: {{source_type}}
+Source Type: {source_type}
 
 Output ONLY a valid JSON object following the format instructions."""
 

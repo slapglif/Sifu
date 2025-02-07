@@ -38,7 +38,7 @@ Available tools:
 
     human_template = """Generate a plan to answer this question:
 
-{{question}}
+{question}
 
 Remember:
 1. Each task must have a unique idx

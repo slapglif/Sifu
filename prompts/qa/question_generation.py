@@ -28,8 +28,8 @@ IMPORTANT RULES:
 
     human_template = """Generate questions based on this context and topic:
 
-Context: {{context}}
-Topic: {{topic}}
+Context: {context}
+Topic: {topic}
 
 Output ONLY a valid JSON object following the format instructions."""
 
