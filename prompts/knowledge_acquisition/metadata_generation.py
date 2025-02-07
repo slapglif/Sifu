@@ -15,7 +15,7 @@ def get_metadata_generation_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Generate metadata for the given text. Return in JSON format.
-{{{{format_instructions}}}}
+{format_instructions}
 
 IMPORTANT:
 1. The metadata field is required and must be an object
@@ -27,11 +27,23 @@ IMPORTANT:
 7. Do not include any text before or after the JSON
 8. Use proper JSON formatting with double quotes
 9. All fields are required
-10. The response must be wrapped in a metadata object"""
+10. The response must be wrapped in a metadata object
+
+Example response:
+{{
+    "metadata": {{
+        "source_type": "text",
+        "confidence_score": 0.85,
+        "domain_relevance": 0.9,
+        "timestamp": "2024-02-07T12:00:00Z",
+        "validation_status": "pending",
+        "domain": "knowledge"
+    }}
+}}"""
 
     human_template = """Generate metadata for this text:
 
-{{content}}
+{content}
 
 Remember:
 1. Return metadata wrapped in a metadata object
@@ -41,7 +53,10 @@ Remember:
 5. Use current timestamp in ISO format with timezone
 6. Output ONLY a valid JSON object following the format instructions."""
 
-    return ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
-    ]) 
+    ])
+    
+    prompt = prompt.partial(format_instructions=format_instructions)
+    return prompt 

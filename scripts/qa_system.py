@@ -109,7 +109,7 @@ class QASystem(LLMCompiler):
         try:
             prompt, parser = get_qa_plan_prompt()
             chain = prompt | self.llm | parser
-            plan = await chain.ainvoke({"question": state.content})
+            plan = await chain.ainvoke({"question": state.get('question', '')})
             return plan
 
         except Exception as e:
@@ -165,12 +165,14 @@ class QASystem(LLMCompiler):
         try:
             # Create join prompt
             plan_json = "{}"
-            if state.plan:
-                plan_json = json.dumps(state.plan.model_dump(), indent=2)
+            plan = state.get('plan')
+            if plan is not None:
+                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
 
             results_json = "[]"
-            if state.results:
-                results_json = json.dumps([r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results], indent=2)
+            results = state.get('results')
+            if results:
+                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
 
             prompt, parser = get_join_decision_prompt()
             chain = prompt | self.llm | parser
@@ -196,7 +198,7 @@ class QASystem(LLMCompiler):
             count = 0
 
             # Extract results from tasks
-            for result in state.results:
+            for result in state.get('results', []):
                 if result and result.result:
                     if isinstance(result.result, dict):
                         if 'answer' in result.result:

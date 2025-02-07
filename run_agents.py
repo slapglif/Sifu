@@ -13,7 +13,6 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 from dotenv import load_dotenv
-from loguru import logger
 from scripts.logging_config import (
     log_error_with_traceback,
     log_warning_with_context,
@@ -23,14 +22,10 @@ from scripts.logging_config import (
 )
 from langchain_core.globals import set_debug
 from langchain.output_parsers import PydanticOutputParser
-from prompts.compiler.compiler_prompts import get_join_decision_prompt, get_task_execution_prompt
+from prompts.compiler.compiler_prompts import get_join_decision_prompt
 from pathlib import Path
-from rich.layout import Layout
-from rich.spinner import Spinner
-from rich.text import Text
-from rich.box import Box
-from rich.syntax import Syntax
-set_debug(False)
+
+set_debug(True)
 # Load environment variables
 load_dotenv(override=True)
 
@@ -249,49 +244,8 @@ class ResearchAgent(LLMCompiler):
     async def _generate_plan(self, state: CompilerState) -> Plan:
         """Generate research plan."""
         try:
-            # Create plan for research workflow
-            tasks = []
-            task_idx = 0
-            
-            # Research task
-            tasks.append(Task(
-                idx=task_idx,
-                tool="research_topics",
-                args={"domain": self.state.domain_name},  # Use the actual domain name
-                dependencies=[]
-            ))
-            task_idx += 1
-            
-            # Knowledge synthesis task
-            tasks.append(Task(
-                idx=task_idx,
-                tool="synthesize_knowledge",
-                args={"sources": []},  # Will be filled from research results
-                dependencies=[task_idx - 1]
-            ))
-            task_idx += 1
-            
-            # Training example generation task
-            tasks.append(Task(
-                idx=task_idx,
-                tool="generate_examples",
-                args={"knowledge": []},  # Will be filled from synthesis results
-                dependencies=[task_idx - 1]
-            ))
-            task_idx += 1
-            
-            # Model training task
-            tasks.append(Task(
-                idx=task_idx,
-                tool="train_model",
-                args={"examples": []},  # Will be filled from example generation
-                dependencies=[task_idx - 1]
-            ))
-            
-            return Plan(
-                tasks=tasks,
-                thought=f"Generated plan for research workflow in domain '{self.state.domain_name}': research topics, synthesize knowledge, generate examples, and train model"
-            )
+            # Use parent class's generate_plan method
+            return await super().generate_plan(state)
             
         except Exception as e:
             log_error_with_traceback(e, "Error generating research plan")
@@ -432,9 +386,10 @@ class ResearchAgent(LLMCompiler):
         """Decide whether to complete or replan"""
         try:
             # Format state for LLM
+            plan = state.get('plan')
             formatted_state = {
-                "plan": state.plan.model_dump() if state.plan else None,
-                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
+                "plan": plan.dict() if plan else None,
+                "results": [r.dict() for r in state.get('results', [])],
                 "current_progress": {
                     "knowledge_sources": len(self.state.knowledge_sources),
                     "synthetic_knowledge": len(self.state.synthetic_knowledge),
@@ -459,7 +414,7 @@ class ResearchAgent(LLMCompiler):
         """Generate final system state."""
         try:
             # Update state with results
-            for result in state.results:
+            for result in state.get('results', []):
                 if result and result.result:
                     if isinstance(result.result, dict):
                         if 'knowledge_sources' in result.result:
@@ -512,113 +467,116 @@ class ResearchAgent(LLMCompiler):
                         source["path"],
                         source["type"]
                     )
-                    if docs:
-                        all_docs.extend(docs)
-                        log_info_with_context(f"Extracted {len(docs)} documents from source", "Research")
-                        console.print(f"[green]✓ Extracted {len(docs)} documents[/green]")
+                    if not docs:
+                        continue
                         
-                        # Use vector store to find related knowledge
-                        for doc in docs:
-                            try:
-                                # Search for related content
-                                if self.knowledge_system.vector_store:
-                                    similar_docs = await asyncio.to_thread(
-                                        self.knowledge_system.vector_store.similarity_search,
-                                        doc.page_content,
-                                        k=5
-                                    )
-                                    
-                                    # Add unique related documents
-                                    added = 0
-                                    for similar_doc in similar_docs:
-                                        if similar_doc not in all_docs:
-                                            all_docs.append(similar_doc)
-                                            added += 1
-                                    if added > 0:
-                                        log_info_with_context(f"Found {added} related documents", "Research")
-                                        console.print(f"[green]✓ Found {added} related documents[/green]")
+                    all_docs.extend(docs)
+                    log_info_with_context(f"Extracted {len(docs)} documents from source", "Research")
+                    console.print(f"[green]✓ Extracted {len(docs)} documents[/green]")
+                    
+                    # Use vector store to find related knowledge
+                    for doc in docs:
+                        try:
+                            # Search for related content
+                            if self.knowledge_system.vector_store:
+                                similar_docs = await asyncio.to_thread(
+                                    self.knowledge_system.vector_store.similarity_search,
+                                    doc.page_content,
+                                    k=5
+                                )
                                 
-                                if self.qa_system:
-                                    # Generate follow-up questions
-                                    questions = await self.qa_system.generate_questions(
-                                        topic=doc.metadata.get("topic", "general"),
-                                        num_questions=5
+                                # Add unique related documents
+                                added = 0
+                                for similar_doc in similar_docs:
+                                    if similar_doc not in all_docs:
+                                        all_docs.append(similar_doc)
+                                        added += 1
+                                if added > 0:
+                                    log_info_with_context(f"Found {added} related documents", "Research")
+                                    console.print(f"[green]✓ Found {added} related documents[/green]")
+                                    
+                            if self.qa_system:
+                                # Generate follow-up questions
+                                questions = await self.qa_system.generate_questions(
+                                    topic=doc.metadata.get("topic", "general"),
+                                    num_questions=5
+                                )
+                                
+                                if questions:
+                                    log_info_with_context(f"Generated {len(questions)} follow-up questions", "Research")
+                                    console.print(f"[green]✓ Generated {len(questions)} follow-up questions[/green]")
+                                    
+                                    # Store questions
+                                    self.state.generated_questions.extend([
+                                        {
+                                            "question": q.question,
+                                            "source": doc.metadata.get("source", "unknown"),
+                                            "topic": doc.metadata.get("topic", "general")
+                                        }
+                                        for q in questions
+                                    ])
+                                    
+                                    # Research each question
+                                    question_progress = create_progress()
+                                    question_task = question_progress.add_task(
+                                        "[yellow]Researching questions...",
+                                        total=len(questions)
                                     )
                                     
-                                    if questions:
-                                        log_info_with_context(f"Generated {len(questions)} follow-up questions", "Research")
-                                        console.print(f"[green]✓ Generated {len(questions)} follow-up questions[/green]")
-                                        
-                                        # Store questions
-                                        self.state.generated_questions.extend([
-                                            {
-                                                "question": q.question,
-                                                "source": doc.metadata.get("source", "unknown"),
-                                                "topic": doc.metadata.get("topic", "general")
-                                            }
-                                            for q in questions
-                                        ])
-                                        
-                                        # Research each question
-                                        question_progress = create_progress()
-                                        question_task = question_progress.add_task(
-                                            "[yellow]Researching questions...",
-                                            total=len(questions)
-                                        )
-                                        
-                                        for question in questions:
-                                            try:
-                                                answer = await self.qa_system.process_question(question.question)
-                                                if answer and answer.confidence > 0.7:
-                                                    # Add new knowledge to stores
-                                                    new_doc = Document(
-                                                        page_content=answer.answer,
-                                                        metadata={
-                                                            "source": "qa_research",
-                                                            "question": question.question,
-                                                            "confidence": answer.confidence,
-                                                            "topic": doc.metadata.get("topic", "general"),
-                                                            "domain": domain
-                                                        }
+                                    for question in questions:
+                                        try:
+                                            answer = await self.qa_system.process_question(question.question)
+                                            if answer and answer.confidence > 0.7:
+                                                # Add new knowledge to stores
+                                                new_doc = Document(
+                                                    page_content=answer.answer,
+                                                    metadata={
+                                                        "source": "qa_research",
+                                                        "question": question.question,
+                                                        "confidence": answer.confidence,
+                                                        "topic": doc.metadata.get("topic", "general"),
+                                                        "domain": domain
+                                                    }
+                                                )
+                                                all_docs.append(new_doc)
+                                                log_info_with_context(f"Added answer with confidence {answer.confidence}", "Research")
+                                                console.print(f"[green]✓ Added answer with {answer.confidence:.2f} confidence[/green]")
+                                                
+                                                # Search for related content to the answer
+                                                if self.knowledge_system.vector_store:
+                                                    answer_related = await asyncio.to_thread(
+                                                        self.knowledge_system.vector_store.similarity_search,
+                                                        answer.answer,
+                                                        k=5
                                                     )
-                                                    all_docs.append(new_doc)
-                                                    log_info_with_context(f"Added answer with confidence {answer.confidence}", "Research")
-                                                    console.print(f"[green]✓ Added answer with {answer.confidence:.2f} confidence[/green]")
-                                                    
-                                                    # Search for related content to the answer
-                                                    if self.knowledge_system.vector_store:
-                                                        answer_related = await asyncio.to_thread(
-                                                            self.knowledge_system.vector_store.similarity_search,
-                                                            answer.answer,
-                                                            k=5
-                                                        )
-                                                        added = 0
-                                                        for rel_doc in answer_related:
-                                                            if rel_doc not in all_docs:
-                                                                all_docs.append(rel_doc)
-                                                                added += 1
-                                                        if added > 0:
-                                                            log_info_with_context(f"Found {added} documents related to answer", "Research")
-                                                            console.print(f"[green]✓ Found {added} related documents[/green]")
-                                                            
-                                                question_progress.update(question_task, advance=1)
-                                            except Exception as e:
-                                                log_error_with_traceback(e, f"Error researching question: {question.question}")
-                                                console.print(f"[red]✗ Failed to research question: {question.question}[/red]")
-                                                continue
-                            except Exception as e:
-                                log_error_with_traceback(e, f"Error generating questions from document: {e}")
-                                console.print("[red]✗ Failed to generate questions from document[/red]")
-                                continue
+                                                    added = 0
+                                                    for rel_doc in answer_related:
+                                                        if rel_doc not in all_docs:
+                                                            all_docs.append(rel_doc)
+                                                            added += 1
+                                                    if added > 0:
+                                                        log_info_with_context(f"Found {added} documents related to answer", "Research")
+                                                        console.print(f"[green]✓ Found {added} related documents[/green]")
+                                            
+                                            question_progress.update(question_task, advance=1)
+                                        except Exception as e:
+                                            log_error_with_traceback(e, f"Error researching question: {question.question}")
+                                            console.print(f"[red]✗ Failed to research question: {question.question}[/red]")
+                                            continue
+                        except Exception as e:
+                            log_error_with_traceback(e, f"Error generating questions from document: {e}")
+                            console.print("[red]✗ Failed to generate questions from document[/red]")
+                            continue
                     
                     # Update progress
                     progress.update(research_task, advance=1)
                     progress.refresh()
+                    
                 except Exception as e:
                     log_error_with_traceback(e, f"Error processing source {source['path']}")
                     console.print(f"[red]✗ Failed to process source: {source['path']}[/red]")
                     continue
-                
+            
             log_info_with_context(f"Research completed with {len(all_docs)} total documents", "Research")
             console.print(Panel(f"[bold green]Research Complete[/bold green]\nTotal Documents: {len(all_docs)}"))
             
@@ -626,7 +584,7 @@ class ResearchAgent(LLMCompiler):
             self.state.knowledge_sources.extend(all_docs)
             
             return {"knowledge_sources": all_docs}
-                
+            
         except Exception as e:
             log_error_with_traceback(e, "Error in research topics")
             raise
@@ -639,12 +597,12 @@ class ResearchAgent(LLMCompiler):
                 
             log_info_with_context("Starting knowledge synthesis", "Synthesis")
             console.print("\n[bold cyan]Synthesizing Knowledge...[/bold cyan]")
-                
+            
             if not sources:
                 log_warning_with_context("No sources available for synthesis", "Synthesis")
                 console.print("[yellow]Warning: No sources available for synthesis[/yellow]")
                 return {"synthetic_knowledge": []}
-                
+            
             # Create progress tracking
             progress = create_progress()
             synthesis_task = progress.add_task(
@@ -700,7 +658,7 @@ class ResearchAgent(LLMCompiler):
             self.state.synthetic_knowledge.extend(all_knowledge)
             
             return {"synthetic_knowledge": all_knowledge}
-                
+            
         except Exception as e:
             log_error_with_traceback(e, "Error in knowledge synthesis")
             raise
@@ -717,7 +675,7 @@ class ResearchAgent(LLMCompiler):
                 return {"training_examples": []}
             
             examples = []
-                
+            
             # Create progress tracking
             progress = create_progress()
             example_task = progress.add_task(
@@ -725,67 +683,67 @@ class ResearchAgent(LLMCompiler):
                 total=len(knowledge)
             )
             progress.update(example_task, description="Processing knowledge items...")
-                
-                # Generate from synthetic knowledge
+            
+            # Generate from synthetic knowledge
             for k in knowledge:
                 try:
                     log_info_with_context(f"Processing knowledge from {k.get('source', 'unknown')}", "Training Data")
                     
-                        # Generate examples for pattern recognition
+                    # Generate examples for pattern recognition
                     for pattern in k.get("patterns", []):
-                            examples.append(TrainingExample(
-                                input_text=f"Identify patterns in this context: {pattern['supporting_evidence']}",
-                                output_text=pattern["description"],
+                        examples.append(TrainingExample(
+                            input_text=f"Identify patterns in this context: {pattern['supporting_evidence']}",
+                            output_text=pattern["description"],
                             metadata={
                                 "type": "pattern_recognition",
                                 "source": k.get("source", "unknown"),
                                 "topic": k.get("topic", "general"),
                                 "domain": k.get("domain", "unknown")
                             },
-                                quality_score=pattern["confidence"]
-                            ))
-                            
-                            # Generate examples for hypothesis validation
-                        for hypothesis in k.get("hypotheses", []):
-                                examples.append(TrainingExample(
-                                    input_text=f"Validate this hypothesis: {hypothesis['statement']}\nEvidence: {hypothesis['evidence']}",
-                                    output_text=hypothesis["reasoning"],
-                                metadata={
-                                    "type": "hypothesis_validation",
-                                    "source": k.get("source", "unknown"),
-                                    "topic": k.get("topic", "general"),
-                                    "domain": k.get("domain", "unknown")
-                                },
-                                    quality_score=hypothesis["confidence"]
-                                ))
-                                
-                        # Generate examples for relationship inference
-                        for relationship in k.get("relationships", []):
-                            examples.append(TrainingExample(
-                                input_text=f"Infer relationship: {relationship['source']} -> {relationship['target']}",
-                                output_text=relationship["relation"],
-                                metadata={
-                                    "type": "relationship_inference",
-                                    "source": k.get("source", "unknown"),
-                                    "topic": k.get("topic", "general"),
-                                    "domain": k.get("domain", "unknown")
-                                },
-                                quality_score=k.get("confidence", 0.7)
-                            ))
-                            
+                            quality_score=pattern["confidence"]
+                        ))
+                        
+                    # Generate examples for hypothesis validation
+                    for hypothesis in k.get("hypotheses", []):
+                        examples.append(TrainingExample(
+                            input_text=f"Validate this hypothesis: {hypothesis['statement']}\nEvidence: {hypothesis['evidence']}",
+                            output_text=hypothesis["reasoning"],
+                            metadata={
+                                "type": "hypothesis_validation",
+                                "source": k.get("source", "unknown"),
+                                "topic": k.get("topic", "general"),
+                                "domain": k.get("domain", "unknown")
+                            },
+                            quality_score=hypothesis["confidence"]
+                        ))
+                        
+                    # Generate examples for relationship inference
+                    for relationship in k.get("relationships", []):
+                        examples.append(TrainingExample(
+                            input_text=f"Infer relationship: {relationship['source']} -> {relationship['target']}",
+                            output_text=relationship["relation"],
+                            metadata={
+                                "type": "relationship_inference",
+                                "source": k.get("source", "unknown"),
+                                "topic": k.get("topic", "general"),
+                                "domain": k.get("domain", "unknown")
+                            },
+                            quality_score=k.get("confidence", 0.7)
+                        ))
+                        
                     progress.update(example_task, advance=1)
                 except Exception as e:
                     log_error_with_traceback(e, "Error generating examples from knowledge")
                     console.print("[red]✗ Failed to generate examples from knowledge[/red]")
-                        continue
-                
-                # Filter and validate examples
-                valid_examples = []
-                for example in examples:
-                    if example.quality_score >= 0.7 and len(example.input_text.split()) >= 10:
-                        valid_examples.append(example)
-                
-                log_info_with_context(f"Generated {len(valid_examples)} valid training examples", "Training Data")
+                    continue
+            
+            # Filter and validate examples
+            valid_examples = []
+            for example in examples:
+                if example.quality_score >= 0.7 and len(example.input_text.split()) >= 10:
+                    valid_examples.append(example)
+            
+            log_info_with_context(f"Generated {len(valid_examples)} valid training examples", "Training Data")
             
             # Log example statistics
             table = Table(title="[bold]Training Examples[/bold]", box=box.ROUNDED)
@@ -817,16 +775,16 @@ class ResearchAgent(LLMCompiler):
             raise
 
     async def _train_model(self, examples: List[TrainingExample]) -> Dict[str, Any]:
-                """Train LoRA adapter"""
+        """Train LoRA adapter"""
         try:
-                if not self.lora_trainer:
-                    raise ValueError("LoRA trainer not initialized")
-                    
+            if not self.lora_trainer:
+                raise ValueError("LoRA trainer not initialized")
+                
             log_info_with_context("Starting model training", "Training")
             console.print("\n[bold cyan]Training Model...[/bold cyan]")
-                
+            
             if not examples:
-                    log_warning_with_context("No training examples available", "Training")
+                log_warning_with_context("No training examples available", "Training")
                 console.print("[yellow]Warning: No training examples available[/yellow]")
                 return {"model_metrics": {}}
                 
@@ -837,13 +795,13 @@ class ResearchAgent(LLMCompiler):
                 total=4
             )
             progress.update(train_task, description="Preparing training data...")
-                
-                    # Prepare datasets
+            
+            # Prepare datasets
             console.print("[cyan]Preparing datasets...[/cyan]")
             dataset = self.lora_trainer.prepare_training_data(examples)
-                    train_size = int(0.8 * len(dataset))
-                    train_dataset = dataset.select(range(train_size))
-                    eval_dataset = dataset.select(range(train_size, len(dataset)))
+            train_size = int(0.8 * len(dataset))
+            train_dataset = dataset.select(range(train_size))
+            eval_dataset = dataset.select(range(train_size, len(dataset)))
             
             # Log dataset statistics
             table = Table(title="[bold]Dataset Statistics[/bold]", box=box.ROUNDED)
@@ -855,22 +813,22 @@ class ResearchAgent(LLMCompiler):
             
             console.print(table)
             progress.update(train_task, advance=1)
-                    
-                    # Train model
+            
+            # Train model
             console.print("[cyan]Training model...[/cyan]")
-                    metrics = self.lora_trainer.train(
-                        train_dataset=train_dataset,
-                        eval_dataset=eval_dataset
-                    )
+            metrics = self.lora_trainer.train(
+                train_dataset=train_dataset,
+                eval_dataset=eval_dataset
+            )
             progress.update(train_task, advance=1)
-                    
-                    # Save adapter
+            
+            # Save adapter
             console.print("[cyan]Saving adapter...[/cyan]")
             adapter_path = f"results/{self.state.domain_name}/lora_adapter"
-                    self.lora_trainer.save_adapter(
+            self.lora_trainer.save_adapter(
                 adapter_path,
-                        "domain_adaptation"
-                    )
+                "domain_adaptation"
+            )
             progress.update(train_task, advance=1)
             
             # Log training metrics
@@ -932,18 +890,18 @@ class ResearchAgent(LLMCompiler):
             progress.update(training_task, description="Training model...")
                 
             # Initialize state
-            initial_state = CompilerState(
-                content=f"Research domain: {self.state.domain_name}\nKnowledge sources: {len(self.config.get('knowledge_sources', []))} sources\nTask: Generate research plan and execute workflow.",
-                plan=None,
-                results=[],
-                join_decision=None,
-                final_result=None
-            )
+            initial_state = {
+                "domain_name": self.state.domain_name,
+                "plan": None,
+                "results": [],
+                "join_decision": None,
+                "final_result": None
+            }
             
             log_info_with_context("Starting research workflow", "Research")
             
             # Run LLM compiler workflow
-            result = await super().run(dict(initial_state.model_dump()))
+            result = await super().run(initial_state)
             
             # Update progress based on results
             if result and isinstance(result, SystemState):
@@ -982,17 +940,17 @@ class ResearchAgent(LLMCompiler):
                 # Ensure progress display is cleared
                 progress.stop()
                 
-                    # Log final metrics
+                # Log final metrics
                 if result.model_metrics:
-                        console.print("\n[bold green]Training Metrics[/bold green]")
-                        metrics_panel = Panel.fit(
+                    console.print("\n[bold green]Training Metrics[/bold green]")
+                    metrics_panel = Panel.fit(
                         "\n".join([f"{k}: {v}" for k, v in result.model_metrics.items()]),
-                            title="Results",
-                            border_style="green"
-                        )
-                        console.print(metrics_panel)
-                        
-                    # Print final state summary
+                        title="Results",
+                        border_style="green"
+                    )
+                    console.print(metrics_panel)
+                    
+                # Print final state summary
                 console.print("\n[bold blue]Final State Summary[/bold blue]")
                 print_state_summary(result)
                 
@@ -1025,7 +983,7 @@ class ResearchAgent(LLMCompiler):
                     log_info_with_context("Results saved successfully", "Research")
                     console.print(Panel("[bold green]All Results Saved Successfully[/bold green]"))
                     
-            except Exception as e:
+                except Exception as e:
                     log_error_with_traceback(e, "Error saving results")
                     console.print("[red]✗ Failed to save some results[/red]")
             else:
@@ -1044,11 +1002,6 @@ async def main():
         parser.add_argument("--config", required=True, help="Path to config file")
         args = parser.parse_args()
         
-        # Initialize logging first
-        setup_logging()
-        log_info_with_context("Starting research agent", "Main")
-        
-        try:
         # Initialize and run agent
         log_info_with_context("Initializing research agent", "Main")
         agent = ResearchAgent(args.config)
@@ -1059,33 +1012,11 @@ async def main():
         
     except Exception as e:
         log_error_with_traceback(e, "Fatal error in research agent")
-            console.print("[red]Research agent failed with error:[/red]")
-            console.print(Panel(str(e), title="Error", border_style="red"))
-            sys.exit(1)
-            
-    except Exception as e:
-        # Log any errors that occur during startup
-        print(f"CRITICAL ERROR: {str(e)}")  # Fallback if logging not initialized
-        if 'logger' in globals():
-            log_error_with_traceback(e, "Fatal error during startup")
         sys.exit(1)
-    finally:
-        # Ensure all logs are written
-        if 'logger' in globals():
-            logger.complete()
 
 if __name__ == "__main__":
     # Set up argparse at module level
     import argparse
     
-    try:
     # Run main with asyncio
     asyncio.run(main())
-    except KeyboardInterrupt:
-        log_info_with_context("Research agent stopped by user", "Main")
-        sys.exit(0)
-    except Exception as e:
-        print(f"CRITICAL ERROR: {str(e)}")  # Fallback if logging not initialized
-        if 'logger' in globals():
-            log_error_with_traceback(e, "Fatal error in main")
-        sys.exit(1)

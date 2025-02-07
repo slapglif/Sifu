@@ -621,3 +621,6 @@ data/databases/system/profiles/neostore.labeltokenstore.db.names.id.1617.cachepr
 data/databases/system/profiles/neostore.labeltokenstore.db.names.id.1730.cacheprof
 data/databases/system/profiles/neostore.nodestore.db.1617.cacheprof
 data/databases/system/profiles/neostore.nodestore.db.1730.cacheprof
+logs/error_20250207_164416.log
+logs/debug_20250207_163511.log
+prompts/compiler/__pycache__/compiler_prompts.cpython-313.pyc

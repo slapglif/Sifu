@@ -7,7 +7,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 class RelationshipResponse(BaseModel):
     """Schema for relationship extraction response"""
-    relationships: List[Dict[str, Any]] = Field(description="List of extracted relationships")
+    relationships: List[Dict[str, str]] = Field(description="Extracted relationships")
 
 def get_relationship_extraction_prompt() -> ChatPromptTemplate:
     """Get the relationship extraction prompt template."""
@@ -15,7 +15,7 @@ def get_relationship_extraction_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Extract meaningful relationships between concepts from the text. Return in JSON format.
-{{{{format_instructions}}}}
+{format_instructions}
 
 IMPORTANT:
 1. The relationships field is required and must be a non-empty array
@@ -31,11 +31,32 @@ IMPORTANT:
    - Related ideas or concepts
 6. Do not include any text before or after the JSON
 7. Use proper JSON formatting with double quotes
-8. Return at least 3 meaningful relationships"""
+8. Return at least 3 meaningful relationships
+
+Example response:
+{{
+    "relationships": [
+        {{
+            "source": "AI",
+            "relation": "is_a",
+            "target": "tool"
+        }},
+        {{
+            "source": "AI",
+            "relation": "has_part",
+            "target": "limitations"
+        }},
+        {{
+            "source": "AI",
+            "relation": "related_to",
+            "target": "productivity"
+        }}
+    ]
+}}"""
 
     human_template = """Extract meaningful relationships from this text:
 
-{{content}}
+{content}
 
 Remember:
 1. Return at least 3 meaningful relationships
@@ -44,7 +65,10 @@ Remember:
 4. Consider hierarchical, compositional, and associative relationships
 5. Output ONLY a valid JSON object following the format instructions."""
 
-    return ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
-    ]) 
+    ])
+    
+    prompt = prompt.partial(format_instructions=format_instructions)
+    return prompt 

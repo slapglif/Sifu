@@ -18,7 +18,7 @@ def get_qa_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Answer the given question based on the provided context. Return in JSON format.
-{{{{format_instructions}}}}
+{format_instructions}
 
 IMPORTANT:
 1. All fields are required
@@ -27,12 +27,20 @@ IMPORTANT:
 4. confidence must be between 0.0 and 1.0
 5. reasoning must explain your thought process
 6. Do not include any text before or after the JSON
-7. Use proper JSON formatting with double quotes"""
+7. Use proper JSON formatting with double quotes
+
+Example response:
+{{
+    "answer": "Paris is the capital of France",
+    "sources": ["World Geography Database"],
+    "confidence": 0.95,
+    "reasoning": "This is a well-established geographical fact"
+}}"""
 
     human_template = """Answer this question:
 
-Question: {{question}}
-Context: {{context}}
+Question: {question}
+Context: {context}
 
 Focus on:
 1. Providing a detailed answer
@@ -42,7 +50,10 @@ Focus on:
 
 Output ONLY a valid JSON object following the format instructions."""
 
-    return ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
-    ]) 
+    ])
+    
+    prompt = prompt.partial(format_instructions=format_instructions)
+    return prompt 

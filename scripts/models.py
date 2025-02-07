@@ -1,4 +1,4 @@
-from typing import List, Dict, Literal, Optional, Any
+from typing import List, Dict, Literal, Optional
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 
@@ -39,6 +39,11 @@ class KnowledgeAcquisitionConfig(BaseModel):
     chunk_overlap: int = Field(default=400, description="Overlap between text chunks")
     max_tokens: int = Field(default=32000, description="Maximum tokens for model context")
     enable_web_search: bool = Field(default=False, description="Whether to enable web search enrichment")
+    collection_name: str = Field(default="knowledge_base", description="Name of the vector store collection")
+    persist_directory: str = Field(default="./data/vector_store", description="Directory to persist vector store")
+    neo4j_uri: str = Field(default="bolt://localhost:7687", description="Neo4j database URI")
+    neo4j_username: str = Field(default="neo4j", description="Neo4j username")
+    neo4j_password: str = Field(default="password", description="Neo4j password")
 
     @validator("domains")
     def validate_domains(cls, v):
@@ -154,18 +159,21 @@ class DocumentProcessingInput(BaseModel):
     source_type: str = Field(description="Type of source")
     domain: str = Field(default="knowledge", description="Domain for processing")
 
-class Entity(BaseModel):
-    """Entity extracted from text."""
-    name: str = Field(description="Entity name")
-    type: str = Field(description="Entity type")
-    confidence: float = Field(description="Confidence score", ge=0.0, le=1.0)
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+class ConfidenceFactors(BaseModel):
+    """Model for confidence evaluation factors"""
+    content_quality: float = Field(default=0.5, description="Quality of the content", ge=0.0, le=1.0)
+    entity_confidence: float = Field(default=0.5, description="Confidence in entity extraction", ge=0.0, le=1.0)
+    relationship_validity: float = Field(default=0.5, description="Validity of relationships", ge=0.0, le=1.0)
+    source_reliability: float = Field(default=0.5, description="Reliability of the source", ge=0.0, le=1.0)
+    context_relevance: float = Field(default=0.5, description="Relevance to context", ge=0.0, le=1.0)
+    overall: float = Field(default=0.5, description="Overall confidence score", ge=0.0, le=1.0)
 
-    def model_dump(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return {
-            "name": self.name,
-            "type": self.type,
-            "confidence": self.confidence,
-            "metadata": self.metadata
-        } 
+    def get(self, key: str, default: float = 0.5) -> float:
+        """Get factor value with default"""
+        return getattr(self, key, default)
+
+class ConfidenceEvaluation(BaseModel):
+    """Model for confidence evaluation"""
+    confidence: float = Field(description="Overall confidence score", ge=0.0, le=1.0)
+    factors: ConfidenceFactors = Field(description="Detailed confidence factors")
+    reasoning: str = Field(description="Reasoning behind confidence evaluation") 

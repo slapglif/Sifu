@@ -1,8 +1,19 @@
-from typing import List, Dict, Optional, Any, TypedDict, Protocol
+from typing import (
+    List,
+    Dict,
+    Optional,
+    Any,
+    TypedDict,
+    Protocol,
+    cast,
+    Awaitable,
+    Callable,
+    Union,
+    TypeVar,
+    Coroutine
+)
 from datetime import datetime
 import json
-import os
-import asyncio
 from pydantic import BaseModel, Field, validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_ollama import ChatOllama, OllamaEmbeddings
@@ -21,7 +32,9 @@ from scripts.models import (
     ExtractedKnowledge,
     Relationship,
     SourceMetadata,
-    Entity
+    DomainConfig,
+    ConfidenceEvaluation,
+    ConfidenceFactors
 )
 from scripts.logging_config import (
     log_error_with_traceback,
@@ -36,12 +49,11 @@ from scripts.mdconvert import MarkdownConverter
 from scripts.visual_qa import VisualAnalyzer
 from scripts.text_inspector_tool import TextInspector, TextAnalysis
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
+import os
+from loguru import logger
+import asyncio
 from prompts.knowledge_acquisition import (
-    ExtractedKnowledge,
-    Relationship,
-    SourceMetadata,
     get_knowledge_extraction_prompt,
-    ConfidenceEvaluation,
     get_confidence_evaluation_prompt,
     EntityResponse,
     get_entity_extraction_prompt,
@@ -49,12 +61,13 @@ from prompts.knowledge_acquisition import (
     get_relationship_extraction_prompt,
     MetadataResponse,
     get_metadata_generation_prompt,
-    Task,
-    Plan,
     get_plan_generation_prompt,
-    JoinDecision,
     get_join_decision_prompt
 )
+
+# Type variables for async functions
+T = TypeVar('T')
+AsyncFunc = Callable[..., Coroutine[Any, Any, T]]
 
 # Initialize logging and rich console
 setup_logging()
@@ -227,42 +240,256 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     """Knowledge acquisition system using LLMCompiler pattern"""
     def __init__(self, config: KnowledgeAcquisitionConfig):
         """Initialize the system"""
-        # Initialize LLM first
-        llm = ChatOllama(
-            model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b"),
-            format="json",
-            temperature=0.7,
-            mirostat=2,
-            mirostat_eta=0.1,
-            mirostat_tau=5.0
-        )
-        super().__init__(llm)
-        
-        # Initialize state
-        self.state = ProcessingState()
-        
-        # Initialize other components
-        self.config = config
-        self.embeddings = None
-        self.vector_store = None
-        self.web_browser = None
-        self.text_inspector = None
-        self.visual_analyzer = None
-        self.graph = None
-        
-        # Initialize text splitter
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=self.config.chunk_size,
-            chunk_overlap=self.config.chunk_overlap,
-            separators=["\n\n", "\n", " ", ""]
-        )
-        
-        # Initialize parsers
-        self.entity_parser = PydanticOutputParser(pydantic_object=EntityResponse)
-        self.relationship_parser = PydanticOutputParser(pydantic_object=RelationshipResponse)
-        self.metadata_parser = PydanticOutputParser(pydantic_object=MetadataResponse)
-        
-        log_info_with_context("Knowledge acquisition system initialized", "Initialization")
+        try:
+            # Initialize LLM first
+            llm = ChatOllama(
+                model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b"),
+                format="json",
+                temperature=0.7,
+                mirostat=2,
+                mirostat_eta=0.1,
+                mirostat_tau=5.0
+            )
+            super().__init__(llm)
+            
+            # Initialize other components
+            self.config = config
+            self.embeddings = OllamaEmbeddings(model='bge-m3', base_url='http://localhost:11434')
+            self.vector_store = None
+            self.graph = None
+            self.text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=config.chunk_size,
+                chunk_overlap=config.chunk_overlap,
+                length_function=len,
+                separators=["\n\n", "\n", " ", ""]
+            )
+            self.entity_parser = PydanticOutputParser(pydantic_object=EntityResponse)
+            self.relationship_parser = PydanticOutputParser(pydantic_object=RelationshipResponse)
+            self.metadata_parser = PydanticOutputParser(pydantic_object=MetadataResponse)
+            
+            log_info_with_context("Knowledge acquisition system initialized", "KnowledgeAcquisition", include_locals=True)
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Failed to initialize knowledge acquisition system", include_locals=True)
+            raise
+
+    async def initialize(self) -> "KnowledgeAcquisitionSystem":
+        """Initialize vector store and graph database"""
+        try:
+            log_info_with_context("Starting system initialization", "KnowledgeAcquisition")
+            
+            # Initialize vector store
+            if not self.vector_store:
+                self.vector_store = Chroma(
+                    collection_name=self.config.collection_name,
+                    embedding_function=self.embeddings,
+                    persist_directory=self.config.persist_directory
+                )
+                log_info_with_context("Vector store initialized", "KnowledgeAcquisition")
+            
+            # Initialize graph database
+            if not self.graph:
+                self.graph = Neo4jGraph(
+                    url=self.config.neo4j_uri,
+                    username=self.config.neo4j_username,
+                    password=self.config.neo4j_password
+                )
+                log_info_with_context("Graph database initialized", "KnowledgeAcquisition")
+            
+            return self
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Failed to initialize system components", include_locals=True)
+            raise
+
+    async def add_source(self, source_path: str, source_type: str) -> List[Document]:
+        """Add a source to the knowledge base"""
+        try:
+            log_info_with_context(f"Processing source: {source_path}", "KnowledgeAcquisition")
+            
+            # Ensure system is initialized
+            if not self.vector_store or not self.graph:
+                await self.initialize()
+            
+            # Load and split content
+            chunks = await self._load_chunks(source_path, source_type)
+            if not chunks:
+                log_warning_with_context(f"No content extracted from {source_path}", "KnowledgeAcquisition", include_locals=True)
+                return []
+            
+            documents = []
+            progress = create_progress()
+            chunk_task = progress.add_task(f"Processing {len(chunks)} chunks...", total=len(chunks))
+            
+            for chunk in chunks:
+                try:
+                    # Process chunk
+                    knowledge = await self.process_source(chunk)
+                    if not knowledge:
+                        log_warning_with_context("Failed to extract knowledge from chunk", "KnowledgeAcquisition", include_locals=True)
+                        continue
+                    
+                    # Generate embeddings
+                    embeddings = await self._generate_embeddings(chunk)
+                    if not embeddings:
+                        log_warning_with_context("Failed to generate embeddings", "KnowledgeAcquisition", include_locals=True)
+                        continue
+                    
+                    # Add to vector store
+                    if self.vector_store is not None:
+                        try:
+                            # Define synchronous function for vector store operation
+                            def add_to_vector_store() -> None:
+                                if self.vector_store is not None:
+                                    self.vector_store.add_texts(
+                                        texts=[chunk],
+                                        embeddings=[embeddings],
+                                        metadatas=[{"source": source_path, "type": source_type}]
+                                    )
+                            
+                            # Run in thread pool
+                            await asyncio.to_thread(cast(Callable[[], None], add_to_vector_store))
+                        except Exception as e:
+                            log_error_with_traceback(e, "Failed to add to vector store", include_locals=True)
+                            continue
+                    
+                    # Add to graph
+                    try:
+                        await self._add_to_graph(knowledge)
+                    except Exception as e:
+                        log_error_with_traceback(e, "Failed to add to graph", include_locals=True)
+                        continue
+                    
+                    # Create document
+                    doc = Document(
+                        page_content=chunk,
+                        metadata={
+                            "source": source_path,
+                            "type": source_type,
+                            "knowledge": knowledge.model_dump() if hasattr(knowledge, "model_dump") else knowledge,
+                            "embeddings": embeddings
+                        }
+                    )
+                    documents.append(doc)
+                    
+                except Exception as e:
+                    log_error_with_traceback(e, f"Failed to process chunk from {source_path}", include_locals=True)
+                    continue
+                finally:
+                    progress.update(chunk_task, advance=1)
+            
+            log_info_with_context(
+                f"Processed {len(documents)} documents from {source_path}",
+                "KnowledgeAcquisition",
+                include_locals=True
+            )
+            return documents
+            
+        except Exception as e:
+            log_error_with_traceback(e, f"Failed to add source: {source_path}", include_locals=True)
+            raise
+
+    async def process_source(self, content: str) -> ExtractedKnowledge:
+        """Process a source and extract knowledge"""
+        try:
+            log_info_with_context("Starting source processing", "KnowledgeAcquisition")
+            
+            # Extract entities
+            entities = await self._extract_entities(content)
+            if not entities:
+                log_warning_with_context("No entities extracted", "KnowledgeAcquisition", include_locals=True)
+                entities = []
+            
+            # Extract relationships
+            relationships = await self._extract_relationships(content)
+            if not relationships:
+                log_warning_with_context("No relationships extracted", "KnowledgeAcquisition", include_locals=True)
+                relationships = []
+            
+            # Generate metadata
+            metadata = await self._generate_metadata(content)
+            if not metadata:
+                log_warning_with_context("Failed to generate metadata", "KnowledgeAcquisition", include_locals=True)
+                metadata = self._create_default_metadata()
+            
+            # Evaluate confidence
+            confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+            confidence_score = (
+                confidence_eval.confidence 
+                if hasattr(confidence_eval, 'confidence') 
+                else confidence_eval.factors.overall
+                if hasattr(confidence_eval, 'factors')
+                else 0.5
+            )
+            
+            # Create knowledge object
+            knowledge = ExtractedKnowledge(
+                content=content,
+                entities=entities,
+                relationships=relationships,
+                metadata=metadata,
+                confidence=confidence_score
+            )
+            
+            log_extraction_results(knowledge)
+            return knowledge
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Failed to process source", include_locals=True)
+            raise
+
+    async def _add_to_graph(self, knowledge: ExtractedKnowledge) -> None:
+        """Add extracted knowledge to graph database"""
+        try:
+            if not self.graph:
+                raise ValueError("Graph database not initialized")
+            
+            # Add entities
+            for entity in knowledge.entities:
+                try:
+                    # Define synchronous function for graph operation
+                    def add_entity() -> None:
+                        if self.graph is not None:
+                            self.graph.query(
+                                f"MERGE (e:Entity {{name: $name, confidence: $confidence}})",
+                                {"name": entity, "confidence": float(knowledge.confidence)}
+                            )
+                    
+                    # Run in thread pool
+                    await asyncio.to_thread(cast(Callable[[], None], add_entity))
+                except Exception as e:
+                    log_error_with_traceback(e, f"Failed to add entity: {entity}", include_locals=True)
+                    continue
+            
+            # Add relationships
+            for rel in knowledge.relationships:
+                try:
+                    # Define synchronous function for graph operation
+                    def add_relationship() -> None:
+                        if self.graph is not None:
+                            self.graph.query(
+                                """
+                                MATCH (s:Entity {name: $source})
+                                MATCH (t:Entity {name: $target})
+                                MERGE (s)-[r:RELATES {type: $relation, confidence: $confidence}]->(t)
+                                """,
+                                {
+                                    "source": rel.source,
+                                    "target": rel.target,
+                                    "relation": rel.relation,
+                                    "confidence": float(knowledge.confidence)
+                                }
+                            )
+                    
+                    # Run in thread pool
+                    await asyncio.to_thread(cast(Callable[[], None], add_relationship))
+                except Exception as e:
+                    log_error_with_traceback(e, f"Failed to add relationship: {rel}", include_locals=True)
+                    continue
+                    
+        except Exception as e:
+            log_error_with_traceback(e, "Failed to add knowledge to graph", include_locals=True)
+            raise
 
     async def _generate_plan(self, state: CompilerState) -> Plan:
         """Generate knowledge acquisition plan"""
@@ -270,7 +497,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             prompt = get_plan_generation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
             plan = await chain.ainvoke({
-                "content": state.content
+                "content": state.get('content', '')
             })
             return plan
 
@@ -329,25 +556,24 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def _make_join_decision(self, state: CompilerState) -> JoinDecision:
         """Decide whether to complete or replan"""
         try:
-            # Format state for LLM using direct attribute access
-            formatted_state = {
-                "plan": state.plan.model_dump() if state.plan else None,
-                "results": [r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results],
-                "current_progress": {
-                    "knowledge_sources": len(self.state.tasks),
-                    "synthetic_knowledge": len(self.state.completed),
-                    "training_examples": len(self.state.errors),
-                    "has_metrics": bool(self.state.errors)
-                }
-            }
+            # Create join prompt
+            plan_json = "{}"
+            plan = state.get('plan')
+            if plan is not None:
+                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
 
-            # Get decision from LLM using join decision prompt
+            results_json = "[]"
+            results = state.get('results')
+            if results:
+                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
+
             prompt = get_join_decision_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=JoinDecision)
-            result = await chain.ainvoke({
-                "state": json.dumps(formatted_state, indent=2)
+            decision = await chain.ainvoke({
+                "plan": plan_json,
+                "results": results_json
             })
-            return result
+            return decision
 
         except Exception as e:
             log_error_with_traceback(e, "Error making join decision")
@@ -357,7 +583,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         """Generate final documents from results"""
         try:
             documents = []
-            for result in state.results:  # Access results directly
+            for result in state.get('results', []):
                 if result and result.result and isinstance(result.result, Document):
                     documents.append(result.result)
             return documents
@@ -366,321 +592,69 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             log_error_with_traceback(e, "Error generating final result")
             raise
 
-    async def add_source(self, source_path: str, source_type: str) -> List[Document]:
-        """Add a source to the knowledge base"""
+    async def _generate_embeddings(self, content: str) -> Optional[List[float]]:
+        """Generate embeddings for content"""
         try:
-            log_info_with_context(f"Processing source: {source_path}", "Knowledge Processing")
+            if not self.embeddings:
+                raise ValueError("Embeddings model not initialized")
             
-            # Load source content
-            docs = []
-            if source_type == "text":
-                loader = TextLoader(source_path)
-                docs = await asyncio.to_thread(loader.load)
-            elif source_type == "pdf":
-                loader = PyPDFLoader(source_path)
-                docs = await asyncio.to_thread(loader.load)
-            elif source_type == "web":
-                # Use web browser to fetch content
-                content = await self.web_browser.get_content(source_path)
-                if content:
-                    docs = [Document(
-                        page_content=content,
-                        metadata={"source": source_path, "type": "web"}
-                    )]
-            else:
-                raise ValueError(f"Unsupported source type: {source_type}")
-                
-            if not docs:
-                log_warning_with_context(f"No content extracted from source: {source_path}", "Knowledge Processing")
-                return []
-                
-            # Split documents
-            split_docs = await asyncio.to_thread(
-                self.text_splitter.split_documents,
-                docs
-            )
+            # Generate embeddings using a synchronous function
+            def generate_embeddings() -> Optional[List[float]]:
+                if not self.embeddings:
+                    return None
+                result = self.embeddings.embed_documents([content])
+                return result[0] if result else None
             
-            # Generate embeddings and add to vector store
-            if self.vector_store:
-                try:
-                    await asyncio.to_thread(
-                        self.vector_store.add_documents,
-                        split_docs
-                    )
-                    log_info_with_context(f"Added {len(split_docs)} documents to vector store", "Knowledge Processing")
-                except Exception as e:
-                    log_error_with_traceback(e, "Error adding documents to vector store")
-                    
-            # Process each chunk
-            processed_docs = []
-            for doc in split_docs:
-                try:
-                    # Extract knowledge
-                    knowledge = await self.process_source(doc.page_content)
-                    if knowledge and knowledge.confidence >= self.config.confidence_thresholds["extraction"]:
-                        # Add metadata
-                        doc.metadata.update({
-                            "knowledge_extracted": True,
-                            "confidence": knowledge.confidence,
-                            "entities": [e.name for e in knowledge.entities],
-                            "relationships": [r.model_dump() for r in knowledge.relationships],
-                            "timestamp": datetime.now().isoformat()
-                        })
-                        processed_docs.append(doc)
-                        
-                        # Add to graph database
-                        if self.graph:
-                            try:
-                                await self._add_to_graph(knowledge)
-                                log_info_with_context("Added knowledge to graph database", "Knowledge Processing")
-                            except Exception as e:
-                                log_error_with_traceback(e, "Error adding to graph database")
-                                
-                except Exception as e:
-                    log_error_with_traceback(e, f"Error processing document chunk: {e}")
-                    continue
-                    
-            log_info_with_context(f"Successfully processed {len(processed_docs)} documents", "Knowledge Processing")
-            return processed_docs
+            # Run in thread pool
+            embeddings = await asyncio.to_thread(generate_embeddings)
+            return embeddings
             
         except Exception as e:
-            log_error_with_traceback(e, "Error adding source")
-            raise
+            log_error_with_traceback(e, "Failed to generate embeddings", include_locals=True)
+            return None
 
-    async def _add_to_graph(self, knowledge: ExtractedKnowledge) -> None:
-        """Add extracted knowledge to Neo4j graph"""
-        if not self.graph:
-            return
-            
-        try:
-            # Create entity nodes
-            for entity in knowledge.entities:
-                await asyncio.to_thread(
-                    self.graph.query,
-                    """
-                    MERGE (e:Entity {name: $name})
-                    SET e += $properties
-                    RETURN e
-                    """,
-                    {
-                        "name": entity,
-                        "properties": {
-                            "confidence": knowledge.confidence,
-                            "source_type": knowledge.metadata.source_type if knowledge.metadata else "unknown",
-                            "timestamp": datetime.now().isoformat()
-                        }
-                    }
-                )
-            
-            # Create relationships
-            for rel in knowledge.relationships:
-                await asyncio.to_thread(
-                    self.graph.query,
-                    """
-                    MATCH (s:Entity {name: $source}), (t:Entity {name: $target})
-                    MERGE (s)-[r:RELATES {type: $relation}]->(t)
-                    SET r += $properties
-                    RETURN r
-                    """,
-                    {
-                        "source": rel.source,
-                        "target": rel.target,
-                        "relation": rel.relation,
-                        "properties": {
-                            "timestamp": datetime.now().isoformat()
-                        }
-                    }
-                )
-                
-        except Exception as e:
-            log_error_with_traceback(e, "Error adding to graph database")
-
-    async def process_source(self, content: str) -> ExtractedKnowledge:
-        """Process content to extract knowledge"""
-        if not self.llm:
-            log_warning_with_context("LLM not initialized, initializing now", "Knowledge Processing")
-            await self.initialize()
-
-        try:
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TimeRemainingColumn(),
-                console=console
-            ) as progress:
-                # Create tasks for tracking
-                extraction_task = progress.add_task("[cyan]Extracting knowledge...", total=4)
-                
-                try:
-                    # Run text analysis first
-                    log_info_with_context("Starting text analysis", "Knowledge Processing")
-                    inspector = TextInspector(self.llm)
-                    analysis: TextAnalysis = await inspector.inspect_text(content)
-                    progress.update(extraction_task, advance=1)
-                    
-                    # Extract knowledge using knowledge extraction prompt
-                    log_info_with_context("Extracting initial knowledge", "Knowledge Processing")
-                    prompt = get_knowledge_extraction_prompt()
-                    chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ExtractedKnowledge)
-                    initial_knowledge = await chain.ainvoke({
-                        "text": content,
-                        "analysis": analysis.model_dump() if hasattr(analysis, "model_dump") else analysis
-                    })
-                    progress.update(extraction_task, advance=1)
-                    
-                    # Run entity extraction, relationship extraction, and metadata generation in parallel
-                    log_info_with_context("Starting parallel knowledge extraction", "Knowledge Processing")
-                    tasks = [
-                        self._extract_entities(content),
-                        self._extract_relationships(content),
-                        self._generate_metadata(content)
-                    ]
-                    
-                    entities, relationships, metadata = await asyncio.gather(*tasks)
-                    progress.update(extraction_task, advance=1)
-
-                    # Evaluate confidence with factors
-                    log_info_with_context("Evaluating confidence", "Knowledge Processing")
-                    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
-                    factors = confidence_eval.factors
-                    
-                    # Optionally enrich with web search
-                    web_context = None
-                    if self.config.enable_web_search:
-                        try:
-                            log_info_with_context("Enriching with web search", "Knowledge Processing")
-                            search_results = await web_search(content)
-                            if search_results and not search_results.startswith("Error"):
-                                web_context = search_results
-                                log_info_with_context("Web search enrichment successful", "Knowledge Processing")
-                            else:
-                                log_warning_with_context("Web search returned no results", "Knowledge Processing")
-                        except Exception as e:
-                            log_error_with_traceback(e, "Error in web search enrichment")
-                    
-                    progress.update(extraction_task, advance=1)
-
-                    # Create final knowledge object
-                    knowledge = ExtractedKnowledge(
-                        content=content,
-                        entities=entities,
-                        relationships=relationships,
-                        confidence=confidence_eval.confidence,
-                        metadata=SourceMetadata(
-                            source_type="text",
-                            confidence_score=confidence_eval.confidence,
-                            domain_relevance=confidence_eval.factors.context_relevance,
-                            timestamp=datetime.now().isoformat(),
-                            validation_status="pending",
-                            domain="knowledge"
-                        )
-                    )
-                    
-                    # Log extraction results
-                    log_extraction_results(knowledge)
-                    log_info_with_context(
-                        f"Knowledge extraction complete - Confidence: {knowledge.confidence:.2f}",
-                        "Knowledge Processing"
-                    )
-                    return knowledge
-                    
-                except Exception as e:
-                    log_error_with_traceback(e, "Error in knowledge extraction process")
-                    raise
-                
-        except Exception as e:
-            log_error_with_traceback(e, "Fatal error in process_source")
-            raise
-
-    async def _extract_entities(self, content: str) -> List[Entity]:
+    async def _extract_entities(self, content: str) -> List[str]:
         """Extract entities from content"""
         try:
-            log_info_with_context("Starting entity extraction", "Knowledge Processing")
-            if not self.llm:
-                raise ValueError("LLM not initialized")
-            
             prompt = get_entity_extraction_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=EntityResponse)
-            result = await chain.ainvoke({
-                "content": content
-            })
-            
-            # Convert string entities to Entity objects
-            entities = []
-            for entity_str in result.entities:
-                entities.append(Entity(
-                    name=entity_str,
-                    type="unknown",
-                    confidence=0.7
-                ))
-            
-            return entities
-            
+            chain = prompt | self.llm | self.entity_parser
+            result = await chain.ainvoke({"text": content})
+            return result.entities if hasattr(result, 'entities') else []
         except Exception as e:
-            log_error_with_traceback(e, "Error extracting entities")
-            raise
+            log_error_with_traceback(e, "Failed to extract entities", include_locals=True)
+            return []
 
     async def _extract_relationships(self, content: str) -> List[Relationship]:
         """Extract relationships from content"""
         try:
-            log_info_with_context("Starting relationship extraction", "Knowledge Processing")
-            await self._ensure_initialized()
-            if not self.llm:
-                raise ValueError("LLM not initialized")
-            
             prompt = get_relationship_extraction_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=RelationshipResponse)
-            result = await chain.ainvoke({
-                "content": content
-            })
-            
-            # Convert to Relationship objects
-            relationships = []
-            for rel in result.relationships:
-                relationships.append(Relationship(
-                    source=rel["source"],
-                    relation=rel["relation"],
-                    target=rel["target"]
-                ))
-                
-            log_info_with_context(f"Extracted {len(relationships)} relationships", "Knowledge Processing")
-            return relationships
-            
+            chain = prompt | self.llm | self.relationship_parser
+            result = await chain.ainvoke({"text": content})
+            return result.relationships if hasattr(result, 'relationships') else []
         except Exception as e:
-            log_error_with_traceback(e, "Error extracting relationships")
-            raise
+            log_error_with_traceback(e, "Failed to extract relationships", include_locals=True)
+            return []
 
-    async def _generate_metadata(self, content: str) -> SourceMetadata:
+    async def _generate_metadata(self, content: str) -> Optional[SourceMetadata]:
         """Generate metadata for content"""
         try:
-            log_info_with_context("Starting metadata generation", "Knowledge Processing")
-            await self._ensure_initialized()
-            if not self.llm:
-                raise ValueError("LLM not initialized")
-            
             prompt = get_metadata_generation_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=MetadataResponse)
-            result = await chain.ainvoke({
-                "content": content
-            })
-            
-            log_info_with_context("Metadata generation complete", "Knowledge Processing")
-            return result.metadata
-            
+            chain = prompt | self.llm | self.metadata_parser
+            result = await chain.ainvoke({"text": content})
+            return result.metadata if hasattr(result, 'metadata') else None
         except Exception as e:
-            log_error_with_traceback(e, "Error generating metadata")
-            return self._create_default_metadata()
+            log_error_with_traceback(e, "Failed to generate metadata", include_locals=True)
+            return None
 
     def _create_default_metadata(self) -> SourceMetadata:
         """Create default metadata"""
         return SourceMetadata(
             source_type="text",
-            confidence_score=0.0,
-            domain_relevance=0.0,
+            confidence_score=0.5,
+            domain_relevance=0.5,
             timestamp=datetime.now().isoformat(),
-            validation_status="failed",
-            domain="knowledge"
+            validation_status="pending",
+            domain=self.config.default_domain
         )
 
     async def _ensure_initialized(self) -> None:
@@ -690,155 +664,49 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             await self.initialize()
 
     async def _load_chunks(self, source_path: str, source_type: str = "text") -> List[str]:
-        """Load and chunk content from source"""
+        """Load and split content into chunks"""
         try:
-            # Create progress bar
-            progress = Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TimeRemainingColumn(),
-                console=console
+            # Define synchronous loading functions
+            def load_pdf() -> List[Document]:
+                loader = PyPDFLoader(source_path)
+                return loader.load()
+            
+            def load_text() -> List[Document]:
+                loader = TextLoader(source_path)
+                return loader.load()
+            
+            def split_documents(docs: List[Document]) -> List[str]:
+                chunks = self.text_splitter.split_documents(docs)
+                return [chunk.page_content for chunk in chunks]
+            
+            # Load content based on source type
+            docs = await asyncio.to_thread(
+                cast(Callable[[], List[Document]], load_pdf if source_type == "pdf" else load_text)
             )
             
-            with progress:
-                # Create tasks for tracking
-                load_task = progress.add_task("[cyan]Loading document...", total=1)
-                chunk_task = progress.add_task("[cyan]Splitting into chunks...", total=1)
-                
-                # Load document based on type
-                log_info_with_context(f"Loading document: {source_path}", "Document Loading")
-                
-                document_text = ""
-                if source_type.lower() == "pdf":
-                    loader = PyPDFLoader(source_path)
-                    pages = await asyncio.to_thread(loader.load)
-                    document_text = "\n\n".join(page.page_content for page in pages)
-                elif source_type.lower() == "text":
-                    loader = TextLoader(source_path)
-                    docs = await asyncio.to_thread(loader.load)
-                    document_text = "\n\n".join(doc.page_content for doc in docs)
-                elif source_type.lower() in ["html", "htm"]:
-                    # Use SimpleTextBrowser for web content
-                    browser = SimpleTextBrowser()
-                    document_text = await browser.visit(source_path)
-                else:
-                    # Use markdown converter for other types
-                    result = await asyncio.to_thread(markdown_converter.convert, source_path, file_extension=source_type)
-                    document_text = result.text_content if result else ""
-                
-                if not document_text:
-                    log_warning_with_context("Failed to load document", "Document Loading")
-                    return []
-                
-                progress.update(load_task, advance=1)
-                
-                # Split into chunks
-                chunks = self.text_splitter.split_text(document_text)
-                progress.update(chunk_task, advance=1)
-                
-                # Store in vector store
-                if chunks and self.vector_store:
-                    try:
-                        embeddings = await self._generate_embeddings("\n".join(chunks))
-                        if embeddings:
-                            await asyncio.to_thread(
-                                self.vector_store.add_texts,
-                                texts=chunks,
-                                embeddings=[embeddings],
-                                metadatas=[{"source": source_path, "type": source_type}]
-                            )
-                    except Exception as e:
-                        log_error_with_traceback(e, "Error storing in vector store")
-                
-                return chunks
-                
+            # Split into chunks
+            chunks = await asyncio.to_thread(split_documents, docs)
+            return chunks
+            
         except Exception as e:
-            log_error_with_traceback(e, f"Error loading chunks from {source_path}")
+            log_error_with_traceback(e, f"Failed to load chunks from {source_path}", include_locals=True)
             return []
 
-    async def initialize(self) -> "KnowledgeAcquisitionSystem":
-        """Initialize the system"""
-        try:
-            # Initialize embeddings
-            self.embeddings = OllamaEmbeddings(
-                model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b")
-            )
-            
-            # Initialize vector store
-            self.vector_store = Chroma(
-                collection_name="knowledge_store",
-                embedding_function=self.embeddings,
-                persist_directory="./data/vector_store"
-            )
-            
-            # Initialize web browser for crawling
-            self.web_browser = SimpleTextBrowser()
-            
-            # Initialize text inspector
-            self.text_inspector = TextInspector()
-            
-            # Initialize visual analyzer
-            self.visual_analyzer = VisualAnalyzer()
-            
-            # Initialize Neo4j connection
-            self.graph = Neo4jGraph(
-                url=os.getenv("NEO4J_URL", "bolt://localhost:7687"),
-                username=os.getenv("NEO4J_USERNAME", "neo4j"),
-                password=os.getenv("NEO4J_PASSWORD", "password")
-            )
-            
-            log_info_with_context("Knowledge acquisition system initialized successfully", "Initialization")
-            return self
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Error initializing knowledge acquisition system")
-            raise
-
     async def _evaluate_confidence(self, content: str, entities: List[str], relationships: List[Relationship]) -> ConfidenceEvaluation:
-        """Evaluate confidence using proper evaluation prompts."""
+        """Evaluate confidence in extracted knowledge"""
         try:
             prompt = get_confidence_evaluation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ConfidenceEvaluation)
             result = await chain.ainvoke({
-                "content": content,
+                "text": content,
                 "entities": entities,
-                "relationships": [r.model_dump() for r in relationships],
-                "source_type": "text"
+                "relationships": [rel.model_dump() for rel in relationships]
             })
             return result
         except Exception as e:
-            log_error_with_traceback(e, "Error evaluating confidence")
-            raise
-
-    async def _generate_embeddings(self, content: str) -> Optional[List[float]]:
-        """Generate embeddings with proper error handling"""
-        try:
-            log_info_with_context("Starting embeddings generation", "Embeddings")
-            if not self.embeddings:
-                log_warning_with_context("Embeddings not initialized, initializing now", "Embeddings")
-                await self.initialize()
-                if not self.embeddings:
-                    raise ValueError("Failed to initialize embeddings")
-            
-            # Use a safe wrapper to handle the None case
-            def generate_embeddings(text: str) -> Optional[List[List[float]]]:
-                if self.embeddings:
-                    try:
-                        return self.embeddings.embed_documents([text])
-                    except Exception as e:
-                        log_error_with_traceback(e, "Error in embed_documents call")
-                        return None
-                return None
-                
-            embeddings = await asyncio.to_thread(generate_embeddings, content)
-            if embeddings and isinstance(embeddings, list):
-                log_info_with_context(f"Successfully generated embeddings of length {len(embeddings[0])}", "Embeddings")
-                return embeddings[0]
-            
-            log_warning_with_context("Failed to generate embeddings - returned None or empty list", "Embeddings")
-            return None
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Fatal error generating embeddings")
-            raise
+            log_error_with_traceback(e, "Failed to evaluate confidence", include_locals=True)
+            return ConfidenceEvaluation(
+                confidence=0.5,
+                factors=ConfidenceFactors(),
+                reasoning="Failed to evaluate confidence"
+            )

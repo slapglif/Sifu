@@ -8,7 +8,7 @@ from loguru import logger
 import json
 
 from .mdconvert import MarkdownConverter
-from scripts.logging_config import log_error_with_traceback, log_info_with_context
+from scripts.logging_config import log_error_with_traceback
 from langchain_core.language_models.chat_models import BaseChatModel
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
 
@@ -41,14 +41,13 @@ class Entity(BaseModel):
     title: str = Field(description="Entity title")
 
 class TextAnalysis(BaseModel):
-    """Result of text analysis."""
-    word_count: int = Field(description="Number of words")
-    sentence_count: int = Field(description="Number of sentences")
-    avg_word_length: float = Field(description="Average word length")
-    avg_sentence_length: float = Field(description="Average sentence length")
-    unique_words: int = Field(description="Number of unique words")
-    readability_score: float = Field(description="Readability score")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    """Schema for text analysis results"""
+    content: str = Field(description="Original text content")
+    segments: List[TextSegment] = Field(description="Text segments")
+    key_points: List[str] = Field(description="Key points from text")
+    entities: List[Entity] = Field(description="Extracted entities")
+    relationships: List[str] = Field(description="Identified relationships")
+    summary: str = Field(description="Text summary")
 
 class InspectionState(BaseModel):
     """State for text inspection workflow"""
@@ -73,7 +72,7 @@ class TextInspector(LLMCompiler):
         try:
             prompt, parser = get_plan_generation_prompt()
             chain = prompt | self.llm | parser
-            plan = await chain.ainvoke({"content": state.content})
+            plan = await chain.ainvoke({"content": state.get('content', '')})
             return plan
 
         except Exception as e:
@@ -129,12 +128,14 @@ class TextInspector(LLMCompiler):
         try:
             # Create join prompt
             plan_json = "{}"
-            if state.plan:
-                plan_json = json.dumps(state.plan.model_dump(), indent=2)
+            plan = state.get('plan')
+            if plan is not None:
+                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
 
             results_json = "[]"
-            if state.results:
-                results_json = json.dumps([r.model_dump() if hasattr(r, "model_dump") else r.dict() for r in state.results], indent=2)
+            results = state.get('results')
+            if results:
+                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
 
             prompt, parser = get_join_decision_prompt()
             chain = prompt | self.llm | parser
@@ -153,7 +154,7 @@ class TextInspector(LLMCompiler):
         try:
             # Combine results into TextAnalysis
             analysis = TextAnalysis(
-                content=state.content,
+                content=state.get('content', ''),
                 segments=[],
                 key_points=[],
                 entities=[],
@@ -162,7 +163,7 @@ class TextInspector(LLMCompiler):
             )
 
             # Extract results from tasks
-            for result in state.results:
+            for result in state.get('results', []):
                 if result and result.result:
                     if isinstance(result.result, dict):
                         if 'segments' in result.result:

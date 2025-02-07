@@ -23,7 +23,7 @@ def get_plan_generation_prompt() -> ChatPromptTemplate:
     format_instructions = parser.get_format_instructions()
     
     system_template = """Generate a plan to acquire and process knowledge from the given content.
-{{{{format_instructions}}}}
+{format_instructions}
 
 Available tools:
 - extract_knowledge: Extract structured knowledge from text
@@ -35,11 +35,30 @@ IMPORTANT:
 1. Each task must have a unique idx
 2. Dependencies must refer to valid task indices
 3. Tool names must match exactly
-4. All tasks must have required args"""
+4. All tasks must have required args
+
+Example response:
+{{
+    "tasks": [
+        {{
+            "idx": 0,
+            "tool": "extract_knowledge",
+            "args": {{"text": "sample text"}},
+            "dependencies": []
+        }},
+        {{
+            "idx": 1,
+            "tool": "generate_embeddings",
+            "args": {{"text": "sample text"}},
+            "dependencies": [0]
+        }}
+    ],
+    "thought": "First extract knowledge, then generate embeddings"
+}}"""
 
     human_template = """Generate a plan to process this content:
 
-{{content}}
+{content}
 
 Remember:
 1. Each task must have a unique idx
@@ -48,7 +67,10 @@ Remember:
 4. All tasks must have required args
 5. Output ONLY a valid JSON object following the format instructions."""
 
-    return ChatPromptTemplate.from_messages([
+    prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
-    ]) 
+    ])
+    
+    prompt = prompt.partial(format_instructions=format_instructions)
+    return prompt 
