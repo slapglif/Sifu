@@ -10,11 +10,12 @@ from typing import (
     Callable,
     Union,
     TypeVar,
-    Coroutine
+    Coroutine,
+    Sequence
 )
 from datetime import datetime
 import json
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, field_validator
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_core.documents import Document
@@ -184,7 +185,8 @@ class TaskState(BaseModel):
     graph_updates: Optional[bool] = Field(default=None, description="Whether graph updates are complete")
     error: Optional[str] = None
 
-    @validator("content")
+    @field_validator("content")
+    @classmethod
     def validate_content(cls, v: Any) -> str:
         if isinstance(v, str):
             return v
@@ -243,7 +245,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         try:
             # Initialize LLM first
             llm = ChatOllama(
-                model=os.getenv("OLLAMA_MODEL", "MFDoom/deepseek-r1-tool-calling:1.5b"),
+                model=os.getenv("OLLAMA_MODEL", "smallthinker"),
                 format="json",
                 temperature=0.7,
                 mirostat=2,
@@ -491,107 +493,6 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             log_error_with_traceback(e, "Failed to add knowledge to graph", include_locals=True)
             raise
 
-    async def _generate_plan(self, state: CompilerState) -> Plan:
-        """Generate knowledge acquisition plan"""
-        try:
-            prompt = get_plan_generation_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
-            plan = await chain.ainvoke({
-                "content": state.get('content', '')
-            })
-            return plan
-
-        except Exception as e:
-            log_error_with_traceback(e, "Error generating plan")
-            raise
-
-    async def _execute_tasks(self, tasks: List[Task]) -> List[TaskResult]:
-        """Execute knowledge acquisition tasks"""
-        try:
-            results = []
-            for task in tasks:
-                try:
-                    # Check dependencies
-                    deps_met = all(
-                        any(r.task_id == dep and not r.error for r in results)
-                        for dep in task.dependencies
-                    )
-                    if not deps_met:
-                        continue
-
-                    # Execute task
-                    result = None
-                    if task.tool == "extract_knowledge":
-                        result = await self.process_source(task.args["content"])
-                    elif task.tool == "generate_embeddings":
-                        result = await self._generate_embeddings(task.args["content"])
-                    elif task.tool == "update_graph":
-                        await self._add_to_graph(task.args["knowledge"])
-                        result = True
-                    elif task.tool == "create_documents":
-                        result = Document(
-                            page_content=task.args["content"],
-                            metadata=task.args["metadata"]
-                        )
-
-                    results.append(TaskResult(
-                        task_id=task.idx,
-                        result=result,
-                        error=None
-                    ))
-
-                except Exception as e:
-                    results.append(TaskResult(
-                        task_id=task.idx,
-                        result=None,
-                        error=str(e)
-                    ))
-
-            return results
-
-        except Exception as e:
-            log_error_with_traceback(e, "Error executing tasks")
-            raise
-
-    async def _make_join_decision(self, state: CompilerState) -> JoinDecision:
-        """Decide whether to complete or replan"""
-        try:
-            # Create join prompt
-            plan_json = "{}"
-            plan = state.get('plan')
-            if plan is not None:
-                plan_json = json.dumps(plan.dict() if hasattr(plan, 'dict') else plan, indent=2)
-
-            results_json = "[]"
-            results = state.get('results')
-            if results:
-                results_json = json.dumps([r.dict() if hasattr(r, 'dict') else r for r in results], indent=2)
-
-            prompt = get_join_decision_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=JoinDecision)
-            decision = await chain.ainvoke({
-                "plan": plan_json,
-                "results": results_json
-            })
-            return decision
-
-        except Exception as e:
-            log_error_with_traceback(e, "Error making join decision")
-            raise
-
-    async def _generate_final_result(self, state: CompilerState) -> List[Document]:
-        """Generate final documents from results"""
-        try:
-            documents = []
-            for result in state.get('results', []):
-                if result and result.result and isinstance(result.result, Document):
-                    documents.append(result.result)
-            return documents
-
-        except Exception as e:
-            log_error_with_traceback(e, "Error generating final result")
-            raise
-
     async def _generate_embeddings(self, content: str) -> Optional[List[float]]:
         """Generate embeddings for content"""
         try:
@@ -692,15 +593,19 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             log_error_with_traceback(e, f"Failed to load chunks from {source_path}", include_locals=True)
             return []
 
-    async def _evaluate_confidence(self, content: str, entities: List[str], relationships: List[Relationship]) -> ConfidenceEvaluation:
+    async def _evaluate_confidence(self, content: str, entities: List[str], relationships: Sequence[Union[Relationship, Dict[str, Any]]]) -> ConfidenceEvaluation:
         """Evaluate confidence in extracted knowledge"""
         try:
             prompt = get_confidence_evaluation_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ConfidenceEvaluation)
             result = await chain.ainvoke({
-                "text": content,
+                "content": content,
                 "entities": entities,
-                "relationships": [rel.model_dump() for rel in relationships]
+                "relationships": [
+                    rel.model_dump() if isinstance(rel, Relationship) else rel 
+                    for rel in relationships
+                ],
+                "source_type": "text"
             })
             return result
         except Exception as e:

@@ -55,6 +55,16 @@ class LLMCompiler:
                 raise CompilerError("LLM instance is required")
                 
             self.llm = llm
+            self.state: CompilerState = {
+                "content": "",
+                "domain_name": "",
+                "plan": None,
+                "results": [],
+                "join_decision": None,
+                "final_result": None,
+                "error": None,
+                "feedback": None
+            }
             log_info_with_context("Initialized LLM compiler", "Compiler")
             console.print(Panel("LLM Compiler Initialized", style="bold green"))
             
@@ -119,17 +129,26 @@ class LLMCompiler:
 
     def _format_state(self, state: CompilerState) -> Dict[str, Any]:
         """Format state for LLM input."""
+        # Handle plan conversion
         plan = state.get("plan")
-        join_decision = state.get("join_decision")
+        plan_dict = plan.dict() if isinstance(plan, Plan) else None
         
-        return {
-            "content": state.get("content", ""),
-            "domain_name": state.get("domain_name", "test_domain"),
-            "plan": plan.dict() if plan else None,
+        # Handle join decision conversion
+        join_decision = state.get("join_decision")
+        join_dict = join_decision.dict() if isinstance(join_decision, JoinDecision) else None
+        
+        formatted_state = {
+            "content": state["content"] if "content" in state else "",
+            "domain_name": state["domain_name"] if "domain_name" in state else "",
+            "plan": plan_dict,
             "results": [r.dict() for r in state.get("results", [])],
-            "join_decision": join_decision.dict() if join_decision else None,
-            "final_result": state.get("final_result")
+            "join_decision": join_dict,
+            "final_result": state["final_result"] if "final_result" in state else None
         }
+        
+        # Log formatted state for debugging
+        log_info_with_context(f"Formatted state: {formatted_state}", "State")
+        return formatted_state
 
     async def generate_plan(self, state: CompilerState) -> Plan:
         """Generate execution plan."""
@@ -149,15 +168,28 @@ class LLMCompiler:
                 prompt = get_plan_generation_prompt()
                 chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
                 response = await chain.ainvoke({"state": formatted_state})
-            except Exception as e:
-                log_error_with_traceback(e, "Failed to get plan from LLM", include_locals=True)
-                raise PlanningError("Failed to generate plan") from e
-            
-            # Parse and validate response
-            try:
-                plan = self._parse_plan_response(response)
-                if not plan.tasks:
-                    log_warning_with_context("Generated plan has no tasks", "Planning", include_locals=True)
+                
+                # Handle response based on type
+                if isinstance(response, Plan):
+                    plan = response
+                elif isinstance(response, dict):
+                    # Validate response has both required fields
+                    if "tasks" not in response:
+                        raise PlanningError("Response missing required 'tasks' field")
+                        
+                    if "thought" not in response:
+                        raise PlanningError("Response missing required 'thought' field")
+                        
+                    if not isinstance(response["tasks"], list) or not response["tasks"]:
+                        raise PlanningError("'tasks' must be a non-empty array")
+                        
+                    if not isinstance(response["thought"], str) or not response["thought"].strip():
+                        raise PlanningError("'thought' must be a non-empty string")
+                        
+                    # Parse into Plan object
+                    plan = self._parse_plan_response(response)
+                else:
+                    raise PlanningError(f"Invalid response type: {type(response)}")
                     
                 # Log the generated plan
                 log_info_with_context(f"Generated plan with {len(plan.tasks)} tasks", "Planning")
@@ -165,8 +197,8 @@ class LLMCompiler:
                 return plan
                 
             except Exception as e:
-                log_error_with_traceback(e, "Failed to parse plan response", include_locals=True)
-                raise PlanningError("Failed to parse plan response") from e
+                log_error_with_traceback(e, "Failed to get plan from LLM", include_locals=True)
+                raise PlanningError("Failed to generate plan") from e
             
         except Exception as e:
             log_error_with_traceback(e, "Error in plan generation", include_locals=True)
@@ -258,6 +290,7 @@ class LLMCompiler:
             prompt = get_task_execution_prompt()
             chain = prompt | self.llm | PydanticOutputParser(pydantic_object=TaskResult)
             results = []
+            task_results = {}  # Store results by task ID
             
             # Create progress bar
             progress = create_progress()
@@ -270,23 +303,64 @@ class LLMCompiler:
                 try:
                     log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
                     
-                    # Check dependencies
-                    deps_met = all(
-                        any(r.task_id == dep_id and not r.error for r in results)
-                        for dep_id in task.dependencies
-                    )
-                    if not deps_met:
-                        log_warning_with_context(f"Dependencies not met for task {task.idx}", "Execution", include_locals=True)
-                        results.append(TaskResult(
-                            task_id=task.idx,
-                            error="Dependencies not met",
-                            result=None
-                        ))
-                        continue
+                    # Only check dependencies if task has any
+                    if task.dependencies:
+                        deps_met = all(
+                            task_id in task_results and not task_results[task_id].error
+                            for task_id in task.dependencies
+                        )
+                        if not deps_met:
+                            log_warning_with_context(f"Dependencies not met for task {task.idx}", "Execution", include_locals=True)
+                            results.append(TaskResult(
+                                task_id=task.idx,
+                                error="Dependencies not met",
+                                result=None
+                            ))
+                            task_results[task.idx] = results[-1]
+                            continue
                     
                     # Execute task
                     try:
-                        response = await chain.ainvoke({"task": task})
+                        # Format task args with actual state values
+                        formatted_args = {}
+                        for key, value in task.args.items():
+                            if isinstance(value, str):
+                                # Handle state variable references
+                                if "{state." in value:
+                                    state_key = value.replace("{state.", "").replace("}", "")
+                                    state_value = self.state.get(state_key)
+                                    if state_value is None:
+                                        log_warning_with_context(f"State variable {state_key} not found", "Execution")
+                                        state_value = ""
+                                    formatted_args[key] = state_value
+                                else:
+                                    formatted_args[key] = value
+                            else:
+                                formatted_args[key] = value
+
+                        # Create a copy of the task with formatted args
+                        formatted_task = Task(
+                            idx=task.idx,
+                            tool=task.tool,
+                            args=formatted_args,
+                            dependencies=task.dependencies
+                        )
+                        
+                        # Execute the task using the chain
+                        response = await chain.ainvoke({
+                            "task": formatted_task.model_dump()
+                        })
+                        
+                        # Create task result
+                        task_result = TaskResult(
+                            task_id=task.idx,
+                            result=response.result if hasattr(response, 'result') else None,
+                            error=response.error if hasattr(response, 'error') else None
+                        )
+                        results.append(task_result)
+                        task_results[task.idx] = task_result
+                        self._log_task_result(task_result)
+                        
                     except Exception as e:
                         log_error_with_traceback(e, f"Failed to execute task {task.idx}", include_locals=True)
                         results.append(TaskResult(
@@ -294,20 +368,8 @@ class LLMCompiler:
                             error=str(e),
                             result=None
                         ))
+                        task_results[task.idx] = results[-1]
                         continue
-                    
-                    # Parse response
-                    try:
-                        result = self._parse_task_result(response, task.idx)
-                        results.append(result)
-                        self._log_task_result(result)
-                    except Exception as e:
-                        log_error_with_traceback(e, f"Failed to parse task {task.idx} result", include_locals=True)
-                        results.append(TaskResult(
-                            task_id=task.idx,
-                            error=str(e),
-                            result=None
-                        ))
                         
                 except Exception as e:
                     log_error_with_traceback(e, f"Error executing task {task.idx}", include_locals=True)
@@ -316,6 +378,7 @@ class LLMCompiler:
                         error=str(e),
                         result=None
                     ))
+                    task_results[task.idx] = results[-1]
                 finally:
                     progress.update(task_progress, advance=1)
                     
@@ -448,18 +511,16 @@ class LLMCompiler:
             # Convert initial state to CompilerState
             state: CompilerState = {
                 "content": initial_state.get("content", ""),
+                "domain_name": initial_state.get("domain_name", ""),
                 "plan": None,
                 "results": [],
                 "join_decision": None,
-                "final_result": None
+                "final_result": None,
+                "error": None,
+                "feedback": None
             }
             
-            max_iterations = 5
-            iteration = 0
-            
-            while iteration < max_iterations:
-                log_info_with_context(f"Starting iteration {iteration + 1}", "Compiler")
-                
+            while True:  # Continue until we get a valid result or unrecoverable error
                 try:
                     # Generate plan
                     plan = await self.generate_plan(state)
@@ -477,6 +538,9 @@ class LLMCompiler:
                             "Compiler",
                             include_locals=True
                         )
+                        console.print("\n[yellow]Task Failures:[/yellow]")
+                        for task in failed_tasks:
+                            console.print(f"[red]Task {task.task_id} failed:[/red] {task.error}")
                     
                     # Make join decision
                     decision = await self.make_join_decision(state)
@@ -496,16 +560,30 @@ class LLMCompiler:
                         )
                         break
                         
+                    # If we need to replan, update state with feedback
+                    if decision.feedback:
+                        console.print(f"\n[cyan]Replanning based on feedback:[/cyan] {decision.feedback}")
+                        state["feedback"] = decision.feedback
+                    
+                    # Clear previous plan and results for next iteration
+                    state["plan"] = None
+                    state["results"] = []
+                    state["join_decision"] = None
+                        
                 except Exception as e:
-                    log_error_with_traceback(e, f"Error in iteration {iteration + 1}", include_locals=True)
+                    log_error_with_traceback(e, "Error in execution iteration", include_locals=True)
                     if isinstance(e, CompilerError):
                         raise
-                    raise CompilerError(f"Iteration {iteration + 1} failed") from e
-                    
-                iteration += 1
-                
+                    # If this is a recoverable error, try replanning
+                    console.print(f"\n[yellow]Encountered error, attempting to replan:[/yellow] {str(e)}")
+                    state["error"] = str(e)
+                    state["plan"] = None
+                    state["results"] = []
+                    state["join_decision"] = None
+                    continue
+            
             log_warning_with_context(
-                f"Max iterations ({max_iterations}) reached",
+                "Failed to complete execution or generate valid replan",
                 "Compiler",
                 include_locals=True
             )

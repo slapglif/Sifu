@@ -1,7 +1,7 @@
 """Compiler prompts for LLM compiler system."""
 
 from typing import List, Dict, Any, Optional, TypedDict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import PydanticOutputParser
@@ -21,8 +21,15 @@ class Plan(BaseModel):
 class TaskResult(BaseModel):
     """Schema for task execution results."""
     task_id: int = Field(..., description="Task ID")
-    result: Any = Field(..., description="Task result")
+    result: Optional[Dict[str, Any]] = Field(None, description="Task result")
     error: Optional[str] = Field(None, description="Error if any")
+
+    @validator("result")
+    def validate_result(cls, v):
+        """Validate that result includes a thought field if present."""
+        if v is not None and "thought" not in v:
+            raise ValueError("Result must include a thought field explaining the execution reasoning")
+        return v
 
 class JoinDecision(BaseModel):
     """Schema for join decisions."""
@@ -34,17 +41,23 @@ class JoinDecision(BaseModel):
 class CompilerState(TypedDict):
     """State for LLM compiler workflow."""
     content: str
+    domain_name: str
     plan: Optional[Plan]
     results: List[TaskResult]
     join_decision: Optional[JoinDecision]
     final_result: Optional[Any]
+    error: Optional[str]
+    feedback: Optional[str]
 
 def get_plan_generation_prompt() -> ChatPromptTemplate:
     """Get the prompt template for plan generation."""
     parser = PydanticOutputParser(pydantic_object=Plan)
+    format_instructions = parser.get_format_instructions()
     
     system_template = """You are a planning expert that generates execution plans.
 Your plans should be efficient and well-organized.
+
+{format_instructions}
 
 CRITICAL: You MUST respond with ONLY a valid JSON object, no other text or explanation.
 The JSON object MUST EXACTLY match this structure:
@@ -55,13 +68,17 @@ The JSON object MUST EXACTLY match this structure:
       "tool": <string>,
       "args": <object with string keys and any valid JSON values>,
       "dependencies": <array of integers>
-    }},
+    }}
   ],
-  "thought": <string>
+  "thought": <string explaining your planning reasoning>
 }}
 
+CRITICAL: Both the "tasks" and "thought" fields are REQUIRED and MUST be included in your response.
+The "tasks" field MUST be a non-empty array of task objects.
+The "thought" field MUST explain your planning reasoning in a clear and concise way.
+
 Available tools and their required args:
-- research_topics: {{"domain": <string>}} (MUST use state.domain_name for the domain value)
+- research_topics: {{"domain": <string>}} (Use the domain_name from the provided state)
 - synthesize_knowledge: {{"sources": <array>}}
 - generate_examples: {{"knowledge": <array>}}
 - train_model: {{"examples": <array>}}
@@ -84,8 +101,12 @@ CRITICAL FORMATTING RULES:
 15. The "args" field MUST be an object/dictionary, not an array
 16. Each task MUST have all required fields: idx, tool, args, dependencies
 17. The "thought" field MUST be included and MUST be a string
-18. For research_topics tool, you MUST use state.domain_name as the domain value
+18. For research_topics tool, use the actual domain_name value from state
 19. For research_topics tool, args MUST ONLY contain the "domain" field
+20. Dependencies MUST be an array of task indices that MUST be completed before this task
+21. Dependencies MUST be valid task indices (i.e., must refer to tasks that exist)
+22. Dependencies MUST NOT create circular dependencies
+23. Dependencies MUST be in order (i.e., a task can only depend on tasks with lower indices)
 
 Example valid response:
 {{
@@ -93,7 +114,7 @@ Example valid response:
     {{
       "idx": 0,
       "tool": "research_topics",
-      "args": {{"domain": "test_domain"}},
+      "args": {{"domain": "{state.domain_name}"}},
       "dependencies": []
     }},
     {{
@@ -111,40 +132,42 @@ Example valid response:
     {{
       "idx": 3,
       "tool": "train_model",
-      "args": {{"examples": [{{"data": {{"value": "example"}}]}}]}},
+      "args": {{"examples": [{{"data": {{"value": "example"}}}}]}},
       "dependencies": [2]
     }}
   ],
   "thought": "First research topics to gather sources, then synthesize knowledge from those sources, generate training examples from the knowledge, and finally train the model on those examples"
-}}
+}}"""
 
-{format_instructions}
+    human_template = """Please generate an execution plan for this state:
+{state}
+
+The domain_name in the state is: {state.domain_name}
 
 Remember:
 1. Return ONLY valid JSON with the EXACT structure shown above
 2. No text before or after the JSON
 3. No explanation, just the JSON object
-4. Always include all required fields
-5. The "args" field MUST be an object/dictionary
-6. Follow the tool-specific args format exactly
-7. Double-check your JSON is valid and properly formatted
-8. Do not wrap the JSON in extra quotes
-9. Do not quote individual fields that should not be quoted
-10. The "thought" field MUST be included
-11. For research_topics tool, you MUST use state.domain_name as the domain value
-12. For research_topics tool, args MUST ONLY contain the "domain" field"""
-
-    human_template = """Please generate an execution plan for this state:
-{state}
-
-Remember to respond with ONLY the JSON object, no other text."""
+4. Always include all required fields (tasks and thought)
+5. The "tasks" field MUST be a non-empty array of task objects
+6. The "args" field MUST be an object/dictionary
+7. Follow the tool-specific args format exactly
+8. Double-check your JSON is valid and properly formatted
+9. Do not wrap the JSON in extra quotes
+10. Do not quote individual fields that should not be quoted
+11. The "thought" field MUST be included and MUST explain your planning reasoning
+12. For research_topics tool, use the actual domain_name value from state
+13. For research_topics tool, args MUST ONLY contain the "domain" field
+14. Dependencies MUST be valid task indices
+15. Dependencies MUST be in order (lower indices only)
+16. Dependencies MUST NOT create cycles"""
 
     prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
     ])
 
-    prompt = prompt.partial(format_instructions=parser.get_format_instructions())
+    prompt = prompt.partial(format_instructions=format_instructions)
 
     return prompt
 
@@ -158,17 +181,28 @@ Your executions should be precise and reliable.
 CRITICAL: You MUST respond with ONLY a valid JSON object, no other text or explanation.
 The JSON object MUST EXACTLY match this structure:
 {{
-  "task_id": <integer>,
-  "result": <object with tool-specific format>,
+  "task_id": <integer - MUST be the idx value from the task>,
+  "result": <object with tool-specific format or null>,
   "error": <string or null>
 }}
+
+CRITICAL: The task_id field MUST be an integer matching the idx value from the task.
+DO NOT include the entire task object as the task_id.
 
 Tool-specific result formats:
 1. research_topics:
    "result": {{
      "knowledge_sources": [
-       {{"content": <string>, "metadata": <object>}}
-     ]
+       {{
+         "content": <string>,
+         "metadata": {{
+           "source_type": "text",
+           "confidence": <float>,
+           "timestamp": <string in ISO format>
+         }}
+       }}
+     ],
+     "thought": <string explaining the research process>
    }}
 
 2. synthesize_knowledge:
@@ -182,7 +216,8 @@ Tool-specific result formats:
          "confidence": <float>,
          "metadata": <object>
        }}
-     ]
+     ],
+     "thought": <string explaining the synthesis process>
    }}
 
 3. generate_examples:
@@ -194,7 +229,8 @@ Tool-specific result formats:
          "metadata": <object>,
          "quality_score": <float>
        }}
-     ]
+     ],
+     "thought": <string explaining the example generation process>
    }}
 
 4. train_model:
@@ -205,7 +241,8 @@ Tool-specific result formats:
        "train_samples": <integer>,
        "eval_samples": <integer>,
        "training_time": <float>
-     }}
+     }},
+     "thought": <string explaining the training process>
    }}
 
 CRITICAL FORMATTING RULES:
@@ -234,6 +271,8 @@ CRITICAL FORMATTING RULES:
 23. NEVER include any text before or after the JSON object
 24. NEVER include any comments or explanations
 25. NEVER include any extra fields or properties
+26. ALWAYS include a thought field in the result object explaining your reasoning
+27. State variables in args (e.g. {{state.domain_name}}) will be replaced with actual values
 
 Example valid response for success:
 {{
@@ -248,7 +287,8 @@ Example valid response for success:
           "timestamp": "2024-02-07T12:00:00Z"
         }}
       }}
-    ]
+    ],
+    "thought": "Successfully researched topics and extracted knowledge"
   }},
   "error": null
 }}
@@ -277,7 +317,9 @@ Remember:
 12. The error field MUST be null if there is a result
 13. NEVER include any text before or after the JSON object
 14. NEVER include any comments or explanations
-15. NEVER include any extra fields or properties"""
+15. NEVER include any extra fields or properties
+16. ALWAYS include a thought field in the result object
+17. State variables in args will be replaced with actual values"""
 
     human_template = """Please execute this task:
 

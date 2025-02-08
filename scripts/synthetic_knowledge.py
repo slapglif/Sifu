@@ -27,9 +27,10 @@ from scripts.logging_config import (
     log_error_with_traceback,
 )
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
-from prompts.knowledge_acquisition import (
+from prompts.knowledge_acquisition.confidence_evaluation import (
     get_confidence_evaluation_prompt,
     ConfidenceEvaluation,
+    ConfidenceFactors
 )
 
 console = Console()
@@ -50,7 +51,7 @@ class SyntheticKnowledgeGenerator(LLMCompiler):
         super().__init__(llm)
         self.graph = graph
 
-    async def generate_knowledge(self, documents: List[Document]) -> SyntheticKnowledge:
+    async def generate_knowledge(self, documents: List[Document]) -> Dict[str, Any]:
         """Generate synthetic knowledge from documents."""
         try:
             # Create initial state
@@ -64,6 +65,8 @@ class SyntheticKnowledgeGenerator(LLMCompiler):
 
             # Run LLM compiler workflow
             result = await self.run(state)
+            if isinstance(result, BaseModel):
+                return result.model_dump()
             return result
 
         except Exception as e:
@@ -139,7 +142,7 @@ class SyntheticKnowledgeGenerator(LLMCompiler):
                     if not deps_met:
                         continue
 
-                    # Execute task
+                    # Execute task with formatted args
                     result = None
                     if task.tool == "recognize_patterns":
                         result = await self._recognize_patterns(task.args["content"])
@@ -154,9 +157,24 @@ class SyntheticKnowledgeGenerator(LLMCompiler):
                             task.args["relationships"]
                         )
 
+                    # Convert result to dict if needed
+                    if result is not None:
+                        if hasattr(result, 'model_dump'):
+                            result_dict = result.model_dump()
+                        elif hasattr(result, 'dict'):
+                            result_dict = result.dict()
+                        else:
+                            result_dict = result if isinstance(result, dict) else {"value": result}
+
+                        # Add thought field if missing
+                        if "thought" not in result_dict:
+                            result_dict["thought"] = f"Successfully executed {task.tool} task"
+                    else:
+                        result_dict = None
+
                     results.append(TaskResult(
                         task_id=task.idx,
-                        result=result,
+                        result=result_dict,
                         error=None
                     ))
 

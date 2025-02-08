@@ -28,7 +28,7 @@ console = Console()
 class QASystem(LLMCompiler):
     """Question answering system."""
 
-    def __init__(self, graph: Neo4jGraph, llm: Optional[Any] = None, model: str = "MFDoom/deepseek-r1-tool-calling:1.5b", temperature: float = 0.7):
+    def __init__(self, graph: Neo4jGraph, llm: Optional[Any] = None, model: str = "smallthinker", temperature: float = 0.7):
         """Initialize with graph database and language model."""
         llm = llm if llm is not None else ChatOllama(model=model, temperature=temperature, format="json", mirostat=2, mirostat_eta=0.1, mirostat_tau=5.0)
         super().__init__(llm)

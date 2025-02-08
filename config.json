@@ -1,7 +1,7 @@
 {
     "domain_name": "test_domain",
     "llm": {
-        "model_name": "MFDoom/deepseek-r1-tool-calling:1.5b",
+        "model_name": "smallthinker",
         "temperature": 0.1
     },
     "neo4j": {

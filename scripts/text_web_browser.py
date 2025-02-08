@@ -23,13 +23,15 @@ from pydantic import BaseModel, Field
 import PyPDF2
 import aiohttp
 import asyncio
+from rich import box
 
 from .cookies import COOKIES
 from .mdconvert import FileConversionException, MarkdownConverter, UnsupportedFormatException
 from .logging_config import (
     log_error_with_traceback,
     log_warning_with_context,
-    log_info_with_context
+    log_info_with_context,
+    console
 )
 
 # Initialize SearxNG search
@@ -87,6 +89,8 @@ class SimpleTextBrowser:
         """Visit a URL and return the text content."""
         try:
             log_info_with_context(f"Visiting URL: {url}", "Browser")
+            console.print(f"\n[bold cyan]Visiting URL[/bold cyan]")
+            console.print(f"[cyan]URL:[/cyan] {url}")
             
             # Validate URL
             parsed_url = urlparse(url)
@@ -100,6 +104,8 @@ class SimpleTextBrowser:
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5"
             }
+            
+            console.print("[cyan]Sending request...[/cyan]")
             
             async with aiohttp.ClientSession() as session:
                 try:
@@ -115,10 +121,14 @@ class SimpleTextBrowser:
                         }
                         self._state.update(state_update)
                         
+                        console.print(f"[green]✓ Response received (Status: {response.status})[/green]")
+                        console.print("[cyan]Extracting content...[/cyan]")
+                        
                         # Extract text content
                         content = await self._extract_text(response)
                         if not content:
                             log_warning_with_context("No content extracted from page", "Browser", include_locals=True)
+                            console.print("[yellow]No content found on page[/yellow]")
                             return "No content found on page"
                         
                         self._state['current_page'] = content
@@ -126,15 +136,17 @@ class SimpleTextBrowser:
                         self._state['current_position'] = 0
                         self._state['find_position'] = 0
                         
-                        log_info_with_context(f"Successfully visited {url}", "Browser")
+                        console.print(f"[green]✓ Successfully extracted {len(content)} characters[/green]")
                         return self._get_current_viewport()
                         
                 except aiohttp.ClientError as e:
                     log_error_with_traceback(e, f"Network error visiting {url}", include_locals=True)
+                    console.print(f"[red]Network error:[/red] {str(e)}")
                     raise NetworkError(f"Failed to fetch URL: {str(e)}") from e
                     
         except Exception as e:
             log_error_with_traceback(e, f"Error visiting {url}", include_locals=True)
+            console.print(f"[red]Error visiting URL:[/red] {str(e)}")
             if isinstance(e, (NetworkError, BrowserError)):
                 raise
             raise BrowserError(f"Failed to visit URL: {str(e)}") from e
@@ -339,6 +351,8 @@ async def web_search(query: str) -> str:
             return "Error: Empty search query"
             
         log_info_with_context(f"Searching for: {query}", "Search")
+        console.print(f"\n[bold cyan]Performing Web Search[/bold cyan]")
+        console.print(f"[cyan]Query:[/cyan] {query}")
         
         # Configure SearxNG search
         searx_host = os.getenv("SEARX_HOST", "https://searchapi.anuna.dev")
@@ -357,6 +371,8 @@ async def web_search(query: str) -> str:
             "category": "general"
         }
         
+        console.print("[cyan]Sending search request...[/cyan]")
+        
         # Make request to SearxNG
         try:
             async with aiohttp.ClientSession() as session:
@@ -374,6 +390,7 @@ async def web_search(query: str) -> str:
                         # Extract URLs and snippets
                         formatted_results = []
                         if "results" in results and results["results"]:
+                            console.print(f"[green]✓ Found {len(results['results'])} results[/green]")
                             for result in results["results"][:5]:  # Limit to top 5 results
                                 url = result.get("url", "").strip()
                                 title = result.get("title", "").strip()
@@ -391,24 +408,29 @@ async def web_search(query: str) -> str:
                             return "\n".join(formatted_results)
                         else:
                             log_warning_with_context("No search results found", "Search", include_locals=True)
+                            console.print("[yellow]No results found[/yellow]")
                             return "No results found"
                             
                 except aiohttp.ClientError as e:
                     log_error_with_traceback(e, "Network error during search", include_locals=True)
+                    console.print(f"[red]Network error during search:[/red] {str(e)}")
                     raise NetworkError(f"Failed to connect to search service: {str(e)}") from e
                     
                 except json.JSONDecodeError as e:
                     log_error_with_traceback(e, "Invalid JSON response from search service", include_locals=True)
+                    console.print("[red]Invalid response from search service[/red]")
                     raise SearchError("Invalid response from search service") from e
                     
         except Exception as e:
             log_error_with_traceback(e, "Error performing search", include_locals=True)
+            console.print(f"[red]Search failed:[/red] {str(e)}")
             if isinstance(e, (NetworkError, SearchError)):
                 raise
             raise SearchError(f"Search failed: {str(e)}") from e
             
     except Exception as e:
         log_error_with_traceback(e, "Fatal error in web search", include_locals=True)
+        console.print(f"[red]Fatal error in web search:[/red] {str(e)}")
         if isinstance(e, (NetworkError, SearchError, BrowserError)):
             raise
         raise SearchError(f"Search failed: {str(e)}") from e

@@ -52,4 +52,5 @@ Output ONLY a valid JSON object following the format instructions."""
         ("human", human_template)
     ])
     
+    prompt = prompt.partial(format_instructions=format_instructions)
     return prompt 
