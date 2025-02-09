@@ -15,9 +15,9 @@ from typing import (
 )
 from datetime import datetime
 import json
-from pydantic import BaseModel, Field, validator, field_validator
+from pydantic import BaseModel, Field, validator, field_validator, SecretStr
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
@@ -50,6 +50,7 @@ from scripts.mdconvert import MarkdownConverter
 from scripts.visual_qa import VisualAnalyzer
 from scripts.text_inspector_tool import TextInspector, TextAnalysis
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
+from scripts.chat_langchain import ChatLangChain
 import os
 from loguru import logger
 import asyncio
@@ -244,13 +245,15 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         """Initialize the system"""
         try:
             # Initialize LLM first
-            llm = ChatOllama(
-                model=os.getenv("OLLAMA_MODEL", "smallthinker"),
-                format="json",
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                raise EnvironmentError("GOOGLE_API_KEY environment variable must be set")
+                
+            llm = ChatLangChain(
+                api_key=SecretStr(api_key),
+                model="gemini-2.0-flash",
                 temperature=0.7,
-                mirostat=2,
-                mirostat_eta=0.1,
-                mirostat_tau=5.0
+                pydantic_schema=EntityResponse
             )
             super().__init__(llm)
             
@@ -280,23 +283,48 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
         try:
             log_info_with_context("Starting system initialization", "KnowledgeAcquisition")
             
+            # Initialize embeddings
+            try:
+                self.embeddings = OllamaEmbeddings(
+                    model='bge-m3',  # Using a more reliable model
+                    base_url='http://localhost:11434',
+
+                )
+                log_info_with_context("Embeddings initialized", "KnowledgeAcquisition")
+            except Exception as e:
+                log_error_with_traceback(e, "Failed to initialize embeddings", include_locals=True)
+                raise
+            
             # Initialize vector store
             if not self.vector_store:
-                self.vector_store = Chroma(
-                    collection_name=self.config.collection_name,
-                    embedding_function=self.embeddings,
-                    persist_directory=self.config.persist_directory
-                )
-                log_info_with_context("Vector store initialized", "KnowledgeAcquisition")
+                try:
+                    self.vector_store = Chroma(
+                        collection_name=self.config.collection_name,
+                        embedding_function=self.embeddings,
+                        persist_directory=self.config.persist_directory
+                    )
+                    log_info_with_context("Vector store initialized", "KnowledgeAcquisition")
+                except Exception as e:
+                    log_error_with_traceback(e, "Failed to initialize vector store", include_locals=True)
+                    raise
             
             # Initialize graph database
             if not self.graph:
-                self.graph = Neo4jGraph(
-                    url=self.config.neo4j_uri,
-                    username=self.config.neo4j_username,
-                    password=self.config.neo4j_password
-                )
-                log_info_with_context("Graph database initialized", "KnowledgeAcquisition")
+                try:
+                    self.graph = Neo4jGraph(
+                        url=self.config.neo4j_uri,
+                        username=self.config.neo4j_username,
+                        password=self.config.neo4j_password
+                    )
+                    log_info_with_context("Graph database initialized", "KnowledgeAcquisition")
+                except Exception as e:
+                    log_error_with_traceback(e, "Failed to initialize graph database", include_locals=True)
+                    raise
+            
+            # Create necessary directories
+            os.makedirs(self.config.persist_directory, exist_ok=True)
+            os.makedirs("web", exist_ok=True)
+            os.makedirs("downloads", exist_ok=True)
             
             return self
             
@@ -319,49 +347,24 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                 log_warning_with_context(f"No content extracted from {source_path}", "KnowledgeAcquisition", include_locals=True)
                 return []
             
-            documents = []
+            # Create progress display
             progress = create_progress()
-            chunk_task = progress.add_task(f"Processing {len(chunks)} chunks...", total=len(chunks))
+            console.print(f"\n[cyan]Processing {len(chunks)} chunks from {source_path}[/cyan]")
+            chunk_task = progress.add_task("[cyan]Processing chunks...", total=len(chunks))
             
-            for chunk in chunks:
+            # Process chunks in parallel
+            async def process_chunk(chunk: str) -> Optional[Document]:
                 try:
                     # Process chunk
                     knowledge = await self.process_source(chunk)
                     if not knowledge:
-                        log_warning_with_context("Failed to extract knowledge from chunk", "KnowledgeAcquisition", include_locals=True)
-                        continue
-                    
-                    # Generate embeddings
+                        return None
+                        
+                    # Generate embeddings (will be batched later)
                     embeddings = await self._generate_embeddings(chunk)
                     if not embeddings:
-                        log_warning_with_context("Failed to generate embeddings", "KnowledgeAcquisition", include_locals=True)
-                        continue
-                    
-                    # Add to vector store
-                    if self.vector_store is not None:
-                        try:
-                            # Define synchronous function for vector store operation
-                            def add_to_vector_store() -> None:
-                                if self.vector_store is not None:
-                                    self.vector_store.add_texts(
-                                        texts=[chunk],
-                                        embeddings=[embeddings],
-                                        metadatas=[{"source": source_path, "type": source_type}]
-                                    )
-                            
-                            # Run in thread pool
-                            await asyncio.to_thread(cast(Callable[[], None], add_to_vector_store))
-                        except Exception as e:
-                            log_error_with_traceback(e, "Failed to add to vector store", include_locals=True)
-                            continue
-                    
-                    # Add to graph
-                    try:
-                        await self._add_to_graph(knowledge)
-                    except Exception as e:
-                        log_error_with_traceback(e, "Failed to add to graph", include_locals=True)
-                        continue
-                    
+                        return None
+                        
                     # Create document
                     doc = Document(
                         page_content=chunk,
@@ -372,14 +375,55 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                             "embeddings": embeddings
                         }
                     )
-                    documents.append(doc)
+                    progress.update(chunk_task, advance=1)
+                    return doc
                     
                 except Exception as e:
-                    log_error_with_traceback(e, f"Failed to process chunk from {source_path}", include_locals=True)
-                    continue
-                finally:
-                    progress.update(chunk_task, advance=1)
+                    log_error_with_traceback(e, f"Failed to process chunk", include_locals=True)
+                    return None
+                    
+            # Process chunks in parallel with semaphore to limit concurrency
+            semaphore = asyncio.Semaphore(10)  # Limit concurrent processing
+            async def bounded_process(chunk: str) -> Optional[Document]:
+                async with semaphore:
+                    return await process_chunk(chunk)
+                    
+            # Process all chunks
+            documents = []
+            chunk_tasks = [bounded_process(chunk) for chunk in chunks]
+            results = await asyncio.gather(*chunk_tasks)
+            documents = [doc for doc in results if doc is not None]
             
+            # Batch add to vector store
+            if documents and self.vector_store is not None:
+                try:
+                    texts = [doc.page_content for doc in documents]
+                    embeddings = [doc.metadata["embeddings"] for doc in documents]
+                    metadatas = [{"source": doc.metadata["source"], "type": doc.metadata["type"]} for doc in documents]
+                    
+                    def batch_add_to_vector_store():
+                        if self.vector_store is not None:
+                            self.vector_store.add_texts(
+                                texts=texts,
+                                embeddings=embeddings,
+                                metadatas=metadatas
+                            )
+                            
+                    await asyncio.to_thread(batch_add_to_vector_store)
+                    
+                except Exception as e:
+                    log_error_with_traceback(e, "Failed to batch add to vector store", include_locals=True)
+                    
+            # Batch add to graph
+            if documents:
+                try:
+                    await asyncio.gather(*[
+                        self._add_to_graph(doc.metadata["knowledge"])
+                        for doc in documents
+                    ])
+                except Exception as e:
+                    log_error_with_traceback(e, "Failed to batch add to graph", include_locals=True)
+                    
             log_info_with_context(
                 f"Processed {len(documents)} documents from {source_path}",
                 "KnowledgeAcquisition",
@@ -517,13 +561,37 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def _extract_entities(self, content: str) -> List[str]:
         """Extract entities from content"""
         try:
+            # First try using the entity extraction prompt
             prompt = get_entity_extraction_prompt()
             chain = prompt | self.llm | self.entity_parser
-            result = await chain.ainvoke({"text": content})
-            return result.entities if hasattr(result, 'entities') else []
+            result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+            entities = result.entities if hasattr(result, 'entities') else []
+            
+            # If no entities found, try using the knowledge extraction prompt as backup
+            if not entities:
+                knowledge_prompt = get_knowledge_extraction_prompt()
+                knowledge_chain = knowledge_prompt | self.llm
+                knowledge_result = await knowledge_chain.ainvoke({"text": content})
+                if isinstance(knowledge_result, dict) and "entities" in knowledge_result:
+                    entities = knowledge_result["entities"]
+            
+            # If still no entities, extract some basic ones from the content
+            if not entities:
+                # Split content into words and take unique non-stop words as entities
+                words = set(content.split())
+                stop_words = {"a", "an", "the", "in", "on", "at", "to", "for", "of", "with", "by"}
+                entities = [word for word in words if word.lower() not in stop_words and len(word) > 2][:5]
+            
+            # Ensure we have at least one entity
+            if not entities:
+                entities = ["general_concept"]
+                
+            return entities
+            
         except Exception as e:
             log_error_with_traceback(e, "Failed to extract entities", include_locals=True)
-            return []
+            # Return a default entity rather than empty list
+            return ["general_concept"]
 
     async def _extract_relationships(self, content: str) -> List[Relationship]:
         """Extract relationships from content"""

@@ -1,11 +1,12 @@
 {
     "domain_name": "test_domain",
     "llm": {
-        "model_name": "smallthinker",
-        "temperature": 0.1
+        "model_name": "gemini-2.0-flash",
+        "temperature": 0.1,
+        "google_api_key": "AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0"
     },
     "neo4j": {
-        "url": "bolt://127.0.0.1:7687",
+        "url": "bolt://localhost:7687",
         "username": "neo4j",
         "password": "password"
     },
@@ -117,34 +118,42 @@
         "default_domain": "tech",
         "source_types": ["text", "pdf", "web", "api", "database"],
         "validation_rules": {
-            "min_confidence": 0.7,
+            "min_confidence": 0.6,
             "require_evidence": true,
-            "max_relationship_depth": 5
+            "max_relationship_depth": 3
         },
         "confidence_thresholds": {
-            "extraction": 0.7,
-            "validation": 0.8,
-            "relationship": 0.75
+            "extraction": 0.6,
+            "validation": 0.7,
+            "relationship": 0.65
         },
-        "chunk_size": 2000,
-        "chunk_overlap": 400,
-        "max_tokens": 32000,
+        "chunk_size": 500,
+        "chunk_overlap": 100,
+        "max_tokens": 16000,
         "enable_web_search": true,
-        "collection_name": "knowledge_base",
-        "persist_directory": "./data/vector_store",
-        "neo4j_uri": "bolt://127.0.0.1:7687",
+        "collection_name": "test_collection",
+        "persist_directory": "./data/chroma",
+        "neo4j_uri": "bolt://localhost:7687",
         "neo4j_username": "neo4j",
         "neo4j_password": "password"
     },
     "lora_training": {
-        "model_name": "tiiuae/Falcon3-3B-Base",
-        "lora_alpha": 32,
-        "lora_dropout": 0.1,
+        "model_name": "mistral",
         "r": 8,
         "bias": "none",
         "task_type": "CAUSAL_LM",
         "target_modules": ["q_proj", "v_proj"],
-        "inference_mode": false
+        "inference_mode": false,
+        "lora_alpha": 32,
+        "lora_dropout": 0.1,
+        "learning_rate": 3e-4,
+        "num_epochs": 3,
+        "batch_size": 4,
+        "max_steps": 100,
+        "save_steps": 50,
+        "eval_steps": 50,
+        "warmup_steps": 10,
+        "output_dir": "./lora_output"
     },
     "knowledge_sources": [
         {

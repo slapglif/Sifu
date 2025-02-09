@@ -1,14 +1,21 @@
 """LLM compiler system."""
 
-from typing import Any, Dict, List, Optional, Union, cast
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI, HarmCategory, HarmBlockThreshold
+from typing import Any, Dict, List, Optional, Union, cast, Callable, Awaitable
 from langchain_core.output_parsers import PydanticOutputParser
 import json
+from langchain_ollama import ChatOllama
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 from rich import box
 from loguru import logger
-from pydantic import ValidationError
+from pydantic import ValidationError, SecretStr
+from langchain.prompts import ChatPromptTemplate
+from google.auth.credentials import AnonymousCredentials
+from langchain.schema import HumanMessage, BaseMessage
+from langchain_core.language_models.chat_models import BaseChatModel
 
 from prompts.compiler import (
     Task,
@@ -21,11 +28,13 @@ from prompts.compiler import (
     get_join_decision_prompt
 )
 
+from scripts.chat_langchain import ChatLangChain
 from scripts.logging_config import (
-    log_error_with_traceback,
     log_info_with_context,
-    create_progress,
     log_warning_with_context,
+    log_error_with_context,
+    log_error_with_traceback,
+    create_progress,
     console
 )
 
@@ -34,21 +43,21 @@ class CompilerError(Exception):
     pass
 
 class PlanningError(CompilerError):
-    """Planning-related errors"""
+    """Error during plan generation"""
     pass
 
 class ExecutionError(CompilerError):
-    """Task execution errors"""
+    """Error during task execution"""
     pass
 
 class DecisionError(CompilerError):
-    """Join decision errors"""
+    """Error during join decision"""
     pass
 
 class LLMCompiler:
     """LLM compiler system."""
 
-    def __init__(self, llm):
+    def __init__(self, llm: BaseChatModel):
         """Initialize with language model."""
         try:
             if not llm:
@@ -65,12 +74,18 @@ class LLMCompiler:
                 "error": None,
                 "feedback": None
             }
+            self.tools: Dict[str, Callable[..., Awaitable[Dict[str, Any]]]] = {}
             log_info_with_context("Initialized LLM compiler", "Compiler")
             console.print(Panel("LLM Compiler Initialized", style="bold green"))
             
         except Exception as e:
             log_error_with_traceback(e, "Failed to initialize compiler", include_locals=True)
             raise CompilerError("Failed to initialize compiler") from e
+
+    def register_tool(self, name: str, func: Callable[..., Awaitable[Dict[str, Any]]]):
+        """Register a tool with the compiler."""
+        self.tools[name] = func
+        log_info_with_context(f"Registered tool: {name}", "Compiler")
 
     def _log_plan(self, plan: Plan):
         """Log plan details in a rich format"""
@@ -127,84 +142,68 @@ class LLMCompiler:
         except Exception as e:
             log_error_with_traceback(e, "Failed to log join decision", include_locals=True)
 
-    def _format_state(self, state: CompilerState) -> Dict[str, Any]:
+    def _format_state(self, state: Any) -> Dict[str, Any]:
         """Format state for LLM input."""
-        # Handle plan conversion
-        plan = state.get("plan")
-        plan_dict = plan.dict() if isinstance(plan, Plan) else None
-        
-        # Handle join decision conversion
-        join_decision = state.get("join_decision")
-        join_dict = join_decision.dict() if isinstance(join_decision, JoinDecision) else None
-        
-        formatted_state = {
-            "content": state["content"] if "content" in state else "",
-            "domain_name": state["domain_name"] if "domain_name" in state else "",
-            "plan": plan_dict,
-            "results": [r.dict() for r in state.get("results", [])],
-            "join_decision": join_dict,
-            "final_result": state["final_result"] if "final_result" in state else None
-        }
-        
-        # Log formatted state for debugging
-        log_info_with_context(f"Formatted state: {formatted_state}", "State")
-        return formatted_state
+        if hasattr(state, "__fields__"):  # If it's a Pydantic model
+            formatted_state = {}
+            for field in state.__fields__:
+                if hasattr(state, field):
+                    value = getattr(state, field)
+                    if isinstance(value, str):
+                        formatted_state[field] = f"{{state[{field}]}}"
+                    else:
+                        formatted_state[field] = value
+            return formatted_state
+        elif isinstance(state, dict):  # If it's a dictionary
+            formatted_state = {}
+            for key, value in state.items():
+                if isinstance(value, str):
+                    formatted_state[key] = f"{{state[{key}]}}"
+                else:
+                    formatted_state[key] = value
+            return formatted_state
+        else:
+            raise ValueError(f"Unsupported state type: {type(state)}")
 
     async def generate_plan(self, state: CompilerState) -> Plan:
-        """Generate execution plan."""
+        """Generate a plan based on the current state."""
         try:
-            log_info_with_context("Starting plan generation", "Planning")
-            console.print("\n[bold cyan]Generating Execution Plan...[/bold cyan]")
+            # Format state for prompt using _format_state helper
+            formatted_state = self._format_state(state)
             
-            # Format state for LLM
-            try:
-                formatted_state = self._format_state(state)
-            except Exception as e:
-                log_error_with_traceback(e, "Failed to format state", include_locals=True)
-                raise PlanningError("Failed to format state for planning") from e
+            # Get predefined prompt template
+            prompt = get_plan_generation_prompt()
             
-            # Get plan from LLM
-            try:
-                prompt = get_plan_generation_prompt()
-                chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
-                response = await chain.ainvoke({"state": formatted_state})
-                
-                # Handle response based on type
-                if isinstance(response, Plan):
-                    plan = response
-                elif isinstance(response, dict):
-                    # Validate response has both required fields
-                    if "tasks" not in response:
-                        raise PlanningError("Response missing required 'tasks' field")
-                        
-                    if "thought" not in response:
-                        raise PlanningError("Response missing required 'thought' field")
-                        
-                    if not isinstance(response["tasks"], list) or not response["tasks"]:
-                        raise PlanningError("'tasks' must be a non-empty array")
-                        
-                    if not isinstance(response["thought"], str) or not response["thought"].strip():
-                        raise PlanningError("'thought' must be a non-empty string")
-                        
-                    # Parse into Plan object
-                    plan = self._parse_plan_response(response)
-                else:
-                    raise PlanningError(f"Invalid response type: {type(response)}")
-                    
-                # Log the generated plan
-                log_info_with_context(f"Generated plan with {len(plan.tasks)} tasks", "Planning")
-                self._log_plan(plan)
-                return plan
-                
-            except Exception as e:
-                log_error_with_traceback(e, "Failed to get plan from LLM", include_locals=True)
-                raise PlanningError("Failed to generate plan") from e
+            # Create chain with JSON formatting
+            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Plan)
             
+            # Generate plan with thought field
+            response = await chain.ainvoke({
+                "state": formatted_state,
+                "domain_name": state.get("domain_name", "")  # Pass domain_name explicitly
+            })
+            
+            # Validate and fix state variable format in task args
+            for task in response.tasks:
+                for key, value in task.args.items():
+                    if isinstance(value, str):
+                        if value == "{state}":
+                            if task.tool == "research_topics" and key == "domain" and "domain_name" in state:
+                                task.args[key] = "{state[domain_name]}"
+                            else:
+                                error_msg = f"Invalid state variable format in task {task.idx}. Use {{state[variable_name]}} instead of {{state}}"
+                                log_error_with_context(error_msg, "Planning")
+                                raise PlanningError(error_msg)
+                        elif "{state." in value:
+                            error_msg = f"Invalid state variable format in task {task.idx}. Use {{state[variable_name]}} instead of {value}"
+                            log_error_with_context(error_msg, "Planning")
+                            raise PlanningError(error_msg)
+            
+            return response
+
         except Exception as e:
-            log_error_with_traceback(e, "Error in plan generation", include_locals=True)
-            if isinstance(e, (PlanningError, CompilerError)):
-                raise
-            raise PlanningError("Plan generation failed") from e
+            log_error_with_traceback(e, "Failed to generate plan")
+            raise PlanningError("Failed to generate plan") from e
 
     def _parse_plan_response(self, response: Union[str, Plan, Dict[str, Any]]) -> Plan:
         """Parse and validate plan response."""
@@ -258,6 +257,18 @@ class LLMCompiler:
                     else:
                         raise PlanningError(f"Args must be a dictionary for task {task['idx']}")
                         
+                # Validate state variable format
+                for key, value in task["args"].items():
+                    if isinstance(value, str):
+                        if value == "{state}":
+                            error_msg = f"Invalid state variable format in task {task['idx']}. Use {{state[variable_name]}} instead of {{state}}"
+                            log_error_with_context(error_msg, "Planning")
+                            raise PlanningError(error_msg)
+                        elif "{state." in value:
+                            error_msg = f"Invalid state variable format in task {task['idx']}. Use {{state[variable_name]}} instead of {value}"
+                            log_error_with_context(error_msg, "Planning")
+                            raise PlanningError(error_msg)
+                        
                 # Ensure dependencies is a list
                 if not isinstance(task["dependencies"], list):
                     raise PlanningError(f"Dependencies must be a list for task {task['idx']}")
@@ -277,118 +288,66 @@ class LLMCompiler:
                 raise
             raise PlanningError("Failed to parse plan response") from e
 
-    async def execute_tasks(self, tasks: List[Task]) -> List[TaskResult]:
-        """Execute planned tasks."""
+    async def execute_tasks(self, tasks: List[Task], state: CompilerState) -> List[TaskResult]:
+        """Execute tasks in order."""
         try:
-            if not tasks:
-                log_warning_with_context("No tasks to execute", "Execution", include_locals=True)
-                return []
-                
             log_info_with_context(f"Starting execution of {len(tasks)} tasks", "Execution")
-            console.print("\n[bold yellow]Executing Tasks...[/bold yellow]")
             
-            prompt = get_task_execution_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=TaskResult)
-            results = []
-            task_results = {}  # Store results by task ID
-            
-            # Create progress bar
+            # Initialize progress
             progress = create_progress()
-            task_progress = progress.add_task(
-                "[yellow]Executing tasks...",
-                total=len(tasks)
-            )
+            task_progress = progress.add_task("[cyan]Executing tasks...", total=len(tasks))
             
+            # Track results
+            results: List[TaskResult] = []
+            
+            # Execute tasks in order
             for task in tasks:
                 try:
                     log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
                     
-                    # Only check dependencies if task has any
-                    if task.dependencies:
-                        deps_met = all(
-                            task_id in task_results and not task_results[task_id].error
-                            for task_id in task.dependencies
-                        )
-                        if not deps_met:
-                            log_warning_with_context(f"Dependencies not met for task {task.idx}", "Execution", include_locals=True)
-                            results.append(TaskResult(
-                                task_id=task.idx,
-                                error="Dependencies not met",
-                                result=None
-                            ))
-                            task_results[task.idx] = results[-1]
-                            continue
-                    
-                    # Execute task
-                    try:
-                        # Format task args with actual state values
-                        formatted_args = {}
-                        for key, value in task.args.items():
-                            if isinstance(value, str):
-                                # Handle state variable references
-                                if "{state." in value:
-                                    state_key = value.replace("{state.", "").replace("}", "")
-                                    state_value = self.state.get(state_key)
-                                    if state_value is None:
-                                        log_warning_with_context(f"State variable {state_key} not found", "Execution")
-                                        state_value = ""
-                                    formatted_args[key] = state_value
-                                else:
-                                    formatted_args[key] = value
-                            else:
-                                formatted_args[key] = value
-
-                        # Create a copy of the task with formatted args
-                        formatted_task = Task(
-                            idx=task.idx,
-                            tool=task.tool,
-                            args=formatted_args,
-                            dependencies=task.dependencies
-                        )
-                        
-                        # Execute the task using the chain
-                        response = await chain.ainvoke({
-                            "task": formatted_task.model_dump()
-                        })
-                        
-                        # Create task result
-                        task_result = TaskResult(
-                            task_id=task.idx,
-                            result=response.result if hasattr(response, 'result') else None,
-                            error=response.error if hasattr(response, 'error') else None
-                        )
-                        results.append(task_result)
-                        task_results[task.idx] = task_result
-                        self._log_task_result(task_result)
-                        
-                    except Exception as e:
-                        log_error_with_traceback(e, f"Failed to execute task {task.idx}", include_locals=True)
-                        results.append(TaskResult(
-                            task_id=task.idx,
-                            error=str(e),
-                            result=None
-                        ))
-                        task_results[task.idx] = results[-1]
+                    # Check dependencies
+                    deps_met = all(
+                        any(r.task_id == dep and not r.error for r in results)
+                        for dep in task.dependencies
+                    )
+                    if not deps_met:
+                        error_msg = f"Dependencies not met for task {task.idx}"
+                        log_error_with_context(error_msg, "Execution")
+                        results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
                         continue
-                        
-                except Exception as e:
-                    log_error_with_traceback(e, f"Error executing task {task.idx}", include_locals=True)
-                    results.append(TaskResult(
-                        task_id=task.idx,
-                        error=str(e),
-                        result=None
-                    ))
-                    task_results[task.idx] = results[-1]
-                finally:
+                    
+                    # Format task args with state variables
+                    formatted_args = {}
+                    for key, value in task.args.items():
+                        if isinstance(value, str) and "{state[" in value:
+                            # Extract variable name from {state[variable_name]}
+                            var_name = value.split("[")[1].split("]")[0]
+                            if var_name in state:
+                                formatted_args[key] = state[var_name]
+                            else:
+                                error_msg = f"State variable {var_name} not found"
+                                log_error_with_context(error_msg, "Execution")
+                                results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
+                                continue
+                        else:
+                            formatted_args[key] = value
+                    
+                    # Execute task with formatted args
+                    result = await self._execute_task(task.tool, formatted_args)
+                    results.append(TaskResult(task_id=task.idx, result=result, error=None))
+                    
+                    # Update progress
                     progress.update(task_progress, advance=1)
                     
+                except Exception as e:
+                    log_error_with_traceback(e, f"Error executing task {task.idx}")
+                    results.append(TaskResult(task_id=task.idx, result=None, error=str(e)))
+            
             return results
             
         except Exception as e:
-            log_error_with_traceback(e, "Error in task execution", include_locals=True)
-            if isinstance(e, (ExecutionError, CompilerError)):
-                raise
-            raise ExecutionError("Task execution failed") from e
+            log_error_with_traceback(e, "Error executing tasks")
+            raise
 
     def _parse_task_result(self, response: Union[str, TaskResult, Dict[str, Any]], task_id: int) -> TaskResult:
         """Parse and validate task result."""
@@ -508,8 +467,8 @@ class LLMCompiler:
             if not initial_state:
                 raise CompilerError("Initial state is required")
                 
-            # Convert initial state to CompilerState
-            state: CompilerState = {
+            # Convert initial state to CompilerState and set it
+            self.state = {
                 "content": initial_state.get("content", ""),
                 "domain_name": initial_state.get("domain_name", ""),
                 "plan": None,
@@ -520,74 +479,55 @@ class LLMCompiler:
                 "feedback": None
             }
             
-            while True:  # Continue until we get a valid result or unrecoverable error
-                try:
-                    # Generate plan
-                    plan = await self.generate_plan(state)
-                    state["plan"] = plan
-                    
-                    # Execute tasks
-                    results = await self.execute_tasks(plan.tasks)
-                    state["results"] = results
-                    
-                    # Check for task failures
-                    failed_tasks = [r for r in results if r.error]
-                    if failed_tasks:
-                        log_warning_with_context(
-                            f"{len(failed_tasks)} tasks failed",
-                            "Compiler",
-                            include_locals=True
-                        )
-                        console.print("\n[yellow]Task Failures:[/yellow]")
-                        for task in failed_tasks:
-                            console.print(f"[red]Task {task.task_id} failed:[/red] {task.error}")
-                    
-                    # Make join decision
-                    decision = await self.make_join_decision(state)
-                    state["join_decision"] = decision
-                    
-                    if decision.complete:
-                        # Generate final result
-                        final_result = await self._generate_final_result(state)
-                        state["final_result"] = final_result
-                        return final_result
+            # Generate plan
+            try:
+                plan = await self.generate_plan(self.state)
+                self.state["plan"] = plan
+                self._log_plan(plan)
+            except Exception as e:
+                log_error_with_traceback(e, "Failed to generate plan", include_locals=True)
+                if isinstance(e, PlanningError):
+                    raise
+                raise PlanningError("Failed to generate plan") from e
+                
+            # Execute tasks
+            try:
+                results = await self.execute_tasks(plan.tasks, self.state)
+                self.state["results"] = results
+                
+                # Log failed tasks
+                failed_tasks = [r for r in results if r.error]
+                if failed_tasks:
+                    console.print("\n[bold red]Task Failures:[/bold red]")
+                    for task in failed_tasks:
+                        console.print(f"Task {task.task_id} failed: {task.error}")
                         
-                    if not decision.replan:
-                        log_warning_with_context(
-                            "Join decision neither complete nor replan",
-                            "Compiler",
-                            include_locals=True
-                        )
-                        break
-                        
-                    # If we need to replan, update state with feedback
-                    if decision.feedback:
-                        console.print(f"\n[cyan]Replanning based on feedback:[/cyan] {decision.feedback}")
-                        state["feedback"] = decision.feedback
+            except Exception as e:
+                log_error_with_traceback(e, "Failed to execute tasks", include_locals=True)
+                if isinstance(e, ExecutionError):
+                    raise
+                raise ExecutionError("Failed to execute tasks") from e
+                
+            # Make join decision
+            try:
+                decision = await self.make_join_decision(self.state)
+                self.state["join_decision"] = decision
+                
+                if decision.replan:
+                    console.print(f"\nReplanning based on feedback: {decision.feedback}")
+                    # Convert state back to dict for recursive call
+                    return await self.run(dict(self.state))
                     
-                    # Clear previous plan and results for next iteration
-                    state["plan"] = None
-                    state["results"] = []
-                    state["join_decision"] = None
-                        
-                except Exception as e:
-                    log_error_with_traceback(e, "Error in execution iteration", include_locals=True)
-                    if isinstance(e, CompilerError):
-                        raise
-                    # If this is a recoverable error, try replanning
-                    console.print(f"\n[yellow]Encountered error, attempting to replan:[/yellow] {str(e)}")
-                    state["error"] = str(e)
-                    state["plan"] = None
-                    state["results"] = []
-                    state["join_decision"] = None
-                    continue
-            
-            log_warning_with_context(
-                "Failed to complete execution or generate valid replan",
-                "Compiler",
-                include_locals=True
-            )
-            return state.get("final_result")
+                if decision.complete:
+                    return self.state
+                    
+            except Exception as e:
+                log_error_with_traceback(e, "Failed to make join decision", include_locals=True)
+                if isinstance(e, DecisionError):
+                    raise
+                raise DecisionError("Failed to make join decision") from e
+                
+            return self.state
             
         except Exception as e:
             log_error_with_traceback(e, "Error in compiler workflow", include_locals=True)
@@ -615,4 +555,35 @@ class LLMCompiler:
             log_error_with_traceback(e, "Error generating final result", include_locals=True)
             if isinstance(e, CompilerError):
                 raise
-            raise CompilerError("Failed to generate final result") from e 
+            raise CompilerError("Failed to generate final result") from e
+
+    async def _execute_task(self, tool: str, args: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a single task."""
+        try:
+            # Get the tool function
+            tool_func = self.tools.get(tool)
+            if not tool_func:
+                raise ExecutionError(f"Tool {tool} not found")
+            
+            # Execute the tool
+            try:
+                result = await tool_func(**args)
+                return result
+            except Exception as e:
+                raise ExecutionError(f"Tool execution failed: {str(e)}")
+            
+        except Exception as e:
+            raise ExecutionError(f"Task execution failed: {str(e)}")
+
+# Updated code:
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",  # Using the latest model version
+    temperature=0.1,  # Lower temperature for more consistent outputs
+    max_tokens=None,  # No token limit
+    timeout=None,  # No timeout
+    max_retries=2,  # Add retries for reliability
+    credentials=AnonymousCredentials(),  # Use anonymous credentials
+    safety_settings={
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE
+    }
+).with_structured_output(schema={})  # Use structured output for reliable JSON formatting 

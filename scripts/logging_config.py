@@ -199,6 +199,27 @@ def log_info_with_context(msg: str, context: str = "", include_locals: bool = Fa
                 locals_msg += f"  {key} = <unprintable value>\n"
         logger.opt(depth=1).info(locals_msg)
 
+def log_error_with_context(msg: str, context: str = "", include_locals: bool = False):
+    """Log error with context and optionally local variables"""
+    error_msg = f"{context}: {msg}"
+    
+    # Log to loguru
+    logger.opt(depth=1).error(error_msg)
+    
+    if include_locals:
+        # Get caller's frame
+        frame = sys._getframe(1)
+        locals_msg = "\nLocal Variables:\n"
+        for key, value in frame.f_locals.items():
+            try:
+                value_str = str(value)
+                if len(value_str) > 200:
+                    value_str = value_str[:200] + "..."
+                locals_msg += f"  {key} = {value_str}\n"
+            except:
+                locals_msg += f"  {key} = <unprintable value>\n"
+        logger.opt(depth=1).error(locals_msg)
+
 def log_extraction_results(knowledge: Any):
     """Log knowledge extraction results"""
     if not knowledge:

@@ -25,17 +25,26 @@ def get_plan_generation_prompt() -> ChatPromptTemplate:
     system_template = """Generate a plan to acquire and process knowledge from the given content.
 {format_instructions}
 
+IMPORTANT: State variables MUST be referenced using {state[variable_name]} format, e.g. {state[domain_name]}.
+NEVER use {state} directly - always use {state[variable_name]} for state variables.
+
 Available tools:
 - extract_knowledge: Extract structured knowledge from text
+  args: {{"text": "{state[content]}"}}
 - generate_embeddings: Generate embeddings for text
+  args: {{"text": "{state[content]}"}}
 - update_graph: Update knowledge graph
+  args: {{"knowledge": {state[knowledge]}}}
 - create_documents: Create final documents
+  args: {{"content": {state[content]}, "metadata": {state[metadata]}}}
 
-IMPORTANT:
-1. Each task must have a unique idx
+CRITICAL:
+1. Each task must have a unique idx starting from 0
 2. Dependencies must refer to valid task indices
 3. Tool names must match exactly
 4. All tasks must have required args
+5. State variables must use {state[variable_name]} format
+6. Never use {state} directly
 
 Example response:
 {{
@@ -43,34 +52,36 @@ Example response:
         {{
             "idx": 0,
             "tool": "extract_knowledge",
-            "args": {{"text": "sample text"}},
+            "args": {{"text": "{state[content]}"}},
             "dependencies": []
         }},
         {{
             "idx": 1,
             "tool": "generate_embeddings",
-            "args": {{"text": "sample text"}},
+            "args": {{"text": "{state[content]}"}},
             "dependencies": [0]
         }}
     ],
-    "thought": "First extract knowledge, then generate embeddings"
+    "thought": "First extract knowledge from content, then generate embeddings"
 }}"""
 
-    human_template = """Generate a plan to process this content:
+    human_template = """Current state:
+{state}
 
-{content}
+Generate a plan to process the content based on the current state.
 
 Remember:
-1. Each task must have a unique idx
-2. Dependencies must refer to valid task indices
-3. Tool names must match exactly
-4. All tasks must have required args
-5. Output ONLY a valid JSON object following the format instructions."""
+1. Return ONLY a valid JSON object
+2. Include both tasks and thought fields
+3. Use {state[variable_name]} format for state variables
+4. Make task idx start from 0 and increment sequentially
+5. Ensure dependencies refer to valid task IDs
+6. Include a clear thought explaining your plan
+7. NEVER use {state} directly"""
 
-    prompt = ChatPromptTemplate.from_messages([
+    messages = [
         SystemMessage(content=system_template),
         HumanMessage(content=human_template)
-    ])
-    
-    prompt = prompt.partial(format_instructions=format_instructions)
-    return prompt 
+    ]
+
+    return ChatPromptTemplate(messages=messages) 

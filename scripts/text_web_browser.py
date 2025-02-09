@@ -6,7 +6,7 @@ import re
 import time
 import uuid
 import json
-from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict, Annotated, Coroutine
+from typing import Any, Dict, List, Optional, Tuple, Union, TypedDict, Annotated, Coroutine, Set
 from urllib.parse import unquote, urljoin, urlparse
 
 import pathvalidate
@@ -19,11 +19,18 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain_community.utilities import SearxSearchWrapper
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, OutputParser
 import PyPDF2
 import aiohttp
 import asyncio
 from rich import box
+import random
+from fake_useragent import UserAgent  # For better user agent rotation
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+import tiktoken
 
 from .cookies import COOKIES
 from .mdconvert import FileConversionException, MarkdownConverter, UnsupportedFormatException
@@ -31,11 +38,57 @@ from .logging_config import (
     log_error_with_traceback,
     log_warning_with_context,
     log_info_with_context,
-    console
+    console,
+    create_progress
 )
 
-# Initialize SearxNG search
-searx = SearxSearchWrapper(searx_host="https://searchapi.anuna.dev")
+# Initialize tiktoken encoder
+try:
+    enc = tiktoken.get_encoding("cl100k_base")
+except:
+    enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+# Initialize fake user agent with fallback and rotation
+class UserAgentManager:
+    """Manages user agent rotation with fallback"""
+    FALLBACK_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0",
+        "Mozilla/5.0 (X11; Linux x86_64) Chrome/120.0.0.0"
+    ]
+    
+    def __init__(self):
+        """Initialize with fake-useragent and fallback"""
+        try:
+            self.ua = UserAgent(browsers=['chrome', 'firefox', 'safari', 'edge'])
+            self.using_fallback = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize fake-useragent: {e}. Using fallback user agents.")
+            self.using_fallback = True
+            
+        self.last_rotation = time.time()
+        self.current_agent = None
+        self.rotation_interval = 60  # Rotate every minute
+        
+    def get_agent(self) -> str:
+        """Get a user agent string, rotating if needed"""
+        current_time = time.time()
+        if not self.current_agent or (current_time - self.last_rotation) > self.rotation_interval:
+            if self.using_fallback:
+                self.current_agent = random.choice(self.FALLBACK_AGENTS)
+            else:
+                try:
+                    self.current_agent = self.ua.random
+                except Exception as e:
+                    logger.warning(f"Error getting random user agent: {e}. Using fallback.")
+                    self.current_agent = random.choice(self.FALLBACK_AGENTS)
+            self.last_rotation = current_time
+            logger.debug(f"Rotated user agent to: {self.current_agent}")
+        return self.current_agent
+
+# Initialize user agent manager
+ua_manager = UserAgentManager()
 
 class BrowserError(Exception):
     """Base class for browser errors"""
@@ -59,157 +112,386 @@ class BrowserState(TypedDict):
     last_search: Optional[str]
 
 class SimpleTextBrowser:
-    """Simple text-based browser for web scraping."""
-    
-    def __init__(self, viewport_size: int = 5120, downloads_folder: str = "downloads", request_kwargs: Optional[Dict[str, Any]] = None):
-        """Initialize browser."""
-        try:
-            self.viewport_size = viewport_size
-            self.downloads_folder = downloads_folder
-            self.request_kwargs = request_kwargs or {}
-            self._state: Dict[str, Any] = {
-                'current_page': '',
-                'current_url': None,
-                'current_position': 0,
-                'find_position': 0,
-                'viewport_size': viewport_size,
-                'last_search': None
-            }
-            
-            # Create downloads folder if it doesn't exist
-            os.makedirs(downloads_folder, exist_ok=True)
-            
-            log_info_with_context("Browser initialized", "Browser", include_locals=True)
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Failed to initialize browser", include_locals=True)
-            raise BrowserError("Failed to initialize browser") from e
+    """Agentic browser for intelligent web crawling and text extraction"""
+    def __init__(self, viewport_size: int = 5120, downloads_folder: str = "downloads", request_kwargs: Optional[Dict] = None):
+        self.viewport_size = viewport_size
+        self.downloads_folder = downloads_folder
+        self.request_kwargs = request_kwargs or {}
         
-    async def visit(self, url: str) -> str:
-        """Visit a URL and return the text content."""
+        # Initialize state
+        self._state = {
+            'current_page': '',
+            'current_url': '',
+            'current_position': 0,
+            'find_position': 0,
+            'visited_urls': set(),  # Track visited URLs
+            'url_queue': set(),     # URLs to visit
+            'extracted_content': {}  # Map of URL to extracted content
+        }
+        
+        # Initialize session with default headers and cookies
+        self.session = None
+        self.timeout = aiohttp.ClientTimeout(total=30)
+        
+        # Create downloads folder if it doesn't exist
+        os.makedirs(downloads_folder, exist_ok=True)
+        
+        # Initialize counters
+        self.total_tokens = 0
+        self.total_chunks = 0
+        
+        # Configure crawling settings
+        self.max_depth = 3  # Maximum crawl depth
+        self.max_pages = 50  # Maximum pages to crawl
+        self.same_domain_only = True  # Only crawl same domain
+        self.excluded_patterns = [  # Patterns to exclude
+            r'\.(jpg|jpeg|png|gif|ico|css|js|xml|pdf)$',
+            r'(mailto:|tel:)',
+            r'#.*$',
+            r'\?.*$'
+        ]
+        
+    async def __aenter__(self):
+        """Async context manager entry"""
+        if not self.session:
+            # Initialize session with cookies and default headers
+            self.session = aiohttp.ClientSession(
+                cookies=COOKIES,
+                headers=self._get_default_headers()
+            )
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit"""
+        if self.session:
+            await self.session.close()
+            self.session = None
+
+    def _get_default_headers(self) -> Dict[str, str]:
+        """Get default headers with rotated user agent"""
+        return {
+            "User-Agent": ua_manager.get_agent(),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "DNT": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate", 
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "Connection": "keep-alive"
+        }
+
+    async def crawl_website(self, start_url: str, max_depth: Optional[int] = None, max_pages: Optional[int] = None) -> Dict[str, str]:
+        """Intelligently crawl a website starting from the given URL."""
         try:
-            log_info_with_context(f"Visiting URL: {url}", "Browser")
-            console.print(f"\n[bold cyan]Visiting URL[/bold cyan]")
-            console.print(f"[cyan]URL:[/cyan] {url}")
+            # Reset crawling state
+            self._state['visited_urls'] = set()
+            self._state['url_queue'] = {start_url}
+            self._state['extracted_content'] = {}
             
-            # Validate URL
-            parsed_url = urlparse(url)
-            if not parsed_url.scheme or not parsed_url.netloc:
-                raise NetworkError("Invalid URL format")
+            # Override defaults if provided
+            if max_depth is not None:
+                self.max_depth = max_depth
+            if max_pages is not None:
+                self.max_pages = max_pages
+                
+            # Get base domain for same-domain checking
+            base_domain = urlparse(start_url).netloc
             
-            # Configure timeout and headers
-            timeout = aiohttp.ClientTimeout(total=10)
-            headers = {
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5"
-            }
+            # Initialize progress tracking
+            progress = create_progress()
+            crawl_task = progress.add_task(
+                f"[cyan]Crawling {base_domain}...", 
+                total=self.max_pages
+            )
             
-            console.print("[cyan]Sending request...[/cyan]")
+            # Process URL queue
+            current_depth = 0
+            while (current_depth < self.max_depth and 
+                   len(self._state['url_queue']) > 0 and 
+                   len(self._state['visited_urls']) < self.max_pages):
+                
+                # Get URLs for current depth
+                current_urls = self._state['url_queue'].copy()
+                self._state['url_queue'] = set()
+                
+                # Process URLs at current depth in parallel
+                async def process_url(url: str) -> None:
+                    try:
+                        # Skip if already visited
+                        if url in self._state['visited_urls']:
+                            return
+                            
+                        # Skip if different domain and same_domain_only is True
+                        if self.same_domain_only and urlparse(url).netloc != base_domain:
+                            return
+                            
+                        # Skip if matches excluded patterns
+                        if any(re.search(pattern, url) for pattern in self.excluded_patterns):
+                            return
+                            
+                        # Visit URL and extract content
+                        content = await self.visit(url)
+                        if content and not any(x in content for x in ["Content not accessible", "Error accessing"]):
+                            self._state['extracted_content'][url] = content
+                            
+                            # Extract new URLs from content
+                            new_urls = await self._extract_urls(content, url)
+                            self._state['url_queue'].update(new_urls)
+                            
+                        # Mark as visited
+                        self._state['visited_urls'].add(url)
+                        
+                        # Update progress
+                        progress.update(crawl_task, advance=1)
+                        
+                        # Log progress
+                        log_info_with_context(
+                            f"Crawled {url} - Found {len(new_urls)} new URLs",
+                            "Crawler"
+                        )
+                        
+                    except Exception as e:
+                        log_error_with_traceback(e, f"Error processing URL: {url}")
+                
+                # Process URLs with rate limiting
+                semaphore = asyncio.Semaphore(5)  # Limit concurrent requests
+                async def bounded_process(url: str) -> None:
+                    async with semaphore:
+                        await process_url(url)
+                
+                # Process all URLs at current depth
+                tasks = [bounded_process(url) for url in current_urls]
+                await asyncio.gather(*tasks)
+                
+                current_depth += 1
+                
+                # Log depth completion
+                console.print(f"[green]✓ Completed depth {current_depth}[/green]")
+                console.print(f"  Pages crawled: {len(self._state['visited_urls'])}")
+                console.print(f"  URLs in queue: {len(self._state['url_queue'])}")
             
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get(url, timeout=timeout, headers=headers) as response:
-                        response.raise_for_status()
-                        
-                        # Store response state
-                        state_update = {
-                            'url': url,
-                            'status_code': response.status,
-                            'headers': dict(response.headers),
-                            'content_type': response.headers.get('content-type', '')
-                        }
-                        self._state.update(state_update)
-                        
-                        console.print(f"[green]✓ Response received (Status: {response.status})[/green]")
-                        console.print("[cyan]Extracting content...[/cyan]")
-                        
-                        # Extract text content
-                        content = await self._extract_text(response)
-                        if not content:
-                            log_warning_with_context("No content extracted from page", "Browser", include_locals=True)
-                            console.print("[yellow]No content found on page[/yellow]")
-                            return "No content found on page"
-                        
-                        self._state['current_page'] = content
-                        self._state['current_url'] = url
-                        self._state['current_position'] = 0
-                        self._state['find_position'] = 0
-                        
-                        console.print(f"[green]✓ Successfully extracted {len(content)} characters[/green]")
-                        return self._get_current_viewport()
-                        
-                except aiohttp.ClientError as e:
-                    log_error_with_traceback(e, f"Network error visiting {url}", include_locals=True)
-                    console.print(f"[red]Network error:[/red] {str(e)}")
-                    raise NetworkError(f"Failed to fetch URL: {str(e)}") from e
-                    
+            # Return extracted content
+            return self._state['extracted_content']
+            
         except Exception as e:
-            log_error_with_traceback(e, f"Error visiting {url}", include_locals=True)
-            console.print(f"[red]Error visiting URL:[/red] {str(e)}")
-            if isinstance(e, (NetworkError, BrowserError)):
-                raise
-            raise BrowserError(f"Failed to visit URL: {str(e)}") from e
+            log_error_with_traceback(e, f"Error crawling website: {start_url}")
+            raise
             
-    async def _extract_text(self, response: aiohttp.ClientResponse) -> str:
-        """Extract text content from response."""
+    async def _extract_urls(self, content: str, base_url: str) -> Set[str]:
+        """Extract and normalize URLs from content."""
         try:
-            content_type = response.headers.get('content-type', '').lower()
+            urls = set()
             
-            if content_type and 'text/html' in content_type:
-                content = await response.text()
-                soup = BeautifulSoup(content, 'html.parser')
+            # Parse HTML
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Extract URLs from various tags
+            for tag in soup.find_all(['a', 'link', 'area', 'iframe']):
+                url = tag.get('href') or tag.get('src')
+                if url:
+                    # Normalize URL
+                    try:
+                        normalized = urljoin(base_url, url)
+                        parsed = urlparse(normalized)
+                        
+                        # Skip invalid URLs
+                        if not parsed.scheme or not parsed.netloc:
+                            continue
+                            
+                        # Skip non-HTTP(S) URLs
+                        if parsed.scheme not in ['http', 'https']:
+                            continue
+                            
+                        # Skip excluded patterns
+                        if any(re.search(pattern, normalized) for pattern in self.excluded_patterns):
+                            continue
+                            
+                        urls.add(normalized)
+                        
+                    except Exception as e:
+                        log_warning_with_context(f"Error normalizing URL {url}: {e}")
+                        continue
+            
+            return urls
+            
+        except Exception as e:
+            log_error_with_traceback(e, f"Error extracting URLs from {base_url}")
+            return set()
+
+    async def visit(self, url: str) -> str:
+        """Visit URL and extract text content with enhanced error handling"""
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+        
+        if not self.session:
+            self.session = aiohttp.ClientSession(
+                cookies=COOKIES,
+                headers=self._get_default_headers()
+            )
+            
+        try:
+            # Make request with timeout and headers
+            async with self.session.get(
+                url,
+                headers=self._get_default_headers(),
+                timeout=self.timeout,
+                allow_redirects=True,
+                max_redirects=5,
+                **self.request_kwargs
+            ) as response:
                 
-                # Remove script and style elements
-                for script in soup(["script", "style"]):
-                    script.decompose()
+                # Handle various status codes
+                if response.status == 403:
+                    logger.warning(f"Access denied (403) for {url}, skipping...")
+                    return f"Content not accessible (403 Forbidden) from {url}"
+                elif response.status == 429:
+                    logger.warning(f"Rate limited (429) for {url}, skipping...")
+                    return f"Rate limited (429 Too Many Requests) from {url}"
+                elif response.status != 200:
+                    logger.warning(f"HTTP {response.status} for {url}, skipping...")
+                    return f"Content not accessible (HTTP {response.status}) from {url}"
+                
+                content_type = response.headers.get('content-type', 'text/plain')
+                
+                # Handle different content types
+                if 'application/pdf' in content_type:
+                    content = await response.read()  # Read raw bytes for PDF
+                else:
+                    content = await response.text()  # Read text for other types
+                
+                # Extract text
+                text = await self._extract_text(content, url, content_type)
+                if text:
+                    # Count tokens and log
+                    tokens = len(enc.encode(text))
+                    self.total_tokens += tokens
                     
-                text = soup.get_text()
-                if not text.strip():
-                    log_warning_with_context("No text content found in HTML", "Browser", include_locals=True)
-                return text
-                
-            elif content_type and 'application/pdf' in content_type:
-                # Save PDF and extract text
-                pdf_path = os.path.join(self.downloads_folder, f"{uuid.uuid4()}.pdf")
-                
-                try:
-                    raw_content = await response.read()
-                    with open(pdf_path, 'wb') as f:
-                        f.write(raw_content)
-                        
-                    with open(pdf_path, 'rb') as f:
-                        pdf = PyPDF2.PdfReader(f)
-                        text = '\n'.join(page.extract_text() for page in pdf.pages)
-                        
-                    if not text.strip():
-                        log_warning_with_context("No text content extracted from PDF", "Browser", include_locals=True)
+                    # Log successful extraction with token count
+                    logger.info(f"Successfully extracted {len(text)} chars from {url}")
+                    console.print(Panel(
+                        f"[green]✓ Extracted content from {url}[/green]\n"
+                        f"Length: {len(text)} chars\n"
+                        f"Tokens: {tokens}\n"
+                        f"Preview: {text[:200]}...",
+                        title="Content Extraction"
+                    ))
                     return text
                     
-                except Exception as e:
-                    log_error_with_traceback(e, "Failed to extract text from PDF", include_locals=True)
-                    raise ContentExtractionError("Failed to extract text from PDF") from e
+                return f"No content could be extracted from {url}"
+                
+        except aiohttp.ClientError as e:
+            logger.warning(f"Network error accessing {url}: {str(e)}")
+            return f"Network error: {str(e)}"
+        except Exception as e:
+            logger.warning(f"Error accessing {url}: {str(e)}")
+            return f"Error accessing content: {str(e)}"
+
+    async def _extract_text(self, content: Union[str, bytes], url: str, content_type: str) -> str:
+        """Extract text content with chunk tracking and logging"""
+        try:
+            if 'text/html' in content_type:
+                if isinstance(content, bytes):
+                    try:
+                        content = content.decode('utf-8')
+                    except UnicodeDecodeError:
+                        content = content.decode('utf-8', errors='ignore')
                     
-                finally:
-                    if os.path.exists(pdf_path):
-                        try:
-                            os.remove(pdf_path)
-                        except Exception as e:
-                            log_warning_with_context(f"Failed to remove temporary PDF file: {e}", "Browser")
-                            
+                soup = BeautifulSoup(content, 'html.parser')
+                
+                # Remove script, style, and other non-content elements
+                for element in soup(['script', 'style', 'meta', 'link', 'noscript', 'header', 'footer', 'nav']):
+                    element.decompose()
+                
+                # Extract text from remaining elements with chunk tracking
+                text_parts = []
+                chunk_count = 0
+                
+                for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'div']):
+                    text = element.get_text(strip=True)
+                    if text:
+                        chunk_count += 1
+                        # Log chunk preview
+                        logger.debug(f"Chunk {chunk_count}: {text[:100]}...")
+                        text_parts.append(text)
+                
+                self.total_chunks += chunk_count
+                
+                # Join with newlines between paragraphs
+                text = '\n\n'.join(text_parts)
+                
+                if not text.strip():
+                    log_warning_with_context("No text content found in HTML", "Browser", include_locals=True)
+                    # Try getting all text as fallback
+                    text = soup.get_text(separator='\n\n', strip=True)
+                
+                # Log chunk statistics
+                logger.info(f"Extracted {chunk_count} text chunks")
+                return text if text else "No text content found"
+                
+            elif 'application/pdf' in content_type:
+                # Handle PDF extraction
+                if not isinstance(content, bytes):
+                    if isinstance(content, str):
+                        content = content.encode('utf-8')
+                    else:
+                        raise ContentExtractionError("Invalid content type for PDF extraction")
+                return await self._extract_pdf(content, url)
             else:
-                # Return raw text for other content types
-                content = await response.text()
-                if not content.strip():
-                    log_warning_with_context("No content found in response", "Browser", include_locals=True)
-                return content
+                # Try extracting as plain text
+                if isinstance(content, bytes):
+                    try:
+                        content = content.decode('utf-8')
+                    except UnicodeDecodeError:
+                        content = content.decode('utf-8', errors='ignore')
+                elif not isinstance(content, str):
+                    content = str(content)
+                    
+                text = content.strip()
+                return text if text else "No text content found"
                 
         except Exception as e:
-            log_error_with_traceback(e, "Failed to extract text content", include_locals=True)
-            if isinstance(e, ContentExtractionError):
-                raise
-            raise ContentExtractionError("Failed to extract text content") from e
+            log_error_with_traceback(e, "Error extracting text", include_locals=True)
+            return f"Error extracting text: {str(e)}"
+
+    async def _extract_pdf(self, content: bytes, url: str) -> str:
+        """Extract text from a PDF file"""
+        try:
+            pdf_path = os.path.join(self.downloads_folder, f"{uuid.uuid4()}.pdf")
             
+            with open(pdf_path, 'wb') as f:
+                f.write(content)
+            
+            with open(pdf_path, 'rb') as f:
+                pdf = PyPDF2.PdfReader(f)
+                text_parts = []
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        text_parts.append(text)
+                text = '\n\n'.join(text_parts)
+                
+            if not text.strip():
+                log_warning_with_context("No text content extracted from PDF", "Browser", include_locals=True)
+                return text
+            
+            return text
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Failed to extract text from PDF", include_locals=True)
+            raise ContentExtractionError("Failed to extract text from PDF") from e
+            
+        finally:
+            if os.path.exists(pdf_path):
+                try:
+                    os.remove(pdf_path)
+                except Exception as e:
+                    log_warning_with_context(f"Failed to remove temporary PDF file: {e}", "Browser")
+
     @property
     def state(self) -> Dict[str, Any]:
         """Get current browser state."""
@@ -344,20 +626,23 @@ class FindInput(BaseModel):
     search_string: str = Field(description="The text to search for on the page")
 
 async def web_search(query: str) -> str:
-    """Perform web search using SearxNG."""
+    """Perform web search using SearxNG with intelligent crawling."""
     try:
         if not query or not query.strip():
             log_warning_with_context("Empty search query", "Search", include_locals=True)
             return "Error: Empty search query"
             
         log_info_with_context(f"Searching for: {query}", "Search")
-        console.print(f"\n[bold cyan]Performing Web Search[/bold cyan]")
-        console.print(f"[cyan]Query:[/cyan] {query}")
+        
+        # Get shared progress instance
+        progress = create_progress()
+        
+        console.print(Panel(f"[bold cyan]Web Search[/bold cyan]\nQuery: {query}"))
         
         # Configure SearxNG search
         searx_host = os.getenv("SEARX_HOST", "https://searchapi.anuna.dev")
         headers = {
-            "User-Agent": os.getenv("USER_AGENT", "Mozilla/5.0"),
+            "User-Agent": ua_manager.get_agent(),
             "Accept": "application/json"
         }
         
@@ -365,72 +650,123 @@ async def web_search(query: str) -> str:
         params = {
             "q": query,
             "format": "json",
-            "engines": "google,duckduckgo,bing",
+            "engines": "google,bing,duckduckgo,yahoo,brave,qwant,google_scholar,arxiv,pubmed,crossref,github,gitlab,stackoverflow,wikipedia",
             "language": "en",
             "time_range": "",
-            "category": "general"
+            "categories": "general,science,it,news,social media",
+            "pageno": "1",
+            "results": "25",
+            "safesearch": 0,
+            "engine_type": "general,scientific"
         }
-        
-        console.print("[cyan]Sending search request...[/cyan]")
         
         # Make request to SearxNG
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(cookies=COOKIES) as session:
                 try:
+                    # Create progress tasks
+                    search_task = progress.add_task("[cyan]Searching...", total=100)
+                    fetch_task = progress.add_task("[yellow]Fetching results...", total=100, visible=False)
+                    process_task = progress.add_task("[green]Processing content...", total=100, visible=False)
+                    
                     async with session.get(
                         f"{searx_host}/search",
                         params=params,
                         headers=headers,
-                        ssl=False,  # Disable SSL verification
-                        timeout=aiohttp.ClientTimeout(total=10)
+                        ssl=False,
+                        timeout=aiohttp.ClientTimeout(total=30)
                     ) as response:
                         response.raise_for_status()
                         results = await response.json()
                         
+                        # Update search progress
+                        progress.update(search_task, completed=100)
+                        progress.update(fetch_task, visible=True)
+                        
                         # Extract URLs and snippets
                         formatted_results = []
                         if "results" in results and results["results"]:
-                            console.print(f"[green]✓ Found {len(results['results'])} results[/green]")
-                            for result in results["results"][:5]:  # Limit to top 5 results
-                                url = result.get("url", "").strip()
-                                title = result.get("title", "").strip()
-                                snippet = result.get("content", "").strip()
-                                
-                                if url:  # Only include results with valid URLs
-                                    formatted_results.extend([
-                                        f"Title: {title}",
-                                        f"URL: {url}",
-                                        f"Summary: {snippet}",
-                                        "---"
-                                    ])
-                                    
-                            log_info_with_context(f"Found {len(formatted_results)//4} results", "Search")
-                            return "\n".join(formatted_results)
-                        else:
-                            log_warning_with_context("No search results found", "Search", include_locals=True)
-                            console.print("[yellow]No results found[/yellow]")
-                            return "No results found"
+                            total_results = len(results["results"])
+                            console.print(f"[green]✓ Found {total_results} results[/green]")
                             
+                            # Process results with intelligent crawling
+                            async with SimpleTextBrowser() as browser:
+                                # Process each result URL
+                                for i, result in enumerate(results["results"][:10]):  # Limit to top 10 for crawling
+                                    try:
+                                        url = result.get("url", "").strip()
+                                        title = result.get("title", "").strip()
+                                        snippet = result.get("content", "").strip()
+                                        
+                                        if url:
+                                            # Crawl the website
+                                            console.print(f"\n[cyan]Crawling {url}...[/cyan]")
+                                            crawled_content = await browser.crawl_website(
+                                                url,
+                                                max_depth=2,  # Limit depth for search results
+                                                max_pages=10  # Limit pages per result
+                                            )
+                                            
+                                            # Update fetch progress
+                                            progress.update(fetch_task, advance=100/total_results)
+                                            
+                                            if crawled_content:
+                                                # Create rich table for result
+                                                table = Table(show_header=False, box=box.ROUNDED)
+                                                table.add_column("Field", style="cyan")
+                                                table.add_column("Value", style="white")
+                                                
+                                                table.add_row("Title", title)
+                                                table.add_row("URL", url)
+                                                table.add_row("Summary", snippet)
+                                                
+                                                # Add crawled pages summary
+                                                crawled_summary = f"Crawled {len(crawled_content)} pages:"
+                                                for crawled_url, content in list(crawled_content.items())[:3]:
+                                                    crawled_summary += f"\n- {crawled_url}"
+                                                    if content:
+                                                        preview = content[:200].replace('\n', ' ').strip()
+                                                        crawled_summary += f"\n  {preview}..."
+                                                if len(crawled_content) > 3:
+                                                    crawled_summary += f"\n... and {len(crawled_content) - 3} more pages"
+                                                
+                                                table.add_row("Crawled Content", crawled_summary)
+                                                
+                                                formatted_results.extend([
+                                                    str(table),
+                                                    "---"
+                                                ])
+                                                
+                                                # Update processing progress
+                                                progress.update(process_task, advance=100/total_results)
+                                                
+                                    except Exception as e:
+                                        log_error_with_traceback(e, f"Error processing result {url}")
+                                        continue
+                                
+                                progress.update(process_task, completed=100)
+                                log_info_with_context(f"Processed {len(formatted_results)//2} results", "Search")
+                                return "\n".join(formatted_results)
+                        else:
+                            log_warning_with_context("No results found", "Search", include_locals=True)
+                            return "No results found"
+                                
                 except aiohttp.ClientError as e:
                     log_error_with_traceback(e, "Network error during search", include_locals=True)
-                    console.print(f"[red]Network error during search:[/red] {str(e)}")
                     raise NetworkError(f"Failed to connect to search service: {str(e)}") from e
                     
                 except json.JSONDecodeError as e:
                     log_error_with_traceback(e, "Invalid JSON response from search service", include_locals=True)
-                    console.print("[red]Invalid response from search service[/red]")
                     raise SearchError("Invalid response from search service") from e
                     
         except Exception as e:
             log_error_with_traceback(e, "Error performing search", include_locals=True)
-            console.print(f"[red]Search failed:[/red] {str(e)}")
             if isinstance(e, (NetworkError, SearchError)):
                 raise
             raise SearchError(f"Search failed: {str(e)}") from e
             
     except Exception as e:
         log_error_with_traceback(e, "Fatal error in web search", include_locals=True)
-        console.print(f"[red]Fatal error in web search:[/red] {str(e)}")
         if isinstance(e, (NetworkError, SearchError, BrowserError)):
             raise
         raise SearchError(f"Search failed: {str(e)}") from e

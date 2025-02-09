@@ -1,13 +1,16 @@
 from typing import List, Dict, Optional, Any
 from langchain_core.output_parsers import PydanticOutputParser
-
 from langchain_community.graphs import Neo4jGraph
 from loguru import logger
 from langchain_ollama import ChatOllama
 import json
+import os
 from rich.console import Console
 from scripts.logging_config import log_error_with_traceback
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
+from scripts.chat_langchain import ChatLangChain
+from pydantic import SecretStr
+from langchain_core.language_models.chat_models import BaseChatModel
 
 from prompts.qa import (
     Question,
@@ -28,9 +31,18 @@ console = Console()
 class QASystem(LLMCompiler):
     """Question answering system."""
 
-    def __init__(self, graph: Neo4jGraph, llm: Optional[Any] = None, model: str = "smallthinker", temperature: float = 0.7):
+    def __init__(self, graph: Neo4jGraph, llm: Optional[BaseChatModel] = None, model: str = "smallthinker", temperature: float = 0.7):
         """Initialize with graph database and language model."""
-        llm = llm if llm is not None else ChatOllama(model=model, temperature=temperature, format="json", mirostat=2, mirostat_eta=0.1, mirostat_tau=5.0)
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise EnvironmentError("GOOGLE_API_KEY environment variable must be set")
+            
+        llm = llm if llm is not None else ChatLangChain(
+            api_key=SecretStr(api_key),
+            model="gemini-2.0-flash",
+            temperature=temperature,
+            pydantic_schema=QAResponse
+        )
         super().__init__(llm)
         self.graph = graph
         self.current_topic = ""
