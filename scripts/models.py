@@ -61,14 +61,44 @@ class KnowledgeAcquisitionConfig(BaseModel):
 class Relationship(BaseModel):
     """Schema for knowledge relationships"""
     source: str = Field(description="Source entity")
-    relation: Literal["is_a", "has_part", "related_to"] = Field(description="Type of relationship")
+    relation: Literal[
+        # Methodology relationships
+        "uses", "applies", "implements",
+        # Performance relationships
+        "improves", "outperforms", "achieves",
+        # Component relationships
+        "contains", "consists_of", "part_of",
+        # Comparison relationships
+        "better_than", "similar_to", "different_from",
+        # Causal relationships
+        "leads_to", "causes", "affects",
+        # Temporal relationships
+        "precedes", "follows", "concurrent_with",
+        # Legacy relationships
+        "is_a", "has_part", "related_to"
+    ] = Field(description="Type of relationship")
     target: str = Field(description="Target entity")
     domain: str = Field(default="knowledge", description="Domain this relationship belongs to")
     confidence: float = Field(default=1.0, description="Confidence in this relationship", ge=0.0, le=1.0)
 
     @validator("relation")
     def validate_relation(cls, v):
-        valid_relations = ["is_a", "has_part", "related_to"]
+        valid_relations = [
+            # Methodology relationships
+            "uses", "applies", "implements",
+            # Performance relationships
+            "improves", "outperforms", "achieves",
+            # Component relationships
+            "contains", "consists_of", "part_of",
+            # Comparison relationships
+            "better_than", "similar_to", "different_from",
+            # Causal relationships
+            "leads_to", "causes", "affects",
+            # Temporal relationships
+            "precedes", "follows", "concurrent_with",
+            # Legacy relationships
+            "is_a", "has_part", "related_to"
+        ]
         if v not in valid_relations:
             raise ValueError(f"relation must be one of: {valid_relations}")
         return v
@@ -108,7 +138,7 @@ class ExtractedKnowledge(BaseModel):
     """Model for extracted knowledge"""
     content: str = Field(description="The content or summary of the source")
     entities: List[str] = Field(description="List of extracted entities")
-    relationships: List[Relationship] = Field(description="List of relationships between entities")
+    relationships: List[Relationship] = Field(default_factory=list, description="List of relationships between entities")
     confidence: float = Field(default=1.0, description="Overall confidence score for the extraction", ge=0.0, le=1.0)
     metadata: Optional[SourceMetadata] = Field(None, description="Additional metadata about the extraction")
     domain: str = Field(default="knowledge", description="Domain this knowledge belongs to")
@@ -124,12 +154,6 @@ class ExtractedKnowledge(BaseModel):
         if not v:
             raise ValueError("entities list cannot be empty")
         return [e.strip() for e in v if e.strip()]
-
-    @validator("relationships")
-    def validate_relationships(cls, v):
-        if not v:
-            raise ValueError("relationships list cannot be empty")
-        return v
 
 class LLMResponse(BaseModel):
     """Model for LLM responses"""

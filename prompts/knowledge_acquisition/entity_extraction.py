@@ -7,48 +7,52 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 class EntityResponse(BaseModel):
     """Schema for entity extraction response"""
-    entities: List[str] = Field(description="List of extracted entities")
+    entities: List[str] = Field(
+        description="List of extracted entities",
+        default_factory=list
+    )
 
 def get_entity_extraction_prompt() -> ChatPromptTemplate:
     """Get the entity extraction prompt template."""
     parser = PydanticOutputParser(pydantic_object=EntityResponse)
     format_instructions = parser.get_format_instructions()
     
-    system_template = """Extract entities from the given text. You MUST return ONLY a valid JSON object.
-
+    system_template = """You are an expert at extracting meaningful entities from text.
 {format_instructions}
 
-CRITICAL JSON FORMATTING RULES:
-1. Return ONLY the JSON object - no other text before or after
-2. Use ONLY double quotes (") for strings and property names
-3. The entities field MUST be a non-empty array of strings
-4. Each entity should be a meaningful term or concept
-5. Do not include any explanatory text or comments
-6. No trailing commas
-7. No extra whitespace
-8. No single quotes
-9. No unescaped characters
-
-EXTRACTION GUIDELINES:
-1. Focus on extracting:
-   - Key concepts and terms
-   - Named entities (people, organizations, products)
-   - Technical terms and domain-specific vocabulary
-   - Important topics and themes
-2. Entities should be specific and meaningful
-3. Return at least 3-5 entities
-4. Clean and normalize entity text
-
-Example valid response:
-{
+CRITICAL RULES:
+1. You MUST output ONLY a valid JSON object
+2. The JSON MUST match the schema exactly
+3. The entities field MUST be an array of strings
+4. Each entity MUST be properly escaped if it contains special characters
+5. Do not include any text before or after the JSON object
+6. Do not include any explanations or notes
+7. The response should look exactly like this:
+{{
     "entities": [
-        "machine learning",
-        "neural networks",
-        "deep learning",
-        "artificial intelligence",
-        "data science"
+        "Machine Learning",
+        "Neural Networks",
+        "TensorFlow"
     ]
-}"""
+}}
+
+GUIDELINES for entity extraction:
+1. Extract meaningful terms, concepts, and entities:
+   - Technical concepts and terminology
+   - Domain-specific terms
+   - Named entities (people, organizations, products)
+   - Key processes or methodologies
+   - Important tools or technologies
+   - Core principles or theories
+2. Include both specific and general concepts
+3. Clean and normalize entity text:
+   - Remove unnecessary punctuation
+   - Standardize capitalization
+   - Keep acronyms in uppercase
+4. Return as many entities as you can find (aim for at least 5-10)
+5. If no clear entities, extract key themes or topics
+6. Ensure each entity is self-contained and meaningful
+7. Avoid overly generic terms unless they're domain-specific"""
 
     human_template = """Extract entities from this text:
 
@@ -56,9 +60,9 @@ Example valid response:
 
 Remember:
 1. Return ONLY a valid JSON object
-2. Include at least 3-5 meaningful entities
+2. Include all entities you find
 3. Use proper JSON formatting
-4. No text before or after the JSON"""
+4. Do not include any text before or after the JSON"""
 
     prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),

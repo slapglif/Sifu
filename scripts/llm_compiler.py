@@ -1,7 +1,6 @@
 """LLM compiler system."""
 
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI, HarmCategory, HarmBlockThreshold
 from typing import Any, Dict, List, Optional, Union, cast, Callable, Awaitable
 from langchain_core.output_parsers import PydanticOutputParser
 import json
@@ -13,7 +12,6 @@ from rich import box
 from loguru import logger
 from pydantic import ValidationError, SecretStr
 from langchain.prompts import ChatPromptTemplate
-from google.auth.credentials import AnonymousCredentials
 from langchain.schema import HumanMessage, BaseMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -35,6 +33,7 @@ from scripts.logging_config import (
     log_error_with_context,
     log_error_with_traceback,
     create_progress,
+    cleanup_progress,
     console
 )
 
@@ -294,47 +293,64 @@ class LLMCompiler:
             log_info_with_context(f"Starting execution of {len(tasks)} tasks", "Execution")
             
             # Initialize progress
-            progress = create_progress()
+            progress = await create_progress()
             task_progress = progress.add_task("[cyan]Executing tasks...", total=len(tasks))
             
             # Track results
             results: List[TaskResult] = []
+            result_map: Dict[int, Any] = {}  # Map task IDs to their results
             
             # Execute tasks in order
             for task in tasks:
                 try:
                     log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
                     
-                    # Check dependencies
-                    deps_met = all(
-                        any(r.task_id == dep and not r.error for r in results)
-                        for dep in task.dependencies
-                    )
+                    # Check dependencies and gather their results
+                    dep_results = {}
+                    deps_met = True
+                    for dep in task.dependencies:
+                        if dep not in result_map:
+                            deps_met = False
+                            error_msg = f"Dependency {dep} not found for task {task.idx}"
+                            log_error_with_context(error_msg, "Execution")
+                            break
+                        dep_results[dep] = result_map[dep]
+                    
                     if not deps_met:
                         error_msg = f"Dependencies not met for task {task.idx}"
                         log_error_with_context(error_msg, "Execution")
                         results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
                         continue
                     
-                    # Format task args with state variables
+                    # Format task args with state variables and dependency results
                     formatted_args = {}
-                    for key, value in task.args.items():
-                        if isinstance(value, str) and "{state[" in value:
-                            # Extract variable name from {state[variable_name]}
-                            var_name = value.split("[")[1].split("]")[0]
-                            if var_name in state:
-                                formatted_args[key] = state[var_name]
+                    for arg_name, arg_value in task.args.items():
+                        if isinstance(arg_value, str):
+                            # Handle dependency results
+                            if arg_value.startswith("{") and arg_value.endswith("}"):
+                                try:
+                                    dep_id = int(arg_value.strip("{}"))
+                                    if dep_id in result_map:
+                                        formatted_args[arg_name] = result_map[dep_id].get("knowledge_sources", [])
+                                    else:
+                                        formatted_args[arg_name] = arg_value
+                                except ValueError:
+                                    # Not a dependency ID, use value as is
+                                    formatted_args[arg_name] = arg_value
                             else:
-                                error_msg = f"State variable {var_name} not found"
-                                log_error_with_context(error_msg, "Execution")
-                                results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
-                                continue
+                                formatted_args[arg_name] = arg_value
                         else:
-                            formatted_args[key] = value
+                            formatted_args[arg_name] = arg_value
                     
-                    # Execute task with formatted args
-                    result = await self._execute_task(task.tool, formatted_args)
-                    results.append(TaskResult(task_id=task.idx, result=result, error=None))
+                    # Execute task
+                    try:
+                        result = await getattr(self, f"_{task.tool}")(**formatted_args)
+                        results.append(TaskResult(task_id=task.idx, result=result, error=None))
+                        result_map[task.idx] = result  # Store result for dependencies
+                    except Exception as e:
+                        error_msg = f"Task {task.idx} failed: {str(e)}"
+                        log_error_with_traceback(e, error_msg)
+                        results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
                     
                     # Update progress
                     progress.update(task_progress, advance=1)
@@ -343,10 +359,13 @@ class LLMCompiler:
                     log_error_with_traceback(e, f"Error executing task {task.idx}")
                     results.append(TaskResult(task_id=task.idx, result=None, error=str(e)))
             
+            # Clean up progress
+            await cleanup_progress()
             return results
             
         except Exception as e:
-            log_error_with_traceback(e, "Error executing tasks")
+            log_error_with_traceback(e, "Error in task execution")
+            await cleanup_progress()
             raise
 
     def _parse_task_result(self, response: Union[str, TaskResult, Dict[str, Any]], task_id: int) -> TaskResult:
@@ -575,15 +594,3 @@ class LLMCompiler:
         except Exception as e:
             raise ExecutionError(f"Task execution failed: {str(e)}")
 
-# Updated code:
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",  # Using the latest model version
-    temperature=0.1,  # Lower temperature for more consistent outputs
-    max_tokens=None,  # No token limit
-    timeout=None,  # No timeout
-    max_retries=2,  # Add retries for reliability
-    credentials=AnonymousCredentials(),  # Use anonymous credentials
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE
-    }
-).with_structured_output(schema={})  # Use structured output for reliable JSON formatting 

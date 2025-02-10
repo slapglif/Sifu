@@ -1,0 +1,88 @@
+2025-02-09 19:43:36.237 | 39632:48656 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:707 | Failed to convert relationship: {'source': 'Model evaluation', 'relation': 'informs', 'target': 'model improvement'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='informs', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 702, in _extract_relationships
+    converted_rel = Relationship(**rel)
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='informs', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 19:44:04.680 | 39632:48656 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:707 | Failed to convert relationship: {'source': 'High computational power', 'relation': 'requires', 'target': 'Deep Learning model training'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='requires', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 702, in _extract_relationships
+    converted_rel = Relationship(**rel)
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='requires', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error

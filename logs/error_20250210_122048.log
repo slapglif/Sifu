@@ -1,0 +1,41 @@
+2025-02-10 12:21:37.291 | 32628:31272 | ERROR    | scripts.knowledge_acquisition:process_source:534 | Failed to process source: 1 validation error for SourceMetadata
+validation_status
+  Value error, validation_status must be one of: ['pending', 'processed', 'failed'] [type=value_error, input_value='validated', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 974, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 963, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 518, in process_source
+    metadata = SourceMetadata(**metadata)
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for SourceMetadata
+validation_status
+  Value error, validation_status must be one of: ['pending', 'processed', 'failed'] [type=value_error, input_value='validated', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error

@@ -6,7 +6,7 @@ from langchain_ollama import ChatOllama
 import json
 import os
 from rich.console import Console
-from scripts.logging_config import log_error_with_traceback
+from scripts.logging_config import log_error_with_traceback, log_warning_with_context
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
 from scripts.chat_langchain import ChatLangChain
 from pydantic import SecretStr
@@ -39,7 +39,7 @@ class QASystem(LLMCompiler):
             
         llm = llm if llm is not None else ChatLangChain(
             api_key=SecretStr(api_key),
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             temperature=temperature,
             pydantic_schema=QAResponse
         )
@@ -66,11 +66,68 @@ class QASystem(LLMCompiler):
                 "num_questions": num_questions
             })
             
-            return result.questions if hasattr(result, 'questions') else []
+            questions = result.questions if hasattr(result, 'questions') else []
+            
+            # Validate and filter questions
+            validated_questions = []
+            for question in questions:
+                # Validate question quality
+                if await self._validate_question(question, context):
+                    validated_questions.append(question)
+            
+            return validated_questions
             
         except Exception as e:
             log_error_with_traceback(e, "Error generating questions")
             return []
+
+    async def _validate_question(self, question: Question, context: str) -> bool:
+        """Validate a generated question."""
+        try:
+            # Check if question is answerable from context
+            answer = await self._generate_answer_task(question.question, context)
+            if not answer or not answer.get("answer"):
+                log_warning_with_context(f"Question not answerable: {question.question}", "QA")
+                return False
+            
+            # Check confidence
+            if answer.get("confidence", 0.0) < 0.7:
+                log_warning_with_context(f"Low confidence answer: {question.question}", "QA")
+                return False
+            
+            # Check if question is too simple/generic
+            if len(question.question.split()) < 5:
+                log_warning_with_context(f"Question too short: {question.question}", "QA")
+                return False
+            
+            # Check if question is relevant to topic
+            if question.topic.lower() not in question.question.lower():
+                log_warning_with_context(f"Question not relevant to topic: {question.question}", "QA")
+                return False
+            
+            # Check question type distribution
+            if not hasattr(self, '_question_types'):
+                self._question_types = {
+                    'general': 0,
+                    'factual': 0,
+                    'conceptual': 0,
+                    'analytical': 0,
+                    'error': 0
+                }
+            
+            # Ensure balanced distribution of question types
+            current_count = self._question_types.get(question.type, 0)
+            max_per_type = max(2, self.num_questions // 3)
+            if current_count >= max_per_type:
+                log_warning_with_context(f"Too many questions of type {question.type}", "QA")
+                return False
+            
+            self._question_types[question.type] = current_count + 1
+            return True
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error validating question")
+            return False
 
     async def _get_topic_context(self, topic: str) -> str:
         """Get context for a topic from the graph."""
@@ -279,17 +336,62 @@ class QASystem(LLMCompiler):
     async def _validate_answer_task(self, answer: Dict[str, Any]) -> Dict[str, Any]:
         """Validate generated answer"""
         try:
-            # Simple validation based on confidence and reasoning
-            confidence = answer.get("confidence", 0.0)
+            # Extract key components
+            answer_text = answer.get("answer", "")
             reasoning = answer.get("reasoning", "")
+            sources = answer.get("sources", [])
             
-            if confidence >= 0.7 and reasoning.strip():
+            # Initialize confidence factors
+            completeness = 0.0  # How complete is the answer
+            relevance = 0.0    # How relevant is it to the question
+            support = 0.0      # How well is it supported by sources
+            coherence = 0.0    # How coherent/well-structured is it
+            
+            # Check answer completeness
+            if answer_text and len(answer_text.split()) >= 25:
+                completeness = 0.8
+            elif answer_text and len(answer_text.split()) >= 10:
+                completeness = 0.5
+            
+            # Check relevance via reasoning
+            if reasoning and len(reasoning.split()) >= 20:
+                relevance = 0.8
+            elif reasoning:
+                relevance = 0.5
+            
+            # Check source support
+            if sources and len(sources) >= 2:
+                support = 0.9
+            elif sources:
+                support = 0.6
+            
+            # Check coherence
+            if answer_text and "." in answer_text and "," in answer_text:
+                coherence = 0.8
+            elif answer_text and "." in answer_text:
+                coherence = 0.5
+            
+            # Calculate overall confidence
+            confidence = (completeness + relevance + support + coherence) / 4
+            
+            # Determine validation status
+            if confidence >= 0.7:
                 validation_status = "validated"
             else:
                 validation_status = "failed"
                 confidence = max(0.0, confidence - 0.2)  # Penalize confidence
             
-            return {**answer, "validation_status": validation_status, "confidence": confidence}
+            return {
+                **answer,
+                "validation_status": validation_status,
+                "confidence": confidence,
+                "validation_metrics": {
+                    "completeness": completeness,
+                    "relevance": relevance,
+                    "support": support,
+                    "coherence": coherence
+                }
+            }
             
         except Exception as e:
             log_error_with_traceback(e, "Error validating answer")

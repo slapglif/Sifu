@@ -1,0 +1,1372 @@
+2025-02-09 14:59:44.159 | 42956:50400 | INFO     | __main__:main:853 | Main: Initializing research agent
+2025-02-09 14:59:44.175 | 42956:50400 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:59:44.854 | 42956:50400 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:59:45.283 | 42956:50400 | INFO     | scripts.knowledge_acquisition:__init__:278 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-09 14:59:45.285 | 42956:50400 | INFO     | scripts.knowledge_acquisition:__init__:278 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x000001D78179E7B0>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = temperature=0.7 api_key=SecretStr('**********') pydantic_schema=<class 'prompts.knowledge_acquisition.entity_extraction.EntityResponse'>
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-09 14:59:45.286 | 42956:50400 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:59:45.287 | 42956:50400 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:59:45.290 | 42956:50400 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _research_topics
+2025-02-09 14:59:45.291 | 42956:50400 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-09 14:59:45.292 | 42956:50400 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _generate_examples
+2025-02-09 14:59:45.293 | 42956:50400 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _train_model
+2025-02-09 14:59:45.294 | 42956:50400 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-09 14:59:45.296 | 42956:50400 | INFO     | __main__:main:856 | Main: Starting research agent
+2025-02-09 14:59:45.296 | 42956:50400 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-09 14:59:45.297 | 42956:50400 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-09 14:59:45.298 | 42956:50400 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-09 14:59:45.299 | 42956:50400 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-09 14:59:45.300 | 42956:50400 | INFO     | scripts.knowledge_acquisition:initialize:287 | KnowledgeAcquisition: Starting system initialization
+2025-02-09 14:59:45.719 | 42956:50400 | INFO     | scripts.knowledge_acquisition:initialize:296 | KnowledgeAcquisition: Embeddings initialized
+2025-02-09 14:59:45.858 | 42956:50400 | INFO     | scripts.knowledge_acquisition:initialize:309 | KnowledgeAcquisition: Vector store initialized
+2025-02-09 14:59:45.891 | 42956:50400 | INFO     | scripts.knowledge_acquisition:initialize:322 | KnowledgeAcquisition: Graph database initialized
+2025-02-09 14:59:45.892 | 42956:50400 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview
+2025-02-09 14:59:51.077 | 42956:50400 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain key concepts
+2025-02-09 14:59:56.029 | 42956:50400 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain latest developments
+2025-02-09 15:00:01.861 | 42956:50400 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain research papers
+2025-02-09 15:00:08.577 | 42956:50400 | INFO     | __main__:run:657 | Execution: Executing task 1: _synthesize_knowledge
+2025-02-09 15:00:08.579 | 42956:50400 | INFO     | __main__:run:668 | Execution: Found 10 sources for synthesis
+2025-02-09 15:00:08.582 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (Enter Any Domain or URL) (source_1.txt)
+2025-02-09 15:00:08.583 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword re + [SEO Audit Checklist18-step guide to get higher Google rankings.Step-by-step guide to building a website in 2024.( * ToolsTools + Free Tools + Tool Guides + Tool Reviews + Keyword Re + Backlink CheckerDiscover who’s linking to you and your competitors.Step-by-step guide to building a website in ...
+2025-02-09 15:00:08.585 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 12294
+2025-02-09 15:00:08.586 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword r...
+2025-02-09 15:00:08.588 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:09.347 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Jupyter Notebooks', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing']
+2025-02-09 15:00:09.349 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:12.343 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'used_for', 'target': 'Image Recognition'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:12.388 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'used_for', 'target': 'Natural Language Processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:12.409 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 8 relationships
+2025-02-09 15:00:12.411 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:12.413 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:12.414 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Models
+2025-02-09 15:00:12.415 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data Preprocessing -> precedes -> Model Training
+2025-02-09 15:00:12.416 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> uses -> Training Data
+2025-02-09 15:00:12.418 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> precedes -> Model Evaluation
+2025-02-09 15:00:12.419 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Evaluation -> uses -> Test Data
+2025-02-09 15:00:12.421 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Hyperparameter Tuning -> part_of -> Model Training
+2025-02-09 15:00:12.422 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:13.457 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:13.459 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:14.874 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:14.884 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Website Authority Checker | Check Authority Score of Any ... (source_11.txt)
+2025-02-09 15:00:14.886 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Score is a compound metric that’s calculated based on the website’s referring domains, backlinks, organic traffic, and other factors. This value is expressed on a scale from 0 to 100. The higher the number, the stronger and more authoritative the website is. And the likelier it is to rank well in Goog...
+2025-02-09 15:00:14.888 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1691
+2025-02-09 15:00:14.889 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Sc...
+2025-02-09 15:00:14.890 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:15.690 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Big Data', 'Cloud Computing']
+2025-02-09 15:00:15.691 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:18.829 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Training', 'relation': 'output_of', 'target': 'Trained Model'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='output_of', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='output_of', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:18.850 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Trained Model', 'relation': 'input_to', 'target': 'Model Evaluation'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='input_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='input_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:18.871 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Evaluation', 'relation': 'output_of', 'target': 'Evaluation Metrics'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='output_of', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='output_of', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:18.893 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'applied_to', 'target': 'Image Recognition'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:18.915 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'applied_to', 'target': 'Natural Language Processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:18.937 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 6 relationships
+2025-02-09 15:00:18.938 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:18.940 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:18.941 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Model
+2025-02-09 15:00:18.942 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data Preprocessing -> precedes -> Model Training
+2025-02-09 15:00:18.943 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> uses -> Training Data
+2025-02-09 15:00:18.945 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Evaluation -> uses -> Test Data
+2025-02-09 15:00:18.946 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:19.948 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:19.950 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:21.318 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:21.325 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: How to Choose and Check a Domain for SEO (source_13.txt)
+2025-02-09 15:00:21.326 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to the site with the same name. For example, if you want to visit the SE Ranking website, enter the domain name, seranking.com. Domains typically consist of two main parts: a name (second-level domain) and an extension (top-level domain). In the case of seranking.com, *seranking* is the name, and *com*...
+2025-02-09 15:00:21.328 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 8204
+2025-02-09 15:00:21.329 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to ...
+2025-02-09 15:00:21.330 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:22.212 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'GPU', 'Cloud Computing', 'Big Data', 'Data Science', 'Artificial Intelligence']
+2025-02-09 15:00:22.214 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:22.596 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 15:00:22.598 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 15:00:22.599 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:23.584 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:23.586 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:24.952 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:24.960 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Domain Authority Checker (source_15.txt)
+2025-02-09 15:00:24.962 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Home is a complex metric that reflects the relevance and authority of a website. The calculation of the Domain Authority (Domain Rating, Domain Strength) is executed through DA checker tools, and the score considers factors like the number of backlinks, the quality and relevance of these backlinks, the site's content quality, user experience, internal linking structure, and social signals. It's a comprehensive metric that aims to predict a website's potential to rank in results by assessing its ...
+2025-02-09 15:00:24.963 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 10394
+2025-02-09 15:00:24.965 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Home is a complex metric that reflects the relevance and authority of a website. The calculation of the Domain Authority (Domain Rating, Domain Strength) is executed through DA checker tools, and the ...
+2025-02-09 15:00:24.966 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:25.823 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-09 15:00:25.825 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:28.887 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Training', 'relation': 'produces', 'target': 'Trained Model'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:28.911 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Trained Model', 'relation': 'used_by', 'target': 'Model Evaluation'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:28.935 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Evaluation', 'relation': 'produces', 'target': 'Performance Metrics'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:28.958 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'applied_to', 'target': 'Image Recognition'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:28.980 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'applied_to', 'target': 'Natural Language Processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='applied_to', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:29.003 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 6 relationships
+2025-02-09 15:00:29.005 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:29.007 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:29.009 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Model
+2025-02-09 15:00:29.011 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data Preprocessing -> precedes -> Model Training
+2025-02-09 15:00:29.012 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> uses -> Training Data
+2025-02-09 15:00:29.014 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Evaluation -> uses -> Test Data
+2025-02-09 15:00:29.016 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:30.068 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:30.070 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:31.501 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:31.509 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: CHECK DOMAIN OVERVIEW - SmallSEOTools.com (source_17.txt)
+2025-02-09 15:00:31.510 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 - JA( Italiano - IT( Français - FR( Português - PT( Español - ES( Deutsche - DE( 中文 - ZH( !Report Bug( # CHECK DOMAIN OVERVIEW Use website checker to get a domain overview and have a better insight into the online presence of a website. Just enter the domain or URL below and click the big blue "Chec...
+2025-02-09 15:00:31.512 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 7208
+2025-02-09 15:00:31.514 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 ...
+2025-02-09 15:00:31.515 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:32.155 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Neural Networks', 'TensorFlow', 'Deep Learning', 'Artificial Intelligence', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science']
+2025-02-09 15:00:32.157 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:32.511 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 15:00:32.513 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Neural Networks
+2025-02-09 15:00:32.514 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:33.609 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:33.611 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:35.101 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:35.108 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: NIH News in Health | A monthly newsletter from the National ... (source_19.txt)
+2025-02-09 15:00:35.110 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to main content ![NIH News in Health A monthly newsletter from the National Institutes of Health, part of the U.S. Department of Health and Human Services ## ## Site * Home ### Beyond Basic Blood Tests The Power of Pets Rough Up Your Diet Caring for Concussions Do Social Ties Affect Our Health?( NIH Office of Communications and Public Liaison Building 31, Room 5B52 Bethesda, MD 20892-2094 nihnewsinhealth@od.nih.gov Tel: 301-451-8224 **Editor:** Harrison Wein, Ph.D. **Managing Editor:** Tian...
+2025-02-09 15:00:35.111 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1195
+2025-02-09 15:00:35.112 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to main content ![NIH News in Health A monthly newsletter from the National Institutes of Health, part of the U.S. Department of Health and Human Services ## ## Site * Home ### Beyond Basic Blood...
+2025-02-09 15:00:35.113 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:36.024 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Image Classification', 'Object Detection', 'Convolutional Neural Networks']
+2025-02-09 15:00:36.026 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:39.497 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'used_for', 'target': 'Image Recognition'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:39.521 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'used_for', 'target': 'Natural Language Processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:39.542 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 10 relationships
+2025-02-09 15:00:39.543 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Network
+2025-02-09 15:00:39.545 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Network
+2025-02-09 15:00:39.546 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Image Recognition -> is_a -> Machine Learning Task
+2025-02-09 15:00:39.548 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Natural Language Processing -> is_a -> Machine Learning Task
+2025-02-09 15:00:39.549 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Model
+2025-02-09 15:00:39.550 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data Preprocessing -> precedes -> Model Training
+2025-02-09 15:00:39.551 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> uses -> Training Data
+2025-02-09 15:00:39.553 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> precedes -> Model Evaluation
+2025-02-09 15:00:39.554 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Evaluation -> uses -> Test Data
+2025-02-09 15:00:39.555 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Hyperparameter Tuning -> part_of -> Model Training
+2025-02-09 15:00:39.556 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:40.539 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:40.541 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:41.884 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:41.894 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Rating Checker 【Free tool, No Login, Super Fast】 (source_3.txt)
+2025-02-09 15:00:41.897 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. The higher the DR score, the stronger and more authoritative the website is considered to be. This metric is crucial for understanding how likely a website is to rank in The calculation of DR takes into account the quantity and quality of external backlinks, denoting websites that have robust backlink...
+2025-02-09 15:00:41.899 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 4993
+2025-02-09 15:00:41.900 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. Th...
+2025-02-09 15:00:41.901 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:42.686 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 15:00:42.688 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:45.784 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Training', 'relation': 'produces', 'target': 'Trained Model'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:45.996 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Trained Model', 'relation': 'used_by', 'target': 'Model Inference'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:46.018 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model Inference', 'relation': 'produces', 'target': 'Predictions'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='produces', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:46.040 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'used_by', 'target': 'Image Recognition'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:46.061 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'used_by', 'target': 'Natural Language Processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_by', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:46.082 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 5 relationships
+2025-02-09 15:00:46.084 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:46.085 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:46.087 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Model
+2025-02-09 15:00:46.088 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data Preprocessing -> precedes -> Model Training
+2025-02-09 15:00:46.089 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model Training -> uses -> Training Data
+2025-02-09 15:00:46.090 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:47.144 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.85, 'domain_relevance': 0.9, 'timestamp': '2024-02-09T11:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:47.146 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:48.362 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 15:00:48.371 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (& How to Improve Yours) (source_5.txt)
+2025-02-09 15:00:48.372 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit enter. The website authority report is split into six sections. First, you’ll see an overview of domain metrics, like your authority score. This indicates the level of trust that !undefined:** Combines factors like link quality, organic traffic, and spam presence to create an accurate measure, aiming t...
+2025-02-09 15:00:48.373 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1060
+2025-02-09 15:00:48.375 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit ent...
+2025-02-09 15:00:48.377 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:49.219 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-09 15:00:49.221 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:49.653 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 15:00:49.654 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 15:00:49.656 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:50.675 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:50.677 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:51.936 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 15:00:51.945 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Check Domain Authority Score【No Login, Super Fast, FREE】 (source_7.txt)
+2025-02-09 15:00:51.946 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO Domain Authority (DA) is a metric that predicts how well a website is likely to rank on DA is determined by analyzing multiple factors, including the number of linking root domains and the total count of links, culminating in a single DA score. This score is commonly used for comparing the ranking potential of different websites or monitoring a website's strength over time. It's important to understand that Domain Authority is not utilized by Google in its ## Examples of doma...
+2025-02-09 15:00:51.948 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 5785
+2025-02-09 15:00:51.949 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO Domain Authority (DA) is a metric that predicts how well a website is likely to rank on DA is determined by analyzing multiple factors, including the number of linking root domains...
+2025-02-09 15:00:51.951 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:00:52.797 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Natural Language Processing', 'Computer Vision', 'Data Science', 'Artificial Intelligence', 'Big Data']
+2025-02-09 15:00:52.799 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:00:56.315 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Model evaluation', 'relation': 'informs', 'target': 'Model deployment'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='informs', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='informs', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.337 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'CNNs', 'relation': 'used_for', 'target': 'Image classification'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.358 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'RNNs', 'relation': 'used_for', 'target': 'Sequential data processing'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.380 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Backpropagation', 'relation': 'used_in', 'target': 'Model training'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_in', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_in', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.401 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Gradient descent', 'relation': 'used_in', 'target': 'Backpropagation'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_in', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='used_in', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.422 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Large datasets', 'relation': 'required_for', 'target': 'Effective model training'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='required_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='required_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.443 | 42956:50400 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:652 | Failed to convert relationship: {'source': 'Computational resources', 'relation': 'required_for', 'target': 'Model training'}: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='required_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 466, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 650, in _extract_relationships
+    converted_relationships.append(Relationship(**rel))
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Relationship
+relation
+  Input should be 'uses', 'applies', 'implements', 'improves', 'outperforms', 'achieves', 'contains', 'consists_of', 'part_of', 'better_than', 'similar_to', 'different_from', 'leads_to', 'causes', 'affects', 'precedes', 'follows', 'concurrent_with', 'is_a', 'has_part' or 'related_to' [type=literal_error, input_value='required_for', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/literal_error
+2025-02-09 15:00:56.464 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 5 relationships
+2025-02-09 15:00:56.465 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Convolutional Neural Networks (CNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:56.466 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Recurrent Neural Networks (RNNs) -> is_a -> Neural Networks
+2025-02-09 15:00:56.468 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Neural Networks -> is_a -> Machine Learning Models
+2025-02-09 15:00:56.469 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Data preprocessing -> precedes -> Model training
+2025-02-09 15:00:56.470 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Model training -> precedes -> Model evaluation
+2025-02-09 15:00:56.471 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:00:57.553 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:00:57.555 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:00:59.113 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 15:00:59.121 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Get a Test Domain using Unstoppable Website Faucet Guide (source_9.txt)
+2025-02-09 15:00:59.122 | 42956:50400 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community * Twitter( * Facebook( Resources * Medium( * Podcast( * Youtube( * Github( Copyright © 2024 Unstoppable Domains Inc. All rights reserved....
+2025-02-09 15:00:59.124 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 336
+2025-02-09 15:00:59.125 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community *...
+2025-02-09 15:00:59.127 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 15:01:00.003 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Neural Networks', 'TensorFlow', 'Deep Learning', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-09 15:01:00.005 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 15:01:00.524 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 15:01:00.526 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Neural Networks
+2025-02-09 15:01:00.527 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 15:01:01.637 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 15:01:01.640 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 15:01:03.004 | 42956:50400 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 15:01:03.021 | 42956:50400 | INFO     | __main__:run:657 | Execution: Executing task 2: _generate_examples
+2025-02-09 15:01:03.024 | 42956:50400 | INFO     | __main__:run:678 | Execution: Found 10 knowledge entries for example generation
+2025-02-09 15:01:55.150 | 42956:50400 | INFO     | __main__:run:657 | Execution: Executing task 3: _train_model
+2025-02-09 15:01:55.152 | 42956:50400 | INFO     | __main__:run:688 | Execution: Found 72 examples for training
+2025-02-09 15:01:55.155 | 42956:50400 | INFO     | __main__:run:722 | Decision: Making join decision
+2025-02-09 15:01:55.157 | 42956:50400 | INFO     | scripts.llm_compiler:make_join_decision:412 | Decision: Making join decision
+2025-02-09 15:01:56.158 | 42956:50400 | INFO     | __main__:run:733 | Compiler: Generating final result
+2025-02-09 15:01:56.159 | 42956:50400 | INFO     | scripts.llm_compiler:_generate_final_result:560 | Compiler: Generating final result
+2025-02-09 15:01:56.160 | 42956:50400 | INFO     | scripts.llm_compiler:_generate_final_result:570 | Compiler: Generated final result
+2025-02-09 15:01:56.161 | 42956:50400 | INFO     | __main__:run:737 | Research: Research workflow completed successfully

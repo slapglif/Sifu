@@ -1,0 +1,480 @@
+2025-02-09 14:44:59.532 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:45:02.031 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:05.620 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:09.748 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:45:12.532 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:16.385 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:45:19.211 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:23.551 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:27.450 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:45:29.771 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:34.588 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:45:37.110 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:40.909 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:44.978 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:45:48.460 | 37732:3436 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes

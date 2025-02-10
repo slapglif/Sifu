@@ -1,0 +1,29 @@
+2025-02-09 23:25:08.321 | 55868:23856 | INFO     | __main__:main:959 | Main: Initializing research agent
+2025-02-09 23:25:08.356 | 55868:23856 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 23:25:09.587 | 55868:23856 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 23:25:10.292 | 55868:23856 | INFO     | scripts.knowledge_acquisition:__init__:278 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-09 23:25:10.295 | 55868:23856 | INFO     | scripts.knowledge_acquisition:__init__:278 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x00000240EFA4A7B0>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = temperature=0.7 api_key=SecretStr('**********') pydantic_schema=<class 'prompts.knowledge_acquisition.entity_extraction.EntityResponse'> format='json'
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-09 23:25:10.297 | 55868:23856 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 23:25:10.302 | 55868:23856 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 23:25:10.307 | 55868:23856 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _research_topics
+2025-02-09 23:25:10.309 | 55868:23856 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-09 23:25:10.311 | 55868:23856 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _generate_examples
+2025-02-09 23:25:10.313 | 55868:23856 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _train_model
+2025-02-09 23:25:10.316 | 55868:23856 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-09 23:25:10.318 | 55868:23856 | INFO     | __main__:main:962 | Main: Starting research agent
+2025-02-09 23:25:10.321 | 55868:23856 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-09 23:25:10.323 | 55868:23856 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-09 23:25:10.325 | 55868:23856 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-09 23:25:10.326 | 55868:23856 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-09 23:25:10.329 | 55868:23856 | INFO     | scripts.knowledge_acquisition:initialize:287 | KnowledgeAcquisition: Starting system initialization
+2025-02-09 23:25:11.165 | 55868:23856 | INFO     | scripts.knowledge_acquisition:initialize:296 | KnowledgeAcquisition: Embeddings initialized
+2025-02-09 23:25:11.460 | 55868:23856 | INFO     | scripts.knowledge_acquisition:initialize:309 | KnowledgeAcquisition: Vector store initialized
+2025-02-09 23:25:11.546 | 55868:23856 | INFO     | scripts.knowledge_acquisition:initialize:322 | KnowledgeAcquisition: Graph database initialized
+2025-02-09 23:25:11.549 | 55868:23856 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview

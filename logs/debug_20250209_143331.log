@@ -1,0 +1,1421 @@
+2025-02-09 14:33:31.884 | 54280:12048 | INFO     | __main__:main:853 | Main: Initializing research agent
+2025-02-09 14:33:31.890 | 54280:12048 | INFO     | scripts.llm_compiler:__init__:79 | Compiler: Initialized LLM compiler
+2025-02-09 14:33:33.068 | 54280:12048 | INFO     | scripts.llm_compiler:__init__:79 | Compiler: Initialized LLM compiler
+2025-02-09 14:33:33.796 | 54280:12048 | INFO     | scripts.knowledge_acquisition:__init__:279 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-09 14:33:33.799 | 54280:12048 | INFO     | scripts.knowledge_acquisition:__init__:279 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x00000231A11D2510>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = model='gemini-2.0-flash' temperature=0.7 api_key=SecretStr('**********') format='json' schema={'description': 'Schema for entity extraction response', 'properties': {'entities': {'description': 'List ...
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-09 14:33:33.802 | 54280:12048 | INFO     | scripts.llm_compiler:__init__:79 | Compiler: Initialized LLM compiler
+2025-02-09 14:33:33.806 | 54280:12048 | INFO     | scripts.llm_compiler:__init__:79 | Compiler: Initialized LLM compiler
+2025-02-09 14:33:33.811 | 54280:12048 | INFO     | scripts.llm_compiler:register_tool:89 | Compiler: Registered tool: _research_topics
+2025-02-09 14:33:33.813 | 54280:12048 | INFO     | scripts.llm_compiler:register_tool:89 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-09 14:33:33.815 | 54280:12048 | INFO     | scripts.llm_compiler:register_tool:89 | Compiler: Registered tool: _generate_examples
+2025-02-09 14:33:33.816 | 54280:12048 | INFO     | scripts.llm_compiler:register_tool:89 | Compiler: Registered tool: _train_model
+2025-02-09 14:33:33.818 | 54280:12048 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-09 14:33:33.820 | 54280:12048 | INFO     | __main__:main:856 | Main: Starting research agent
+2025-02-09 14:33:33.822 | 54280:12048 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-09 14:33:33.824 | 54280:12048 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-09 14:33:33.827 | 54280:12048 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-09 14:33:33.828 | 54280:12048 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-09 14:33:33.830 | 54280:12048 | INFO     | scripts.knowledge_acquisition:initialize:288 | KnowledgeAcquisition: Starting system initialization
+2025-02-09 14:33:34.603 | 54280:12048 | INFO     | scripts.knowledge_acquisition:initialize:297 | KnowledgeAcquisition: Embeddings initialized
+2025-02-09 14:33:34.967 | 54280:12048 | INFO     | scripts.knowledge_acquisition:initialize:310 | KnowledgeAcquisition: Vector store initialized
+2025-02-09 14:33:35.047 | 54280:12048 | INFO     | scripts.knowledge_acquisition:initialize:323 | KnowledgeAcquisition: Graph database initialized
+2025-02-09 14:33:35.050 | 54280:12048 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview
+2025-02-09 14:33:40.669 | 54280:12048 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain key concepts
+2025-02-09 14:33:46.484 | 54280:12048 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain latest developments
+2025-02-09 14:33:53.683 | 54280:12048 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain research papers
+2025-02-09 14:34:03.392 | 54280:12048 | INFO     | __main__:run:657 | Execution: Executing task 1: _synthesize_knowledge
+2025-02-09 14:34:03.394 | 54280:12048 | INFO     | __main__:run:668 | Execution: Found 10 sources for synthesis
+2025-02-09 14:34:03.402 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (Enter Any Domain or URL) (source_1.txt)
+2025-02-09 14:34:03.405 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword re + [SEO Audit Checklist18-step guide to get higher Google rankings.Step-by-step guide to building a website in 2024.( * ToolsTools + Free Tools + Tool Guides + Tool Reviews + Keyword Re + Backlink CheckerDiscover who’s linking to you and your competitors.Step-by-step guide to building a website in ...
+2025-02-09 14:34:03.409 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:445 | KnowledgeAcquisition: Starting source processing with content length: 12294
+2025-02-09 14:34:03.412 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:449 | KnowledgeAcquisition: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword r...
+2025-02-09 14:34:03.416 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:452 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:34:03.586 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_entities:646 | Failed to extract entities: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 454, in process_source
+    entities = await self._extract_entities(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 621, in _extract_entities
+    result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:03.754 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:459 | KnowledgeAcquisition: Extracted 1 entities: ['general_concept']
+2025-02-09 14:34:03.758 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:465 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:34:03.830 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:658 | Failed to extract relationships: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 467, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 655, in _extract_relationships
+    result = await chain.ainvoke({"content": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:03.937 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:479 | KnowledgeAcquisition: Extracted 0 relationships
+2025-02-09 14:34:03.940 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:487 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:34:03.993 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_generate_metadata:669 | Failed to generate metadata: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 489, in process_source
+    metadata = await self._generate_metadata(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 666, in _generate_metadata
+    result = await chain.ainvoke({"text": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.087 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:500 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:34:04.148 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_evaluate_confidence:734 | Failed to evaluate confidence: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 502, in process_source
+    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 723, in _evaluate_confidence
+    result = await chain.ainvoke({
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.234 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:510 | KnowledgeAcquisition: Confidence score: 0.5
+2025-02-09 14:34:04.248 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Website Authority Checker | Check Authority Score of Any ... (source_11.txt)
+2025-02-09 14:34:04.251 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Score is a compound metric that’s calculated based on the website’s referring domains, backlinks, organic traffic, and other factors. This value is expressed on a scale from 0 to 100. The higher the number, the stronger and more authoritative the website is. And the likelier it is to rank well in Goog...
+2025-02-09 14:34:04.254 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:445 | KnowledgeAcquisition: Starting source processing with content length: 1691
+2025-02-09 14:34:04.257 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:449 | KnowledgeAcquisition: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Sc...
+2025-02-09 14:34:04.260 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:452 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:34:04.305 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_entities:646 | Failed to extract entities: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 454, in process_source
+    entities = await self._extract_entities(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 621, in _extract_entities
+    result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.441 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:459 | KnowledgeAcquisition: Extracted 1 entities: ['general_concept']
+2025-02-09 14:34:04.445 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:465 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:34:04.490 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:658 | Failed to extract relationships: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 467, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 655, in _extract_relationships
+    result = await chain.ainvoke({"content": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.588 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:479 | KnowledgeAcquisition: Extracted 0 relationships
+2025-02-09 14:34:04.592 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:487 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:34:04.647 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_generate_metadata:669 | Failed to generate metadata: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 489, in process_source
+    metadata = await self._generate_metadata(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 666, in _generate_metadata
+    result = await chain.ainvoke({"text": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.731 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:500 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:34:04.794 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_evaluate_confidence:734 | Failed to evaluate confidence: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 502, in process_source
+    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 723, in _evaluate_confidence
+    result = await chain.ainvoke({
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:04.886 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:510 | KnowledgeAcquisition: Confidence score: 0.5
+2025-02-09 14:34:04.898 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: How to Choose and Check a Domain for SEO (source_13.txt)
+2025-02-09 14:34:04.900 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to the site with the same name. For example, if you want to visit the SE Ranking website, enter the domain name, seranking.com. Domains typically consist of two main parts: a name (second-level domain) and an extension (top-level domain). In the case of seranking.com, *seranking* is the name, and *com*...
+2025-02-09 14:34:04.903 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:445 | KnowledgeAcquisition: Starting source processing with content length: 8204
+2025-02-09 14:34:04.905 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:449 | KnowledgeAcquisition: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to ...
+2025-02-09 14:34:04.907 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:452 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:34:04.968 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_entities:646 | Failed to extract entities: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 454, in process_source
+    entities = await self._extract_entities(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 621, in _extract_entities
+    result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.051 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:459 | KnowledgeAcquisition: Extracted 1 entities: ['general_concept']
+2025-02-09 14:34:05.054 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:465 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:34:05.132 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:658 | Failed to extract relationships: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 467, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 655, in _extract_relationships
+    result = await chain.ainvoke({"content": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.212 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:479 | KnowledgeAcquisition: Extracted 0 relationships
+2025-02-09 14:34:05.216 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:487 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:34:05.284 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_generate_metadata:669 | Failed to generate metadata: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 489, in process_source
+    metadata = await self._generate_metadata(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 666, in _generate_metadata
+    result = await chain.ainvoke({"text": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.441 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:500 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:34:05.488 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_evaluate_confidence:734 | Failed to evaluate confidence: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 502, in process_source
+    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 723, in _evaluate_confidence
+    result = await chain.ainvoke({
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.577 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:510 | KnowledgeAcquisition: Confidence score: 0.5
+2025-02-09 14:34:05.590 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Domain Authority Checker (source_15.txt)
+2025-02-09 14:34:05.593 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Home is a complex metric that reflects the relevance and authority of a website. The calculation of the Domain Authority (Domain Rating, Domain Strength) is executed through DA checker tools, and the score considers factors like the number of backlinks, the quality and relevance of these backlinks, the site's content quality, user experience, internal linking structure, and social signals. It's a comprehensive metric that aims to predict a website's potential to rank in results by assessing its ...
+2025-02-09 14:34:05.597 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:445 | KnowledgeAcquisition: Starting source processing with content length: 10394
+2025-02-09 14:34:05.599 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:449 | KnowledgeAcquisition: Content preview:
+Home is a complex metric that reflects the relevance and authority of a website. The calculation of the Domain Authority (Domain Rating, Domain Strength) is executed through DA checker tools, and the ...
+2025-02-09 14:34:05.602 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:452 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:34:05.645 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_entities:646 | Failed to extract entities: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 454, in process_source
+    entities = await self._extract_entities(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 621, in _extract_entities
+    result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.733 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:459 | KnowledgeAcquisition: Extracted 1 entities: ['general_concept']
+2025-02-09 14:34:05.736 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:465 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:34:05.808 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_relationships:658 | Failed to extract relationships: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 467, in process_source
+    relationships = await self._extract_relationships(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 655, in _extract_relationships
+    result = await chain.ainvoke({"content": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:05.888 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:479 | KnowledgeAcquisition: Extracted 0 relationships
+2025-02-09 14:34:05.891 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:487 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:34:05.934 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_generate_metadata:669 | Failed to generate metadata: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 489, in process_source
+    metadata = await self._generate_metadata(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 666, in _generate_metadata
+    result = await chain.ainvoke({"text": content})
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:06.011 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:500 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:34:06.057 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_evaluate_confidence:734 | Failed to evaluate confidence: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 502, in process_source
+    confidence_eval = await self._evaluate_confidence(content, entities, relationships)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 723, in _evaluate_confidence
+    result = await chain.ainvoke({
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:06.136 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:510 | KnowledgeAcquisition: Confidence score: 0.5
+2025-02-09 14:34:06.147 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: CHECK DOMAIN OVERVIEW - SmallSEOTools.com (source_17.txt)
+2025-02-09 14:34:06.149 | 54280:12048 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 - JA( Italiano - IT( Français - FR( Português - PT( Español - ES( Deutsche - DE( 中文 - ZH( !Report Bug( # CHECK DOMAIN OVERVIEW Use website checker to get a domain overview and have a better insight into the online presence of a website. Just enter the domain or URL below and click the big blue "Chec...
+2025-02-09 14:34:06.152 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:445 | KnowledgeAcquisition: Starting source processing with content length: 7208
+2025-02-09 14:34:06.154 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:449 | KnowledgeAcquisition: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 ...
+2025-02-09 14:34:06.159 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:452 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:34:06.204 | 54280:12048 | ERROR    | scripts.knowledge_acquisition:_extract_entities:646 | Failed to extract entities: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 332, in _agenerate
+    response = await self._client.generate_content_async(
+
+  File "C:\Python313\Lib\site-packages\google\generativeai\generative_models.py", line 385, in generate_content_async
+    response = await self._async_client.generate_content(
+  File "C:\Python313\Lib\site-packages\google\ai\generativelanguage_v1beta\services\generative_service\async_client.py", line 440, in generate_content
+    response = await rpc(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 230, in retry_wrapped_func
+    return await retry_target(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 160, in retry_target
+    _retry_error_helper(
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_base.py", line 212, in _retry_error_helper
+    raise final_exc from source_exc
+  File "C:\Python313\Lib\site-packages\google\api_core\retry\retry_unary_async.py", line 155, in retry_target
+    return await target()
+  File "C:\Python313\Lib\site-packages\google\api_core\grpc_helpers_async.py", line 88, in __await__
+    raise exceptions.from_grpc_error(rpc_error) from rpc_error
+
+google.api_core.exceptions.InvalidArgument: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+  File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 454, in process_source
+    entities = await self._extract_entities(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 621, in _extract_entities
+    result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+
+  File "C:\Python313\Lib\site-packages\langchain_core\runnables\base.py", line 3058, in ainvoke
+    input = await asyncio.create_task(part(), context=context)  # type: ignore
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 305, in ainvoke
+    llm_result = await self.agenerate_prompt(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 870, in agenerate_prompt
+    return await self.agenerate(
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 830, in agenerate
+    raise exceptions[0]
+  File "C:\Python313\Lib\site-packages\langchain_core\language_models\chat_models.py", line 998, in _agenerate_with_cache
+    result = await self._agenerate(
+
+  File "C:\Users\mikeb\work\sifu2\scripts\chat_gemini.py", line 370, in _agenerate
+    raise ValueError(f"Failed to generate response: {str(e)}")
+
+ValueError: Failed to generate response: 400 * GenerateContentRequest.generation_config.response_schema.type: must be specified when not using one_of
+
+2025-02-09 14:34:06.397 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:459 | KnowledgeAcquisition: Extracted 1 entities: ['general_concept']
+2025-02-09 14:34:06.400 | 54280:12048 | INFO     | scripts.knowledge_acquisition:process_source:465 | KnowledgeAcquisition: Extracting relationships...

@@ -14,44 +14,58 @@ def get_metadata_generation_prompt() -> ChatPromptTemplate:
     parser = PydanticOutputParser(pydantic_object=MetadataResponse)
     format_instructions = parser.get_format_instructions()
     
-    system_template = """Generate metadata for the given text. Return in JSON format.
+    system_template = """You are an expert at generating metadata for content.
 {format_instructions}
 
-IMPORTANT:
-1. The metadata field is required and must be an object
-2. source_type must be one of: text, pdf, web
-3. confidence_score and domain_relevance must be numbers between 0.0 and 1.0
-4. timestamp must be in ISO format with timezone (e.g. "2024-02-07T12:00:00Z")
-5. validation_status must be one of: pending, processed, failed
-6. domain must be "knowledge"
-7. Do not include any text before or after the JSON
-8. Use proper JSON formatting with double quotes
-9. All fields are required
-10. The response must be wrapped in a metadata object
-
-Example response:
+CRITICAL RULES:
+1. You MUST output ONLY a valid JSON object
+2. The JSON MUST match the schema exactly
+3. The metadata field MUST be an object with specific fields
+4. All strings MUST be properly escaped if they contain special characters
+5. Do not include any text before or after the JSON object
+6. Do not include any explanations or notes
+7. The response should look exactly like this:
 {{
     "metadata": {{
         "source_type": "text",
         "confidence_score": 0.85,
         "domain_relevance": 0.9,
-        "timestamp": "2024-02-07T12:00:00Z",
-        "validation_status": "pending",
-        "domain": "knowledge"
+        "timestamp": "2024-02-09T11:42:32.000Z",
+        "validation_status": "processed",
+        "domain": "machine_learning"
     }}
-}}"""
+}}
+
+GUIDELINES for metadata generation:
+1. Analyze content to determine:
+   - Source type (text, pdf, web)
+   - Domain relevance
+   - Confidence in reliability
+   - Validation status
+   - Domain classification
+
+2. Consider factors like:
+   - Content quality and coherence
+   - Technical depth
+   - Citation of sources
+   - Author expertise
+   - Publication context
+
+3. Ensure metadata is:
+   - Accurate and objective
+   - Well-structured
+   - Complete
+   - Consistent"""
 
     human_template = """Generate metadata for this text:
 
-{content}
+{text}
 
 Remember:
-1. Return metadata wrapped in a metadata object
-2. Use proper JSON formatting
-3. Follow the schema exactly
-4. All fields are required
-5. Use current timestamp in ISO format with timezone
-6. Output ONLY a valid JSON object following the format instructions."""
+1. Return ONLY a valid JSON object
+2. Include all required metadata fields
+3. Use proper JSON formatting
+4. Do not include any text before or after the JSON"""
 
     prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),

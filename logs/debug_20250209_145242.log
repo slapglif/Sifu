@@ -1,0 +1,731 @@
+2025-02-09 14:52:42.181 | 53560:11368 | INFO     | __main__:main:853 | Main: Initializing research agent
+2025-02-09 14:52:42.197 | 53560:11368 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:52:43.015 | 53560:11368 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:52:43.562 | 53560:11368 | INFO     | scripts.knowledge_acquisition:__init__:278 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-09 14:52:43.564 | 53560:11368 | INFO     | scripts.knowledge_acquisition:__init__:278 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x0000027812A5ABA0>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = temperature=0.7 api_key=SecretStr('**********') pydantic_schema=<class 'prompts.knowledge_acquisition.entity_extraction.EntityResponse'>
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-09 14:52:43.565 | 53560:11368 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:52:43.567 | 53560:11368 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 14:52:43.571 | 53560:11368 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _research_topics
+2025-02-09 14:52:43.572 | 53560:11368 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-09 14:52:43.573 | 53560:11368 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _generate_examples
+2025-02-09 14:52:43.574 | 53560:11368 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _train_model
+2025-02-09 14:52:43.575 | 53560:11368 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-09 14:52:43.577 | 53560:11368 | INFO     | __main__:main:856 | Main: Starting research agent
+2025-02-09 14:52:43.578 | 53560:11368 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-09 14:52:43.579 | 53560:11368 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-09 14:52:43.580 | 53560:11368 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-09 14:52:43.580 | 53560:11368 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-09 14:52:43.582 | 53560:11368 | INFO     | scripts.knowledge_acquisition:initialize:287 | KnowledgeAcquisition: Starting system initialization
+2025-02-09 14:52:44.069 | 53560:11368 | INFO     | scripts.knowledge_acquisition:initialize:296 | KnowledgeAcquisition: Embeddings initialized
+2025-02-09 14:52:44.252 | 53560:11368 | INFO     | scripts.knowledge_acquisition:initialize:309 | KnowledgeAcquisition: Vector store initialized
+2025-02-09 14:52:44.315 | 53560:11368 | INFO     | scripts.knowledge_acquisition:initialize:322 | KnowledgeAcquisition: Graph database initialized
+2025-02-09 14:52:44.317 | 53560:11368 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview
+2025-02-09 14:52:56.316 | 53560:11368 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain key concepts
+2025-02-09 14:53:01.235 | 53560:11368 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain latest developments
+2025-02-09 14:53:07.445 | 53560:11368 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain research papers
+2025-02-09 14:53:18.128 | 53560:11368 | INFO     | __main__:run:657 | Execution: Executing task 1: _synthesize_knowledge
+2025-02-09 14:53:18.129 | 53560:11368 | INFO     | __main__:run:668 | Execution: Found 10 sources for synthesis
+2025-02-09 14:53:18.133 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (Enter Any Domain or URL) (source_1.txt)
+2025-02-09 14:53:18.134 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword re + [SEO Audit Checklist18-step guide to get higher Google rankings.Step-by-step guide to building a website in 2024.( * ToolsTools + Free Tools + Tool Guides + Tool Reviews + Keyword Re + Backlink CheckerDiscover who’s linking to you and your competitors.Step-by-step guide to building a website in ...
+2025-02-09 14:53:18.136 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 12294
+2025-02-09 14:53:18.138 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword r...
+2025-02-09 14:53:18.139 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:19.081 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 14:53:19.083 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:22.259 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 10 relationships
+2025-02-09 14:53:22.261 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:53:22.305 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:23.314 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:23.316 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:24.654 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 14:53:24.655 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:24.680 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Website Authority Checker | Check Authority Score of Any ... (source_11.txt)
+2025-02-09 14:53:24.682 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Score is a compound metric that’s calculated based on the website’s referring domains, backlinks, organic traffic, and other factors. This value is expressed on a scale from 0 to 100. The higher the number, the stronger and more authoritative the website is. And the likelier it is to rank well in Goog...
+2025-02-09 14:53:24.684 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1691
+2025-02-09 14:53:24.686 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to content * Features * Svenska * Tiếng Việt * Türkçe * 中文 * 日本語 * 한국어 Log In is a measurement used to evaluate a domain’s overall quality and SEO performance. For example, Semrush’s Authority Sc...
+2025-02-09 14:53:24.688 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:25.517 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 14:53:25.519 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:25.911 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 14:53:25.913 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:480 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 14:53:25.915 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:27.037 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:27.038 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:28.418 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:53:28.420 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:28.443 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: How to Choose and Check a Domain for SEO (source_13.txt)
+2025-02-09 14:53:28.444 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to the site with the same name. For example, if you want to visit the SE Ranking website, enter the domain name, seranking.com. Domains typically consist of two main parts: a name (second-level domain) and an extension (top-level domain). In the case of seranking.com, *seranking* is the name, and *com*...
+2025-02-09 14:53:28.446 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 8204
+2025-02-09 14:53:28.447 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* Help Center *en*English * *en*English * *de*Deutsch Blog refers to a unique combination of characters and symbols that make up the site’s name. The user can type it into the browser window to go to ...
+2025-02-09 14:53:28.448 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:29.267 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 14:53:29.269 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:32.604 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 11 relationships
+2025-02-09 14:53:32.606 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:53:32.625 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:33.644 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:33.646 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:35.122 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:53:35.124 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:35.145 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Testing - Introduction, Testing Strategy & conclusion (source_15.txt)
+2025-02-09 14:53:35.146 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![QACraft for ease of testing. In other words, Domain testing is a **software testing TAGS : domain testing ## 01 Oct ![software testing ## 28 Jun ![software testing ## Recent Posts * Regression testing comes under which type of testing?( * Why is Regression Testing In Agile?( * Difference Between Selenium and Automation Testing( * Is Integration Testing White box Testing?( * How Many Types of Integration Testing Are There?( ## Categories * Agile Testing( * Agile Testing( * Android App Testing( ...
+2025-02-09 14:53:35.148 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 2357
+2025-02-09 14:53:35.149 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![QACraft for ease of testing. In other words, Domain testing is a **software testing TAGS : domain testing ## 01 Oct ![software testing ## 28 Jun ![software testing ## Recent Posts * Regression testi...
+2025-02-09 14:53:35.151 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:35.749 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Artificial Neural Networks', 'Backpropagation', 'Stochastic Gradient Descent', 'TensorFlow', 'Python', 'Keras', 'Data Science', 'Big Data']
+2025-02-09 14:53:35.750 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:36.112 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 14:53:36.114 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:480 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 14:53:36.115 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:37.161 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:37.163 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:38.626 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:53:38.629 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:38.657 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: CHECK DOMAIN OVERVIEW - SmallSEOTools.com (source_17.txt)
+2025-02-09 14:53:38.659 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 - JA( Italiano - IT( Français - FR( Português - PT( Español - ES( Deutsche - DE( 中文 - ZH( !Report Bug( # CHECK DOMAIN OVERVIEW Use website checker to get a domain overview and have a better insight into the online presence of a website. Just enter the domain or URL below and click the big blue "Chec...
+2025-02-09 14:53:38.661 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 7208
+2025-02-09 14:53:38.662 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 ...
+2025-02-09 14:53:38.664 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:39.513 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'GPU', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing']
+2025-02-09 14:53:39.514 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:42.583 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 10 relationships
+2025-02-09 14:53:42.584 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:53:42.604 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:44.094 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:00:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:44.095 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:45.482 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 14:53:45.484 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:45.506 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: CISSP Exam Refresh 2024: Key Updates and Changes (source_19.txt)
+2025-02-09 14:53:45.508 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+!Destination Certification - Pass CISSP Exam - Destination Cerification logo( Rob Witcher Last Updated On: August 12, 2024 Copy Link In today's digital world, the importance of well-trained information security professionals cannot be overstated. With cyber threats becoming more complex, the need for experts who can navigate and secure our digital environments is crucial. The 2024 update to the CISSP exam reflects these needs, ensuring that cybersecurity professionals are prepared to face modern...
+2025-02-09 14:53:45.510 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 43346
+2025-02-09 14:53:45.511 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+!Destination Certification - Pass CISSP Exam - Destination Cerification logo( Rob Witcher Last Updated On: August 12, 2024 Copy Link In today's digital world, the importance of well-trained informatio...
+2025-02-09 14:53:45.512 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:46.355 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'GPU acceleration']
+2025-02-09 14:53:46.357 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:49.609 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 10 relationships
+2025-02-09 14:53:49.611 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:53:49.630 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:50.733 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:00:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:50.735 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:52.097 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:53:52.099 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:52.120 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Rating Checker 【Free tool, No Login, Super Fast】 (source_3.txt)
+2025-02-09 14:53:52.121 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. The higher the DR score, the stronger and more authoritative the website is considered to be. This metric is crucial for understanding how likely a website is to rank in The calculation of DR takes into account the quantity and quality of external backlinks, denoting websites that have robust backlink...
+2025-02-09 14:53:52.123 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 4993
+2025-02-09 14:53:52.124 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. Th...
+2025-02-09 14:53:52.125 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:52.767 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 14:53:52.769 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:56.164 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 12 relationships
+2025-02-09 14:53:56.166 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:53:56.188 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:53:57.246 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:53:57.248 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:53:58.615 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:53:58.618 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:53:58.655 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (& How to Improve Yours) (source_5.txt)
+2025-02-09 14:53:58.658 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit enter. The website authority report is split into six sections. First, you’ll see an overview of domain metrics, like your authority score. This indicates the level of trust that !undefined:** Combines factors like link quality, organic traffic, and spam presence to create an accurate measure, aiming t...
+2025-02-09 14:53:58.660 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1060
+2025-02-09 14:53:58.662 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit ent...
+2025-02-09 14:53:58.663 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:53:59.432 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 14:53:59.434 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:53:59.839 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 14:53:59.847 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:480 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 14:53:59.850 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:54:00.870 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:00:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:54:00.871 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:54:02.141 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 14:54:02.143 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:54:02.164 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Check Domain Authority Score【No Login, Super Fast, FREE】 (source_7.txt)
+2025-02-09 14:54:02.165 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO Domain Authority (DA) is a metric that predicts how well a website is likely to rank on DA is determined by analyzing multiple factors, including the number of linking root domains and the total count of links, culminating in a single DA score. This score is commonly used for comparing the ranking potential of different websites or monitoring a website's strength over time. It's important to understand that Domain Authority is not utilized by Google in its ## Examples of doma...
+2025-02-09 14:54:02.167 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 5785
+2025-02-09 14:54:02.168 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO Domain Authority (DA) is a metric that predicts how well a website is likely to rank on DA is determined by analyzing multiple factors, including the number of linking root domains...
+2025-02-09 14:54:02.169 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:54:02.962 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'GPU acceleration']
+2025-02-09 14:54:02.964 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:54:06.136 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 11 relationships
+2025-02-09 14:54:06.138 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:54:06.158 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:54:07.137 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:54:07.139 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:54:08.468 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-09 14:54:08.471 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:54:08.494 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Get a Test Domain using Unstoppable Website Faucet Guide (source_9.txt)
+2025-02-09 14:54:08.496 | 53560:11368 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community * Twitter( * Facebook( Resources * Medium( * Podcast( * Youtube( * Github( Copyright © 2024 Unstoppable Domains Inc. All rights reserved....
+2025-02-09 14:54:08.498 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 336
+2025-02-09 14:54:08.500 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community *...
+2025-02-09 14:54:08.502 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 14:54:09.476 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 13 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'GPU', 'Backpropagation', 'Gradient Descent', 'Stochastic Gradient Descent', 'Convolutional Neural Networks', 'Recurrent Neural Networks', 'Natural Language Processing', 'Computer Vision']
+2025-02-09 14:54:09.479 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 14:54:12.458 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 11 relationships
+2025-02-09 14:54:12.460 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:482 | Error extracting relationships: 'dict' object has no attribute 'source'
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 480, in process_source
+    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
+
+AttributeError: 'dict' object has no attribute 'source'
+2025-02-09 14:54:12.480 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:486 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 14:54:13.486 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:493 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 14:54:13.488 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:499 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 14:54:14.676 | 53560:11368 | INFO     | scripts.knowledge_acquisition:process_source:509 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 14:54:14.678 | 53560:11368 | ERROR    | scripts.knowledge_acquisition:process_source:530 | Failed to process source: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 868, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 857, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 515, in process_source
+    metadata.confidence_score = confidence_score
+
+AttributeError: 'dict' object has no attribute 'confidence_score' and no __dict__ for setting new attributes
+2025-02-09 14:54:14.703 | 53560:11368 | INFO     | __main__:run:657 | Execution: Executing task 2: _generate_examples
+2025-02-09 14:54:14.704 | 53560:11368 | INFO     | __main__:run:678 | Execution: Found 10 knowledge entries for example generation
+2025-02-09 14:55:02.577 | 53560:11368 | INFO     | __main__:run:657 | Execution: Executing task 3: _train_model
+2025-02-09 14:55:02.579 | 53560:11368 | INFO     | __main__:run:688 | Execution: Found 67 examples for training
+2025-02-09 14:55:02.586 | 53560:11368 | INFO     | __main__:run:722 | Decision: Making join decision
+2025-02-09 14:55:02.589 | 53560:11368 | INFO     | scripts.llm_compiler:make_join_decision:412 | Decision: Making join decision
+2025-02-09 14:55:03.669 | 53560:11368 | INFO     | __main__:run:733 | Compiler: Generating final result
+2025-02-09 14:55:03.670 | 53560:11368 | INFO     | scripts.llm_compiler:_generate_final_result:560 | Compiler: Generating final result
+2025-02-09 14:55:03.672 | 53560:11368 | INFO     | scripts.llm_compiler:_generate_final_result:570 | Compiler: Generated final result
+2025-02-09 14:55:03.674 | 53560:11368 | INFO     | __main__:run:737 | Research: Research workflow completed successfully

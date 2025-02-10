@@ -13,6 +13,7 @@ from rich import box
 import json
 from typing import Any, Dict, Optional
 from datetime import datetime
+import asyncio
 
 # Install rich traceback handler with more detailed settings
 install_rich_traceback(
@@ -29,23 +30,34 @@ console = Console()
 
 # Create a single shared progress instance
 _shared_progress = None
+_progress_lock = asyncio.Lock()
 
-def create_progress() -> Progress:
-    """Create a new progress instance"""
+async def create_progress() -> Progress:
+    """Create or get the shared progress instance"""
     global _shared_progress
-    if _shared_progress is None:
-        _shared_progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(complete_style="green", finished_style="bright_green"),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TimeRemainingColumn(),
-            console=console,
-            expand=True,
-            refresh_per_second=10
-        )
-        _shared_progress.start()
-    return _shared_progress
+    async with _progress_lock:
+        if _shared_progress is None:
+            _shared_progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(complete_style="green", finished_style="bright_green"),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TimeRemainingColumn(),
+                console=console,
+                expand=True,
+                refresh_per_second=10,
+                auto_refresh=False  # Disable auto refresh to prevent conflicts
+            )
+            _shared_progress.start()
+        return _shared_progress
+
+async def cleanup_progress():
+    """Clean up the shared progress instance"""
+    global _shared_progress
+    async with _progress_lock:
+        if _shared_progress is not None:
+            _shared_progress.stop()
+            _shared_progress = None
 
 def setup_logging(log_file: Optional[str] = None):
     """Configure logging with both file and console output"""

@@ -9,7 +9,22 @@ from langchain_core.messages import SystemMessage, HumanMessage
 class Relationship(BaseModel):
     """Schema for knowledge relationships"""
     source: str = Field(description="Source entity or concept")
-    relation: Literal["is_a", "has_part", "related_to"] = Field(description="Type of relationship")
+    relation: Literal[
+        # Methodology relationships
+        "uses", "applies", "implements",
+        # Performance relationships
+        "improves", "outperforms", "achieves",
+        # Component relationships
+        "contains", "consists_of", "part_of",
+        # Comparison relationships
+        "better_than", "similar_to", "different_from",
+        # Causal relationships
+        "leads_to", "causes", "affects",
+        # Temporal relationships
+        "precedes", "follows", "concurrent_with",
+        # Legacy relationships
+        "is_a", "has_part", "related_to"
+    ] = Field(description="Type of relationship")
     target: str = Field(description="Target entity or concept")
     domain: str = Field(default="knowledge", description="Domain this relationship belongs to")
 
@@ -26,7 +41,7 @@ class ExtractedKnowledge(BaseModel):
     """Schema for extracted knowledge"""
     content: str = Field(description="A clear, comprehensive summary of the key knowledge extracted from the text")
     entities: List[str] = Field(description="List of important concepts, terms, and entities mentioned in the text")
-    relationships: List[Relationship] = Field(description="List of relationships between entities")
+    relationships: List[Relationship] = Field(default_factory=list, description="List of relationships between entities")
     confidence: float = Field(description="Overall confidence in the extraction", ge=0.0, le=1.0)
     metadata: SourceMetadata = Field(description="Source metadata")
 
@@ -39,34 +54,92 @@ def get_knowledge_extraction_prompt() -> ChatPromptTemplate:
     parser = PydanticOutputParser(pydantic_object=ExtractedKnowledge)
     format_instructions = parser.get_format_instructions()
     
-    system_template = """You are a knowledge extraction expert. Extract structured knowledge from text.
+    system_template = """Extract knowledge from text, with special handling for academic papers and technical content. Return in JSON format.
 {format_instructions}
 
-IMPORTANT RULES:
-1. All fields are required
-2. confidence must be a number between 0.0 and 1.0
-3. entities must be a non-empty array of meaningful entities from the text
-4. Each entity should be a specific, meaningful term or concept
-5. relationships must be an array (can be empty) of valid relationship objects
-6. Each relationship must connect two entities from the entities list
-7. All relationship types must be EXACTLY one of: is_a, has_part, related_to
-8. source_type must be one of: text, pdf, web
-9. validation_status must be one of: pending, processed, failed
-10. timestamp must be in ISO format with timezone
-11. Focus on extracting meaningful knowledge that captures the key insights
-12. The content field should provide a clear, comprehensive summary"""
+GUIDELINES:
+1. Extract meaningful knowledge, focusing on:
+   - Research objectives and goals
+   - Methodologies and approaches
+   - Key findings and results
+   - Technical concepts and terminology
+   - Experimental setups and configurations
+   - Metrics and measurements
+   - Conclusions and implications
 
-    human_template = """Extract structured knowledge from this text:
+2. For entities, identify:
+   - Technical terms and concepts
+   - Methods and algorithms
+   - Tools and frameworks
+   - Metrics and measurements
+   - Research domains and fields
+   - Components and systems
+   - Datasets and benchmarks
+
+3. For relationships, capture:
+   - Methodology relationships (uses, applies, implements)
+   - Performance relationships (improves, outperforms, achieves)
+   - Component relationships (contains, consists_of, part_of)
+   - Comparison relationships (better_than, similar_to, different_from)
+   - Causal relationships (leads_to, causes, affects)
+   - Temporal relationships (precedes, follows, concurrent_with)
+
+4. Evaluate confidence based on:
+   - Clarity of presentation
+   - Experimental validation
+   - Statistical significance
+   - Reproducibility of results
+   - Citation of related work
+   - Methodology rigor
+
+5. Include metadata about:
+   - Paper type (research, survey, case study)
+   - Domain relevance
+   - Publication venue
+   - Research context
+   - Validation approach
+
+Example response:
+{{
+    "content": "The paper presents a novel approach to domain adaptation for test case generation using CodeT5. The method improves line coverage by 49.9% compared to baselines.",
+    "entities": [
+        "CodeT5",
+        "domain adaptation",
+        "test case generation",
+        "line coverage",
+        "automated testing",
+        "machine learning"
+    ],
+    "relationships": [
+        {{
+            "source": "domain adaptation",
+            "relation": "improves",
+            "target": "line coverage"
+        }},
+        {{
+            "source": "CodeT5",
+            "relation": "used_for",
+            "target": "test case generation"
+        }}
+    ],
+    "confidence": 0.85,
+    "metadata": {{
+        "source_type": "text",
+        "confidence_score": 0.85,
+        "domain_relevance": 0.9,
+        "timestamp": "2024-02-09T11:42:32.000Z",
+        "validation_status": "processed"
+    }}
+}}"""
+
+    human_template = """Extract knowledge from this text:
 
 {text}
 
-Focus on identifying:
-1. Key concepts and entities
-2. Relationships between entities
-3. Main insights and knowledge
-4. Important patterns or trends
-
-Output ONLY a valid JSON object following the format instructions."""
+Remember:
+1. Return a valid JSON object
+2. Include any knowledge you find
+3. Use proper JSON formatting"""
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_template),

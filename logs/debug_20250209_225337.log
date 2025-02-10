@@ -1,0 +1,99 @@
+2025-02-09 22:53:37.510 | 44852:49616 | INFO     | __main__:main:959 | Main: Initializing research agent
+2025-02-09 22:53:37.530 | 44852:49616 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 22:53:38.432 | 44852:49616 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 22:53:38.993 | 44852:49616 | INFO     | scripts.knowledge_acquisition:__init__:278 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-09 22:53:38.995 | 44852:49616 | INFO     | scripts.knowledge_acquisition:__init__:278 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x000001FF664AA7B0>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = temperature=0.7 api_key=SecretStr('**********') pydantic_schema=<class 'prompts.knowledge_acquisition.entity_extraction.EntityResponse'>
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-09 22:53:38.997 | 44852:49616 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 22:53:38.999 | 44852:49616 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-09 22:53:39.003 | 44852:49616 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _research_topics
+2025-02-09 22:53:39.004 | 44852:49616 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-09 22:53:39.005 | 44852:49616 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _generate_examples
+2025-02-09 22:53:39.007 | 44852:49616 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _train_model
+2025-02-09 22:53:39.008 | 44852:49616 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-09 22:53:39.011 | 44852:49616 | INFO     | __main__:main:962 | Main: Starting research agent
+2025-02-09 22:53:39.012 | 44852:49616 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-09 22:53:39.014 | 44852:49616 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-09 22:53:39.015 | 44852:49616 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-09 22:53:39.016 | 44852:49616 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-09 22:53:39.017 | 44852:49616 | INFO     | scripts.knowledge_acquisition:initialize:287 | KnowledgeAcquisition: Starting system initialization
+2025-02-09 22:53:39.861 | 44852:49616 | INFO     | scripts.knowledge_acquisition:initialize:296 | KnowledgeAcquisition: Embeddings initialized
+2025-02-09 22:53:40.083 | 44852:49616 | INFO     | scripts.knowledge_acquisition:initialize:309 | KnowledgeAcquisition: Vector store initialized
+2025-02-09 22:53:40.151 | 44852:49616 | INFO     | scripts.knowledge_acquisition:initialize:322 | KnowledgeAcquisition: Graph database initialized
+2025-02-09 22:53:40.152 | 44852:49616 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview
+2025-02-09 22:53:45.725 | 44852:49616 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain key concepts
+2025-02-09 22:53:56.239 | 44852:49616 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain latest developments
+2025-02-09 22:54:04.854 | 44852:49616 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain research papers
+2025-02-09 22:54:14.916 | 44852:49616 | INFO     | __main__:run:657 | Execution: Executing task 1: _synthesize_knowledge
+2025-02-09 22:54:14.918 | 44852:49616 | INFO     | __main__:run:668 | Execution: Found 10 sources for synthesis
+2025-02-09 22:54:14.923 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Rating Checker 【Free tool, No Login, Super Fast】 (source_1.txt)
+2025-02-09 22:54:14.927 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. The higher the DR score, the stronger and more authoritative the website is considered to be. This metric is crucial for understanding how likely a website is to rank in The calculation of DR takes into account the quantity and quality of external backlinks, denoting websites that have robust backlink...
+2025-02-09 22:54:14.931 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 4993
+2025-02-09 22:54:14.933 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. Th...
+2025-02-09 22:54:14.935 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 22:54:15.944 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Neural Networks', 'TensorFlow', 'Deep Learning', 'Artificial Intelligence', 'Python', 'Data Science', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-09 22:54:15.947 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 22:54:16.372 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 22:54:16.374 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Neural Networks
+2025-02-09 22:54:16.375 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 22:54:17.432 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 22:54:17.434 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 22:54:18.837 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 22:54:18.847 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Website Authority Checker: Check the "Authority" Of Any Domain (source_11.txt)
+2025-02-09 22:54:18.848 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Ahrefs. Backlink Checker metric from Moz. When we talk about domain authority, we’re talking about a general SEO concept that’s synonymous with “website authority.” Here at Ahrefs, we have a website authority metric of our own called Domain Rating. It runs on a scale from zero to a hundred. The higher a website’s Domain Rating (DR), the stronger and more authoritative it is. The free tool above shows your website’s “authority” as calculated by Ahrefs (i.e., Domain Rating). --- ## How we calculat...
+2025-02-09 22:54:18.850 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 4542
+2025-02-09 22:54:18.852 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Ahrefs. Backlink Checker metric from Moz. When we talk about domain authority, we’re talking about a general SEO concept that’s synonymous with “website authority.” Here at Ahrefs, we have a website a...
+2025-02-09 22:54:18.854 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 22:54:19.652 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'GPU acceleration']
+2025-02-09 22:54:19.654 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 22:54:20.005 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 22:54:20.007 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 22:54:20.009 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 22:54:21.040 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 22:54:21.042 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 22:54:22.311 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 22:54:22.320 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Testing in Software Engineering - GeeksforGeeks (source_13.txt)
+2025-02-09 22:54:22.322 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content !geeksforgeeks( - Data Structure & Algorithm(JavaScript)]( to develop a quality software product. Software testing * Structure of Domain Testing * Domain Knowledge * Domain Testing Strategy * A real-life example of Domain testing * Skills required for Domain testing * Advantages of Domain Testing * Disadvantages of Domain Testing * Conclusion ****Domain Testing :**** It is a software testing technique where minimum numbers of inputs are used to access appropriate output of a syst...
+2025-02-09 22:54:22.324 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 9236
+2025-02-09 22:54:22.326 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to content !geeksforgeeks( - Data Structure & Algorithm(JavaScript)]( to develop a quality software product. Software testing * Structure of Domain Testing * Domain Knowledge * Domain Testing Str...
+2025-02-09 22:54:22.329 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 22:54:23.143 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-09 22:54:23.144 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-09 22:54:26.300 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.302 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.305 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-09 22:54:26.308 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-09 22:54:26.311 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-09 22:54:26.314 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.316 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-09 22:54:26.318 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.321 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.324 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.327 | 44852:49616 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-09 22:54:26.329 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-09 22:54:26.331 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-09 22:54:26.333 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-09 22:54:27.395 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-09 22:54:27.397 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-09 22:54:28.777 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-09 22:54:28.789 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Introduction to Domain Overview - Help Hub - Moz (source_15.txt)
+2025-02-09 22:54:28.791 | 44852:49616 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content Moz logo * Products + Moz Pro + Moz Pro Home + Moz Local + Moz Local Home + STAT + Moz API + Moz API Home + Compare SEO Products + Moz Data * Free SEO Tools + Domain Analysis + Keyword Explorer + Link Explorer + Competitive Re + [MozBar + More Free SEO Tools * Learn SEO + Beginner's Guide to SEO + SEO Learning Center + Moz Academy + SEO Q&A + Webinars, Whitepapers, & Guides * Blog * Why Moz + Agency Solutions + Enterprise Solutions + Small Business Solutions + Case Studies + The ...
+2025-02-09 22:54:28.794 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 5817
+2025-02-09 22:54:28.796 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to content Moz logo * Products + Moz Pro + Moz Pro Home + Moz Local + Moz Local Home + STAT + Moz API + Moz API Home + Compare SEO Products + Moz Data * Free SEO Tools + Domain Analysis + Keyword...
+2025-02-09 22:54:28.797 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-09 22:54:29.615 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Big Data', 'Cloud Computing']
+2025-02-09 22:54:29.618 | 44852:49616 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...

@@ -1,7 +1,7 @@
 {
     "domain_name": "test_domain",
     "llm": {
-        "model_name": "gemini-2.0-flash",
+        "model_name": "gemini-1.5-flash",
         "temperature": 0.1,
         "google_api_key": "AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0"
     },

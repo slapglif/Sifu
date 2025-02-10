@@ -1,0 +1,327 @@
+2025-02-10 12:20:48.768 | 32628:31272 | INFO     | __main__:main:959 | Main: Initializing research agent
+2025-02-10 12:20:48.790 | 32628:31272 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-10 12:20:50.041 | 32628:31272 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-10 12:20:50.571 | 32628:31272 | INFO     | scripts.knowledge_acquisition:__init__:278 | KnowledgeAcquisition: Knowledge acquisition system initialized
+2025-02-10 12:20:50.572 | 32628:31272 | INFO     | scripts.knowledge_acquisition:__init__:278 | 
+Local Variables:
+  self = <scripts.knowledge_acquisition.KnowledgeAcquisitionSystem object at 0x000001854B6EA7B0>
+  config = domains=[DomainConfig(name='medical', description='Medical domain knowledge including diseases, treatments, and healthcare concepts', classes=[OntologyClass(name='Disease', description='A medical cond...
+  api_key = AIzaSyA_5-fcCihRyNZvfl6S5wm420SnuvijQT0
+  llm = temperature=0.7 api_key=SecretStr('**********') pydantic_schema=<class 'prompts.knowledge_acquisition.entity_extraction.EntityResponse'> format='json'
+  __class__ = <class 'scripts.knowledge_acquisition.KnowledgeAcquisitionSystem'>
+
+2025-02-10 12:20:50.574 | 32628:31272 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-10 12:20:50.576 | 32628:31272 | INFO     | scripts.llm_compiler:__init__:77 | Compiler: Initialized LLM compiler
+2025-02-10 12:20:50.579 | 32628:31272 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _research_topics
+2025-02-10 12:20:50.581 | 32628:31272 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _synthesize_knowledge
+2025-02-10 12:20:50.582 | 32628:31272 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _generate_examples
+2025-02-10 12:20:50.583 | 32628:31272 | INFO     | scripts.llm_compiler:register_tool:87 | Compiler: Registered tool: _train_model
+2025-02-10 12:20:50.584 | 32628:31272 | INFO     | __main__:__init__:206 | Research: Research agent initialized
+2025-02-10 12:20:50.586 | 32628:31272 | INFO     | __main__:main:962 | Main: Starting research agent
+2025-02-10 12:20:50.586 | 32628:31272 | INFO     | __main__:run:608 | Research: Starting research workflow for domain: test_domain
+2025-02-10 12:20:50.588 | 32628:31272 | INFO     | __main__:run:643 | Execution: Starting execution of 4 tasks
+2025-02-10 12:20:50.589 | 32628:31272 | INFO     | __main__:run:657 | Execution: Executing task 0: _research_topics
+2025-02-10 12:20:50.590 | 32628:31272 | INFO     | __main__:_research_topics:229 | Research: Starting topic research for domain: test_domain
+2025-02-10 12:20:50.592 | 32628:31272 | INFO     | scripts.knowledge_acquisition:initialize:287 | KnowledgeAcquisition: Starting system initialization
+2025-02-10 12:20:51.117 | 32628:31272 | INFO     | scripts.knowledge_acquisition:initialize:296 | KnowledgeAcquisition: Embeddings initialized
+2025-02-10 12:20:51.290 | 32628:31272 | INFO     | scripts.knowledge_acquisition:initialize:309 | KnowledgeAcquisition: Vector store initialized
+2025-02-10 12:20:51.326 | 32628:31272 | INFO     | scripts.knowledge_acquisition:initialize:322 | KnowledgeAcquisition: Graph database initialized
+2025-02-10 12:20:51.328 | 32628:31272 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain overview
+2025-02-10 12:20:56.170 | 32628:31272 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain key concepts
+2025-02-10 12:21:01.210 | 32628:31272 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain latest developments
+2025-02-10 12:21:07.895 | 32628:31272 | INFO     | __main__:_research_topics:247 | Search: Searching for: test_domain research papers
+2025-02-10 12:21:19.062 | 32628:31272 | INFO     | __main__:run:657 | Execution: Executing task 1: _synthesize_knowledge
+2025-02-10 12:21:19.064 | 32628:31272 | INFO     | __main__:run:668 | Execution: Found 10 sources for synthesis
+2025-02-10 12:21:19.068 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (Enter Any Domain or URL) (source_1.txt)
+2025-02-10 12:21:19.070 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword re + [SEO Audit Checklist18-step guide to get higher Google rankings.Step-by-step guide to building a website in 2024.( * ToolsTools + Free Tools + Tool Guides + Tool Reviews + Keyword Re + Backlink CheckerDiscover who’s linking to you and your competitors.Step-by-step guide to building a website in ...
+2025-02-10 12:21:19.072 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 12294
+2025-02-10 12:21:19.074 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* ArticlesArticles + Popular + SEO Fundamentals + Content Marketing + Link Building + Marketing + What Is SEO?For people that are new to + SEO ChecklistCovers technical SEO, On-page SEO, and keyword r...
+2025-02-10 12:21:19.076 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:21.053 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-10 12:21:21.055 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:21.453 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:21.455 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:21.456 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:22.479 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.85, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:22.481 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:23.772 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.85
+2025-02-10 12:21:23.781 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Free Website Authority Checker (& How to Improve Yours) (source_11.txt)
+2025-02-10 12:21:23.782 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit enter. The website authority report is split into six sections. First, you’ll see an overview of domain metrics, like your authority score. This indicates the level of trust that !undefined:** Combines factors like link quality, organic traffic, and spam presence to create an accurate measure, aiming t...
+2025-02-10 12:21:23.784 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 1060
+2025-02-10 12:21:23.786 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+!grid-line !( Keri Engel January 10, 2025 Our free website authority checker lets you check domain authority for any website on the internet. To get your analysis, just enter a domain name and hit ent...
+2025-02-10 12:21:23.788 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:24.635 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'GPU', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing']
+2025-02-10 12:21:24.637 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:27.897 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.900 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.901 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.904 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.905 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.907 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.909 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.911 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.913 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.914 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.916 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.918 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:27.919 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:27.921 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:27.922 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:28.963 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:28.965 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:30.326 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:30.334 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain testing - Wikipedia (source_13.txt)
+2025-02-10 12:21:30.335 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+# Domain testing **Domain testing** is a software testing technique that involves selecting a small number of test cases from a nearly infinite group of candidate test cases. It is one of the most widely practiced software testing techniques. Domain knowledge plays a very critical role while testing domain-specific work.[1](#cite_note-FOOTNOTEKaner199728-1)[2](#cite_note-FOOTNOTEClarke1976215–222-2)[3](#cite_note-FOOTNOTEClarkeHassellRichardson1982380–390-3)[4](#cite_note-FOOTNOTEMyers1979-4)[5]...
+2025-02-10 12:21:30.337 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 2222
+2025-02-10 12:21:30.338 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+# Domain testing **Domain testing** is a software testing technique that involves selecting a small number of test cases from a nearly infinite group of candidate test cases. It is one of the most wid...
+2025-02-10 12:21:30.340 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:30.959 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-10 12:21:30.961 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:31.336 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:31.338 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:31.340 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:32.382 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:32.384 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:33.792 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:33.801 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Get a Test Domain using Unstoppable Website Faucet Guide (source_15.txt)
+2025-02-10 12:21:33.803 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community * Twitter( * Facebook( Resources * Medium( * Podcast( * Youtube( * Github( Copyright © 2024 Unstoppable Domains Inc. All rights reserved....
+2025-02-10 12:21:33.806 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 336
+2025-02-10 12:21:33.807 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![UD Developer Docs Logo are not supported. ## Get a free domain from Unstoppable Website * Go to the Unstoppable WebsiteNext to **Polygon Faucet Guide**( * Terms of Use( * Privacy Notice( Community *...
+2025-02-10 12:21:33.809 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:34.451 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-10 12:21:34.453 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:34.835 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:34.837 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:34.838 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:35.899 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'validated', 'domain': 'natural_language_processing'}
+2025-02-10 12:21:35.901 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:37.290 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:37.291 | 32628:31272 | ERROR    | scripts.knowledge_acquisition:process_source:534 | Failed to process source: 1 validation error for SourceMetadata
+validation_status
+  Value error, validation_status must be one of: ['pending', 'processed', 'failed'] [type=value_error, input_value='validated', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error
+Traceback (most recent call last):
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 974, in <module>
+    asyncio.run(main())
+
+  File "C:\Python313\Lib\asyncio\runners.py", line 194, in run
+    return runner.run(main)
+  File "C:\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "C:\Python313\Lib\asyncio\base_events.py", line 707, in run_until_complete
+    self.run_forever()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 678, in run_forever
+    self._run_once()
+  File "C:\Python313\Lib\asyncio\base_events.py", line 2033, in _run_once
+    handle._run()
+  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 963, in main
+    await agent.run()
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 691, in run
+    result = await getattr(self, task.tool)(**task.args)
+
+  File "C:\Users\mikeb\work\sifu2\run_agents.py", line 344, in _synthesize_knowledge
+    knowledge = await self.knowledge_system.process_source(content)
+
+> File "C:\Users\mikeb\work\sifu2\scripts\knowledge_acquisition.py", line 518, in process_source
+    metadata = SourceMetadata(**metadata)
+
+  File "C:\Python313\Lib\site-packages\pydantic\main.py", line 214, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+pydantic_core._pydantic_core.ValidationError: 1 validation error for SourceMetadata
+validation_status
+  Value error, validation_status must be one of: ['pending', 'processed', 'failed'] [type=value_error, input_value='validated', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.10/v/value_error
+2025-02-10 12:21:37.343 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: CHECK DOMAIN OVERVIEW - SmallSEOTools.com (source_17.txt)
+2025-02-10 12:21:37.345 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 - JA( Italiano - IT( Français - FR( Português - PT( Español - ES( Deutsche - DE( 中文 - ZH( !Report Bug( # CHECK DOMAIN OVERVIEW Use website checker to get a domain overview and have a better insight into the online presence of a website. Just enter the domain or URL below and click the big blue "Chec...
+2025-02-10 12:21:37.348 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 7249
+2025-02-10 12:21:37.349 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![Image of website logo( Login( * ![PRO Pricing( * Plagiarism Checker( * Free Grammar Checker( * Reverse Image * [Paraphrasing Tool( * Login( × !image of languages( EN English - EN( русский - RU( 日本語 ...
+2025-02-10 12:21:37.351 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:37.962 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Neural Networks', 'TensorFlow', 'Deep Learning', 'Artificial Intelligence', 'Python', 'Data Science', 'Big Data', 'Cloud Computing', 'Amazon Web Services']
+2025-02-10 12:21:37.964 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:41.436 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.438 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.439 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.441 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.443 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.445 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.446 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.448 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.450 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.452 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.453 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.455 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.457 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.5666666666666668
+2025-02-10 12:21:41.459 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:41.460 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Neural Networks
+2025-02-10 12:21:41.461 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:42.557 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.85, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:42.559 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:43.846 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:43.853 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: .TEST Domain (source_19.txt)
+2025-02-10 12:21:43.854 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+* Domain Name * [Business Name Generator with .TEST? * Yes, you can use internationalized domain names (IDNs) with .TEST domains, allowing the use of non-Latin characters in the domain name. * Are there any SEO benefits to using a .TEST domain? * Using a .TEST domain has no inherent SEO benefits over other domain extensions. * What happens if my .TEST domain expires? * If your .TEST domain expires, it typically goes through a grace period where you can renew it without extra fees. After this per...
+2025-02-10 12:21:43.856 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 6931
+2025-02-10 12:21:43.857 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+* Domain Name * [Business Name Generator with .TEST? * Yes, you can use internationalized domain names (IDNs) with .TEST domains, allowing the use of non-Latin characters in the domain name. * Are the...
+2025-02-10 12:21:43.859 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:44.556 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Artificial Neural Networks', 'Backpropagation', 'Stochastic Gradient Descent', 'TensorFlow', 'Python', 'Keras', 'GPU', 'Cloud Computing']
+2025-02-10 12:21:44.558 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:49.202 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.204 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.206 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.208 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.210 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.212 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.214 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.216 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.218 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.220 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.221 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.223 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.225 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.227 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.229 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.230 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.232 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:21:49.234 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:49.236 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:49.238 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:50.247 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:50.250 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:51.628 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:51.646 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: What is Domain Testing in Software Testing? (with Example) - Guru99 (source_3.txt)
+2025-02-10 12:21:51.649 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+Skip to content !Guru99( + Bugzilla By : ![Thomas Hamilton Hours UpdatedApril 30, 2024 ## What is Domain Testing? **Domain Testing** is a Software Testing * Simpler Practice of Domain Testing * Domain Testing Strategy * Domain Testing Example * Domain Testing Structure ## Simpler Practice of Domain Testing In domain testing, we divide a domain into sub-domains (equivalence classes) and then test using values from each subdomain. For example, if a website (domain) has been given for testing, we w...
+2025-02-10 12:21:51.652 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 6384
+2025-02-10 12:21:51.655 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+Skip to content !Guru99( + Bugzilla By : ![Thomas Hamilton Hours UpdatedApril 30, 2024 ## What is Domain Testing? **Domain Testing** is a Software Testing * Simpler Practice of Domain Testing * Domain...
+2025-02-10 12:21:51.657 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:52.418 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Neural Networks', 'TensorFlow', 'Deep Learning', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-10 12:21:52.421 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:52.801 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:52.803 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Neural Networks
+2025-02-10 12:21:52.805 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:53.809 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:53.811 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:55.158 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:55.169 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: .test - Wikipedia (source_5.txt)
+2025-02-10 12:21:55.171 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+# .test Reserved domain name .test | Introduced | 1999 | | --- | --- | | TLD type | Reserved top-level domain | | Status | Reserved to prevent conflict and confusion | | Intended use | In documentation or for internal testing | | Structure | Those using it for testing can use it in any desired structure | | Documents | RFC") 2606 used to test websites or web applications as an alternative to testing webpages using the default localhost. It is guaranteed to never be registered into the Internet.[...
+2025-02-10 12:21:55.174 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 3367
+2025-02-10 12:21:55.177 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+# .test Reserved domain name .test | Introduced | 1999 | | --- | --- | | TLD type | Reserved top-level domain | | Status | Reserved to prevent conflict and confusion | | Intended use | In documentatio...
+2025-02-10 12:21:55.180 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:56.032 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'GPU', 'Cloud Computing', 'Big Data', 'Data Science', 'Artificial Intelligence']
+2025-02-10 12:21:56.034 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:21:56.429 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:21:56.432 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:21:56.434 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:21:57.450 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:21:57.452 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:21:58.948 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:21:58.955 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: Domain Rating Checker 【Free tool, No Login, Super Fast】 (source_7.txt)
+2025-02-10 12:21:58.956 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. The higher the DR score, the stronger and more authoritative the website is considered to be. This metric is crucial for understanding how likely a website is to rank in The calculation of DR takes into account the quantity and quality of external backlinks, denoting websites that have robust backlink...
+2025-02-10 12:21:58.958 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 4993
+2025-02-10 12:21:58.960 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![AI Writer for SEO? Domain Rating (DR) is a metric developed to estimate the relative strength of a website's backlink profile compared to all other sites on the internet on a scale from 0 to 100. Th...
+2025-02-10 12:21:58.961 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:21:59.798 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Data Science', 'Artificial Intelligence', 'Big Data', 'Cloud Computing', 'Natural Language Processing']
+2025-02-10 12:21:59.802 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:22:00.197 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:22:00.199 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:22:00.201 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:22:01.252 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.8, 'timestamp': '2024-02-09T12:42:32.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:22:01.254 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:22:02.784 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:22:02.793 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:325 | Knowledge Synthesis: Processing source: An Introduction to Domain Testing - Trailhead Technology Partners (source_9.txt)
+2025-02-10 12:22:02.795 | 32628:31272 | INFO     | __main__:_synthesize_knowledge:329 | Knowledge Synthesis: Content preview:
+![ **Boundary Testing** – testing values ​​that are at the boundary of certain classes that were previously defined in equivalence testing. It is based on the assumption (fair and reasonable) that most potential errors in the operation of programs will occur at the junction of different classes. In order to get acquainted with the technique of equivalent and boundary testing using specific examples, we only need to understand the terminology of positive and negative tests. **Positive Tests** – s...
+2025-02-10 12:22:02.796 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:444 | KnowledgeAcquisition: Starting source processing with content length: 5333
+2025-02-10 12:22:02.798 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:448 | KnowledgeAcquisition: Content preview:
+![ **Boundary Testing** – testing values ​​that are at the boundary of certain classes that were previously defined in equivalence testing. It is based on the assumption (fair and reasonable) that mos...
+2025-02-10 12:22:02.800 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:451 | KnowledgeAcquisition: Extracting entities...
+2025-02-10 12:22:03.790 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:458 | KnowledgeAcquisition: Extracted 10 entities: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'TensorFlow', 'Python', 'Keras', 'Computer Vision', 'Natural Language Processing', 'Data Science', 'Artificial Intelligence']
+2025-02-10 12:22:03.792 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:464 | KnowledgeAcquisition: Extracting relationships...
+2025-02-10 12:22:07.264 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.267 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.269 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.272 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.274 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.278 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.281 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.283 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.285 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.287 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.289 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.291 | 32628:31272 | WARNING  | scripts.knowledge_acquisition:_extract_relationships:798 | Relationship Extraction: Relationship confidence too low: 0.26666666666666666
+2025-02-10 12:22:07.294 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:478 | KnowledgeAcquisition: Extracted 1 relationships
+2025-02-10 12:22:07.296 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:482 | KnowledgeAcquisition: Relationship: Machine Learning -> related_to -> Deep Learning
+2025-02-10 12:22:07.298 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:488 | KnowledgeAcquisition: Generating metadata...
+2025-02-10 12:22:08.347 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:495 | KnowledgeAcquisition: Generated metadata: {'source_type': 'text', 'confidence_score': 0.9, 'domain_relevance': 0.85, 'timestamp': '2024-02-09T12:45:00.000Z', 'validation_status': 'processed', 'domain': 'machine_learning'}
+2025-02-10 12:22:08.350 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:501 | KnowledgeAcquisition: Evaluating confidence...
+2025-02-10 12:22:09.652 | 32628:31272 | INFO     | scripts.knowledge_acquisition:process_source:511 | KnowledgeAcquisition: Confidence score: 0.8
+2025-02-10 12:22:09.668 | 32628:31272 | INFO     | __main__:run:657 | Execution: Executing task 2: _generate_examples
+2025-02-10 12:22:09.670 | 32628:31272 | INFO     | __main__:run:678 | Execution: Found 10 knowledge entries for example generation
+2025-02-10 12:22:24.541 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.58
+2025-02-10 12:22:29.399 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:29.403 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.64
+2025-02-10 12:22:29.407 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:34.612 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type knowledge_recall
+2025-02-10 12:22:34.614 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.57
+2025-02-10 12:22:34.616 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.60
+2025-02-10 12:22:34.618 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.64
+2025-02-10 12:22:34.621 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:41.948 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type knowledge_recall
+2025-02-10 12:22:41.952 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type concept_application
+2025-02-10 12:22:41.956 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:41.960 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:41.965 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:41.968 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type knowledge_recall
+2025-02-10 12:22:52.641 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type knowledge_recall
+2025-02-10 12:22:52.644 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type concept_application
+2025-02-10 12:22:52.649 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many basic difficulty examples
+2025-02-10 12:22:52.652 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:52.655 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:52.658 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:59.030 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.64
+2025-02-10 12:22:59.036 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.62
+2025-02-10 12:22:59.041 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:22:59.047 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:06.318 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:06.322 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:06.326 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:18.438 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.65
+2025-02-10 12:23:18.441 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type concept_application
+2025-02-10 12:23:18.446 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:238 | Example Generation: Example quality too low: 0.64
+2025-02-10 12:23:18.450 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:18.456 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:18.460 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:30.540 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type knowledge_recall
+2025-02-10 12:23:30.545 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:307 | Example Generation: Too many examples of type concept_application
+2025-02-10 12:23:30.549 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:30.552 | 32628:31272 | WARNING  | scripts.example_generator:_validate_example:283 | Example Generation: Too many intermediate difficulty examples
+2025-02-10 12:23:30.560 | 32628:31272 | INFO     | __main__:run:657 | Execution: Executing task 3: _train_model
+2025-02-10 12:23:30.562 | 32628:31272 | INFO     | __main__:run:688 | Execution: Found 28 examples for training
+2025-02-10 12:23:30.566 | 32628:31272 | INFO     | __main__:run:722 | Decision: Making join decision
+2025-02-10 12:23:30.568 | 32628:31272 | INFO     | __main__:make_join_decision:843 | Decision: Making join decision
+2025-02-10 12:23:30.572 | 32628:31272 | INFO     | __main__:run:733 | Compiler: Generating final result
+2025-02-10 12:23:30.574 | 32628:31272 | INFO     | scripts.llm_compiler:_generate_final_result:560 | Compiler: Generating final result
+2025-02-10 12:23:30.576 | 32628:31272 | INFO     | scripts.llm_compiler:_generate_final_result:570 | Compiler: Generated final result
+2025-02-10 12:23:30.578 | 32628:31272 | INFO     | __main__:run:737 | Research: Research workflow completed successfully
