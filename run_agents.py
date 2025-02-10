@@ -41,6 +41,7 @@ from scripts.synthetic_knowledge import SyntheticKnowledgeGenerator
 from scripts.lora_training import LoRATrainer, LoRATrainingConfig, TrainingExample
 from scripts.example_generator import ExampleGenerator
 from rich.progress import Progress
+import shutil
 
 set_debug(False)
 # Load environment variables
@@ -321,48 +322,14 @@ class ResearchAgent(LLMCompiler):
                         progress.update(synthesis_task, advance=1)
                         continue
                         
-                    # Log source being processed
-                    log_info_with_context(
-                        f"Processing source: {metadata.get('title', 'Unknown')} ({metadata.get('source_file', 'unknown')})",
-                        "Knowledge Synthesis"
-                    )
-                    log_info_with_context(f"Content preview:\n{content[:500]}...", "Knowledge Synthesis")
-                    
                     # Process source with knowledge system
                     try:
-                        # Initialize source metadata
-                        source_metadata = SourceMetadata(
-                            source_type=metadata.get("source_type", "text"),
-                            confidence_score=0.5,
-                            domain_relevance=0.5,
-                            timestamp=metadata.get("timestamp", datetime.now().isoformat()),
-                            validation_status="pending",
-                            domain=self.config.get("domain_name", "test_domain")
-                        )
-                        
-                        # Extract knowledge
                         knowledge = await self.knowledge_system.process_source(content)
                         if not knowledge:
                             log_warning_with_context("No knowledge extracted, skipping source", "Knowledge Synthesis")
                             progress.update(synthesis_task, advance=1)
                             continue
                             
-                        # Update metadata
-                        if hasattr(knowledge, "metadata") and knowledge.metadata is not None:
-                            # Convert both to dicts
-                            current_metadata = knowledge.metadata.model_dump()
-                            current_metadata.update({
-                                "title": metadata.get("title", ""),
-                                "url": metadata.get("url", ""),
-                                "source_file": metadata.get("source_file", ""),
-                                "query": metadata.get("query", "")
-                            })
-                            # Validate metadata
-                            knowledge.metadata = SourceMetadata(**current_metadata)
-                        else:
-                            # Set metadata if not present
-                            knowledge.metadata = source_metadata
-                        
                         # Add to synthetic knowledge
                         synthetic_knowledge.append(knowledge)
                         
@@ -383,6 +350,19 @@ class ResearchAgent(LLMCompiler):
                     log_error_with_traceback(e, f"Error synthesizing knowledge from source {source.get('metadata', {}).get('source_file', 'unknown')}")
                     progress.update(synthesis_task, advance=1)
                     continue
+            
+            # Save synthetic knowledge to disk
+            results_dir = os.path.join("results", self.config.get("domain_name", "test_domain"))
+            os.makedirs(results_dir, exist_ok=True)
+            
+            knowledge_path = os.path.join(results_dir, "synthetic_knowledge.json")
+            with open(knowledge_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    [k.model_dump() for k in synthetic_knowledge],
+                    f,
+                    indent=2,
+                    ensure_ascii=False
+                )
             
             # Log synthesis summary
             avg_confidence = 0
@@ -445,6 +425,19 @@ class ResearchAgent(LLMCompiler):
                     log_error_with_traceback(e, "Error generating examples from knowledge entry")
                     progress.update(example_task, advance=1)
                     continue
+            
+            # Save training examples to disk
+            results_dir = os.path.join("results", self.config.get("domain_name", "test_domain"))
+            os.makedirs(results_dir, exist_ok=True)
+            
+            examples_path = os.path.join(results_dir, "training_examples.json")
+            with open(examples_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    [ex.model_dump() for ex in examples],
+                    f,
+                    indent=2,
+                    ensure_ascii=False
+                )
             
             await cleanup_progress()
             return {
@@ -518,12 +511,6 @@ class ResearchAgent(LLMCompiler):
                 "batch_size": lora_config.get("batch_size", 4)
             }
             
-            # Calculate total steps
-            steps_per_epoch = max(1, len(train_data) // metrics["batch_size"])
-            if len(train_data) % metrics["batch_size"] > 0:
-                steps_per_epoch += 1
-            total_steps = metrics["epochs"] * steps_per_epoch
-            
             # Train model using LoRA trainer
             try:
                 # Convert examples to Datasets
@@ -536,7 +523,7 @@ class ResearchAgent(LLMCompiler):
                     "metadata": [ex["metadata"] for ex in eval_data]
                 }) if eval_data else None
                 
-                # Train model (synchronously since the method is not async)
+                # Train model
                 train_results = self.lora_trainer.train(
                     train_dataset=train_dataset,
                     eval_dataset=eval_dataset,
@@ -549,6 +536,41 @@ class ResearchAgent(LLMCompiler):
                 metrics.update(train_results.model_dump())
                 progress.update(train_task, completed=100)
                 console.print("[green]✓ Model training completed[/green]")
+                
+                # Save metrics to disk
+                results_dir = os.path.join("results", self.config.get("domain_name", "test_domain"))
+                os.makedirs(results_dir, exist_ok=True)
+                
+                metrics_path = os.path.join(results_dir, "model_metrics.json")
+                with open(metrics_path, "w", encoding="utf-8") as f:
+                    json.dump(metrics, f, indent=2)
+                
+                # Save LoRA adapter
+                adapter_dir = os.path.join(results_dir, "lora_adapter")
+                os.makedirs(adapter_dir, exist_ok=True)
+                
+                # Save adapter config
+                config_path = os.path.join(adapter_dir, "adapter_config.json")
+                with open(config_path, "w", encoding="utf-8") as f:
+                    json.dump(lora_config, f, indent=2)
+                
+                # Copy adapter files
+                adapter_files = [
+                    "adapter_model.bin",
+                    "adapter_config.json",
+                    "special_tokens_map.json",
+                    "tokenizer_config.json",
+                    "tokenizer.json",
+                    "vocab.json",
+                    "merges.txt"
+                ]
+                
+                for file in adapter_files:
+                    src = os.path.join(lora_config["output_dir"], file)
+                    if os.path.exists(src):
+                        dst = os.path.join(adapter_dir, file)
+                        shutil.copy2(src, dst)
+                
             except Exception as e:
                 log_error_with_traceback(e, "Error during model training")
                 metrics["error"] = str(e)
