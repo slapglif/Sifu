@@ -63,38 +63,58 @@ Follow these guidelines:
 - Optimize resource utilization
 - Ensure research quality and novelty
 
-Your output must be a JSON object with the following structure:
-{
-    "goal": {
-        "goal": "research goal statement",
-        "domain": "research domain",
-        "constraints": ["constraint1", "constraint2"],
-        "preferences": {"key1": "value1", "key2": "value2"}
-    },
+Your output MUST be a valid JSON object with the following structure:
+{{
+    "goal": {{
+        "goal": "string - research goal statement",
+        "domain": "string - research domain",
+        "constraints": ["string - constraint1", "string - constraint2"],
+        "preferences": {{"key1": "value1", "key2": "value2"}}
+    }},
     "tasks": [
-        {
-            "id": "task1",
-            "name": "task name",
-            "description": "task description",
-            "expected_duration": "duration estimate"
-        }
+        {{
+            "id": "string - task1",
+            "name": "string - task name",
+            "description": "string - task description",
+            "expected_duration": "string - duration estimate"
+        }}
     ],
-    "agent_assignments": {
-        "task1": ["agent1", "agent2"],
-        "task2": ["agent3"]
-    },
-    "dependencies": {
-        "task2": ["task1"],
-        "task3": ["task1", "task2"]
-    }
-}"""
+    "agent_assignments": {{
+        "task1": ["string - agent1", "string - agent2"],
+        "task2": ["string - agent3"]
+    }},
+    "dependencies": {{
+        "task2": ["string - task1"],
+        "task3": ["string - task1", "string - task2"]
+    }}
+}}
+
+{format_instructions}"""
+
+        # Create output parser
+        parser = PydanticOutputParser(pydantic_object=ResearchPlan)
+        
+        # Create prompt template with escaped brackets
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content="""Please create a research plan based on:
+
+Goal: {{{{goal}}}}
+Available Agents: {{{{available_agents}}}}
+Context: {{{{context}}}}
+
+{format_instructions}
+
+Generate a single, well-formed JSON plan that follows the required format exactly.
+Do not omit any required fields or deviate from the specified formats.""")
+        ])
 
         super().__init__(
             llm=llm,
             agent_id=agent_id,
             agent_type="supervisor",
             system_prompt=system_prompt,
-            output_parser=PydanticOutputParser(pydantic_object=ResearchPlan)
+            output_parser=parser
         )
         
         # Initialize supervisor-specific state

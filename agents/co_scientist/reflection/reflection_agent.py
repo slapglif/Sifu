@@ -73,19 +73,7 @@ Follow these guidelines:
 - Maintain scientific rigor
 - Be constructive in criticism
 
-{format_instructions}"""
-
-        # Create prompt template with escaped brackets
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessagePromptTemplate.from_template(system_prompt),
-            HumanMessagePromptTemplate.from_template("""Please review the following hypothesis:
-
-Hypothesis: {{hypothesis}}
-Review Type: {{review_type}}
-Web Knowledge: {{web_knowledge}}
-Previous Reviews: {{previous_reviews}}
-
-Your response MUST be a valid JSON object with ALL of the following fields:
+Your response MUST be a valid JSON object with the following structure:
 {{
   "hypothesis_id": "string - ID of the hypothesis being reviewed",
   "review_type": "string - Type of review (e.g., initial, full, deep_verification)",
@@ -98,11 +86,17 @@ Your response MUST be a valid JSON object with ALL of the following fields:
   "timestamp": "current timestamp string in ISO format"
 }}
 
-Example key_points format:
-["The hypothesis addresses a significant gap in AML treatment", "The proposed mechanism is well-supported by evidence"]
+{format_instructions}"""
 
-Example strengths format:
-["Clear and testable hypothesis statement", "Strong grounding in existing literature"]
+        # Create prompt template with escaped brackets
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_prompt),
+            HumanMessagePromptTemplate.from_template("""Please review the following hypothesis:
+
+Hypothesis: {{{{hypothesis}}}}
+Review Type: {{{{review_type}}}}
+Web Knowledge: {{{{web_knowledge}}}}
+Previous Reviews: {{{{previous_reviews}}}}
 
 {format_instructions}
 

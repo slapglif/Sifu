@@ -1,6 +1,14 @@
 """Example usage of the AI co-scientist system."""
 
 import asyncio
+import sys
+import os
+from pathlib import Path
+
+# Add project root to Python path
+project_root = str(Path(__file__).parent.parent)
+sys.path.append(project_root)
+
 from rich.console import Console
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import PydanticOutputParser
@@ -18,8 +26,9 @@ async def main():
         llm = ChatOllama(
             model="deepscaler",  # Using deepscaler as base model
             format="json",  # Ensure JSON output format
-            temperature=0.7,
-            stop=["\n\n"]  # Add stop sequence for better output control
+            temperature=0.7,  # Add some variability
+            stop=["\n\n"],  # Add stop sequence for better output control
+            seed=42  # For reproducibility
         )
         
         # Initialize AI co-scientist
