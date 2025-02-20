@@ -177,6 +177,12 @@ Your output must be a JSON object with the following structure:
             return None
             
         task = self.state.task_queue.pop(0)
+        
+        # Check if research plan exists
+        if not self.state.research_plan:
+            self.update_memory("error", "No research plan available")
+            return {"task_id": task["id"], "error": "No research plan available"}
+            
         agent_ids = self.state.research_plan.agent_assignments.get(task["id"], [])
         
         results = []

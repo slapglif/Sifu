@@ -16,11 +16,10 @@ async def main():
     try:
         # Initialize language model
         llm = ChatOllama(
-            model="llama2",  # Using llama2 as base model
+            model="deepscaler",  # Using deepscaler as base model
             format="json",  # Ensure JSON output format
             temperature=0.7,
-            stop=["\n\n"],  # Add stop sequence for better output control
-            timeout=120  # Increase timeout for longer generations
+            stop=["\n\n"]  # Add stop sequence for better output control
         )
         
         # Initialize AI co-scientist

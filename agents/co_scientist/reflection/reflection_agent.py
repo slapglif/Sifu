@@ -18,7 +18,7 @@ class Review(BaseModel):
     review_type: str = Field(description="Type of review conducted")
     score: float = Field(description="Overall review score (0-1)", ge=0.0, le=1.0)
     confidence: float = Field(description="Confidence in the review (0-1)", ge=0.0, le=1.0)
-    key_points: List[str] = Field(default_factory=list, description="Key points from the review")
+    key_points: List[str] = Field(description="Key points from the review")
     strengths: List[str] = Field(description="Identified strengths")
     weaknesses: List[str] = Field(description="Identified weaknesses")
     suggestions: List[str] = Field(description="Suggestions for improvement")
@@ -75,26 +75,28 @@ Follow these guidelines:
 
 {format_instructions}"""
 
-        # Create prompt template
+        # Create prompt template with escaped brackets
         prompt = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(system_prompt),
             HumanMessagePromptTemplate.from_template("""Please review the following hypothesis:
 
-Hypothesis: {hypothesis}
-Review Type: {review_type}
-Web Knowledge: {web_knowledge}
-Previous Reviews: {previous_reviews}
+Hypothesis: {{hypothesis}}
+Review Type: {{review_type}}
+Web Knowledge: {{web_knowledge}}
+Previous Reviews: {{previous_reviews}}
 
-Your response MUST include ALL of the following fields in the exact format specified:
-1. hypothesis_id: ID string of the hypothesis being reviewed
-2. review_type: Type of review string (e.g., "initial", "full", "deep_verification")
-3. score: Number between 0 and 1 (e.g., 0.85)
-4. confidence: Number between 0 and 1 (e.g., 0.90)
-5. key_points: Array of strings, each being a key point from the review
-6. strengths: Array of strings, each being an identified strength
-7. weaknesses: Array of strings, each being an identified weakness
-8. suggestions: Array of strings, each being a suggestion for improvement
-9. timestamp: Current timestamp string in ISO format
+Your response MUST be a valid JSON object with ALL of the following fields:
+{{
+  "hypothesis_id": "string - ID of the hypothesis being reviewed",
+  "review_type": "string - Type of review (e.g., initial, full, deep_verification)",
+  "score": "number between 0 and 1 (e.g., 0.85)",
+  "confidence": "number between 0 and 1 (e.g., 0.90)",
+  "key_points": ["array of strings - key points from review"],
+  "strengths": ["array of strings - identified strengths"],
+  "weaknesses": ["array of strings - identified weaknesses"],
+  "suggestions": ["array of strings - suggestions for improvement"],
+  "timestamp": "current timestamp string in ISO format"
+}}
 
 Example key_points format:
 ["The hypothesis addresses a significant gap in AML treatment", "The proposed mechanism is well-supported by evidence"]
@@ -102,7 +104,9 @@ Example key_points format:
 Example strengths format:
 ["Clear and testable hypothesis statement", "Strong grounding in existing literature"]
 
-Generate a single, well-formed review that follows the required format exactly.
+{format_instructions}
+
+Generate a single, well-formed JSON review that follows the required format exactly.
 Focus on providing constructive and actionable feedback.
 Do not omit any required fields or deviate from the specified formats.""")
         ])
@@ -295,141 +299,3 @@ Do not omit any required fields or deviate from the specified formats.""")
     def get_review_history(self) -> List[Dict[str, Any]]:
         """Get the review history."""
         return self.state.review_history
-        
-    def get_review_history_by_type(self, review_type: str) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type]
-        
-    def get_review_history_by_hypothesis(self, hypothesis_id: str) -> List[Dict[str, Any]]:
-        """Get the review history for a specific hypothesis."""
-        return [h for h in self.state.review_history if h["hypothesis_id"] == hypothesis_id]
-        
-    def get_review_history_by_type_and_hypothesis(self, review_type: str, hypothesis_id: str) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type and hypothesis."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["hypothesis_id"] == hypothesis_id]
-        
-    def get_review_history_by_type_and_context(self, review_type: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type and context."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context]
-        
-    def get_review_history_by_type_and_context_and_hypothesis(self, review_type: str, context: Dict[str, Any], hypothesis_id: str) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, and hypothesis."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, and timestamp."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_score(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, score: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, and score."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["score"] == score]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, and confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_key_points(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, key_points: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, and key points."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["key_points"] == key_points]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_strengths(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, strengths: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, and strengths."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["strengths"] == strengths]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_weaknesses(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, weaknesses: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, and weaknesses."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["weaknesses"] == weaknesses]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_suggestions(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, suggestions: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and suggestions."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["suggestions"] == suggestions]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_score(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, score: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and score."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["score"] == score]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_key_points(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, key_points: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and key points."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["key_points"] == key_points]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_strengths(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, strengths: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and strengths."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["strengths"] == strengths]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_weaknesses(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, weaknesses: List[str]) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and weaknesses."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["weaknesses"] == weaknesses]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_suggestions_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, suggestions: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, suggestions, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["suggestions"] == suggestions and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_key_points_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, key_points: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, key points, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["key_points"] == key_points and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_strengths_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, strengths: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, strengths, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["strengths"] == strengths and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_weaknesses_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, weaknesses: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, weaknesses, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["weaknesses"] == weaknesses and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_suggestions_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, suggestions: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, suggestions, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["suggestions"] == suggestions and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_key_points_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, key_points: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, key points, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["key_points"] == key_points and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_strengths_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, strengths: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, strengths, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["strengths"] == strengths and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_weaknesses_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, weaknesses: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, weaknesses, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["weaknesses"] == weaknesses and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_suggestions_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, suggestions: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, suggestions, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["suggestions"] == suggestions and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_key_points_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, key_points: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, key points, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["key_points"] == key_points and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_strengths_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, strengths: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, strengths, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["strengths"] == strengths and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_weaknesses_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, weaknesses: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, weaknesses, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["weaknesses"] == weaknesses and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_suggestions_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, suggestions: List[str], confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, suggestions, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["suggestions"] == suggestions and h["confidence_confidence"] == confidence_confidence]
-        
-    def get_review_history_by_type_and_context_and_hypothesis_and_timestamp_and_confidence_and_confidence_confidence_confidence(self, review_type: str, context: Dict[str, Any], hypothesis_id: str, timestamp: str, confidence: float, confidence_confidence: float) -> List[Dict[str, Any]]:
-        """Get the review history for a specific review type, context, hypothesis, timestamp, confidence, and confidence confidence."""
-        return [h for h in self.state.review_history if h["review_type"] == review_type and h["context"] == context and h["hypothesis_id"] == hypothesis_id and h["timestamp"] == timestamp and h["confidence"] == confidence and h["confidence_confidence"] == confidence_confidence]
-        
-        } 
