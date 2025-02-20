@@ -1,4 +1,4 @@
-from typing import List, Dict, Literal, Optional
+from typing import List, Dict, Literal, Optional, Any
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 
@@ -104,13 +104,41 @@ class Relationship(BaseModel):
         return v
 
 class SourceMetadata(BaseModel):
-    """Model for source metadata"""
-    source_type: str = Field(description="Type of source (academic, web, etc)")
-    confidence_score: float = Field(description="Confidence in source reliability")
-    domain_relevance: float = Field(description="Relevance to current domain")
-    timestamp: str = Field(description="When the source was processed")
-    validation_status: str = Field(description="Validation status of the source")
-    domain: str = Field(default="knowledge", description="Domain this source belongs to")
+    """Metadata for a knowledge source."""
+    source_type: str = Field(description="Type of source (text, pdf, web, etc)")
+    confidence_score: float = Field(description="Confidence score between 0.0 and 1.0", ge=0.0, le=1.0)
+    domain_relevance: float = Field(description="Domain relevance score between 0.0 and 1.0", ge=0.0, le=1.0)
+    timestamp: str = Field(description="ISO format timestamp")
+    validation_status: Literal["pending", "processed", "failed"] = Field(default="pending", description="Validation status")
+    domain: str = Field(description="Domain this source belongs to")
+    
+    # Add metrics tracking
+    qa_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "questions_generated": 0,
+            "questions_answered": 0,
+            "average_confidence": 0.0
+        },
+        description="Metrics from QA processing"
+    )
+    
+    graph_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "entities_added": 0,
+            "relationships_added": 0,
+            "failed_operations": 0
+        },
+        description="Metrics from graph operations"
+    )
+    
+    embedding_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "embeddings_generated": 0,
+            "total_tokens": 0,
+            "average_vector_length": 0.0
+        },
+        description="Metrics from embedding operations"
+    )
 
     @validator("timestamp")
     def validate_timestamp(cls, v):
@@ -142,6 +170,7 @@ class ExtractedKnowledge(BaseModel):
     confidence: float = Field(default=1.0, description="Overall confidence score for the extraction", ge=0.0, le=1.0)
     metadata: Optional[SourceMetadata] = Field(None, description="Additional metadata about the extraction")
     domain: str = Field(default="knowledge", description="Domain this knowledge belongs to")
+    qa_pairs: List[Dict[str, Any]] = Field(default_factory=list, description="Question-answer pairs generated from content")
 
     @validator("content")
     def validate_content(cls, v):

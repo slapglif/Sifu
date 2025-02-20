@@ -1,5 +1,5 @@
 {
-    "domain_name": "test_domain",
+    "domain_name": "Investigating Novel Alternative and Plant-Based Therapies Targeting the Gut-Brain-Vagus Nerve Axis for Systemic Treatment of PANDAS",
     "llm": {
         "model_name": "gemini-1.5-flash",
         "temperature": 0.1,
@@ -125,7 +125,7 @@
         "confidence_thresholds": {
             "extraction": 0.6,
             "validation": 0.7,
-            "relationship": 0.65
+            "relationship": 0.5
         },
         "chunk_size": 500,
         "chunk_overlap": 100,

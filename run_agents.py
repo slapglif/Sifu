@@ -3,9 +3,9 @@ import aiofiles
 import json
 import os
 import sys
-from typing import List, Dict, Optional, Any, cast, TypedDict, Tuple
-from pydantic import BaseModel, Field, SecretStr
-from langchain_community.graphs import Neo4jGraph
+from typing import List, Dict, Optional, Any, cast, TypedDict, Tuple, Protocol, Awaitable, Callable, Union, TypeVar, Coroutine, Sequence
+from pydantic import BaseModel, Field, SecretStr, validator, field_validator
+from langchain_neo4j import Neo4jGraph
 from langchain_core.documents import Document
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from rich.console import Console
@@ -19,7 +19,9 @@ from scripts.logging_config import (
     log_info_with_context,
     setup_logging,
     create_progress,
-    cleanup_progress
+    cleanup_progress,
+    log_extraction_results,
+    console
 )
 from langchain_core.globals import set_debug
 from langchain.output_parsers import PydanticOutputParser
@@ -28,20 +30,24 @@ from prompts.compiler.compiler_prompts import (
 )
 from pathlib import Path
 from prompts.knowledge_acquisition.extraction import get_key_terms_prompt, KeyTermsResponse, SourceMetadata
-from scripts.text_web_browser import SimpleTextBrowser, web_search
+from scripts.text_web_browser_fixed import SimpleTextBrowser, web_search
 from datetime import datetime
 from scripts.chat_langchain import ChatLangChain
 from scripts.llm_compiler import LLMCompiler
 from langchain_google_genai import ChatGoogleGenerativeAI, HarmBlockThreshold, HarmCategory
 from google.auth.credentials import AnonymousCredentials
 import uuid
-from scripts.models import KnowledgeAcquisitionConfig, ExtractedKnowledge, SourceMetadata
+from scripts.models import KnowledgeAcquisitionConfig, ExtractedKnowledge, SourceMetadata, Relationship, DomainConfig, ConfidenceEvaluation, ConfidenceFactors
 from datasets import Dataset
 from scripts.synthetic_knowledge import SyntheticKnowledgeGenerator
 from scripts.lora_training import LoRATrainer, LoRATrainingConfig, TrainingExample
 from scripts.example_generator import ExampleGenerator
 from rich.progress import Progress
 import shutil
+import logging
+from dataclasses import dataclass, field, asdict
+
+logger = logging.getLogger(__name__)
 
 set_debug(False)
 # Load environment variables
@@ -117,12 +123,38 @@ def print_state_summary(state: SystemState):
         
     console.print(table)
 
-class CompilerState(BaseCompilerState):
-    """Extended compiler state with research-specific fields."""
-    knowledge_sources: list
-    synthetic_knowledge: list
-    training_examples: list
-    model_metrics: dict
+class CompilerError(Exception):
+    """Base class for compiler errors"""
+    pass
+
+class PlanningError(CompilerError):
+    """Error during plan generation"""
+    pass
+
+class ExecutionError(CompilerError):
+    """Error during task execution"""
+    pass
+
+class DecisionError(CompilerError):
+    """Error during join decision"""
+    pass
+
+class CompilerStateDict(TypedDict):
+    """State for compiler workflow."""
+    # Required fields
+    content: str
+    domain_name: str
+    results: List[TaskResult]
+    knowledge_sources: List[Union[Document, Dict[str, Any]]]
+    synthetic_knowledge: List[Dict[str, Any]]
+    training_examples: List[Dict[str, Any]]
+    model_metrics: Dict[str, Any]
+    
+    # Optional fields
+    error: Optional[str]
+    feedback: Optional[str]
+    plan: Optional[Plan]
+    join_decision: Optional[JoinDecision]
 
 class ResearchAgent(LLMCompiler):
     """Research agent that uses LLM compiler for execution."""
@@ -138,34 +170,37 @@ class ResearchAgent(LLMCompiler):
             pydantic_schema=Plan
         )
         
-        task_llm = ChatLangChain(
-            model="gemini-1.5-flash",
-            temperature=0.1,
-            api_key=SecretStr(os.getenv("GOOGLE_API_KEY", "")),
-            format="json",
-            pydantic_schema=TaskResult
-        )
-        
         # Initialize compiler with planning LLM
         super().__init__(planning_llm)
-        
-        # Store task execution LLM
-        self.task_llm = task_llm
         
         # Store configuration
         self.config = config
         
-        # Initialize Neo4j
-        self.graph = cast(Any, Neo4jGraph(
+        # Initialize Neo4j graph
+        self.graph = Neo4jGraph(
             url=config["neo4j"]["url"],
             username=config["neo4j"]["username"],
             password=config["neo4j"]["password"]
-        ))
+        )
+        config["graph"] = self.graph
         
-        # Initialize embeddings
-        self.embeddings = OllamaEmbeddings(model='bge-m3', base_url='http://localhost:11434')
+        # Initialize state
+        initial_state: CompilerStateDict = {
+            "content": "",
+            "domain_name": config.get("domain_name", ""),
+            "plan": None,
+            "results": [],
+            "join_decision": None,
+            "knowledge_sources": [],
+            "synthetic_knowledge": [],
+            "training_examples": [],
+            "model_metrics": {},
+            "error": None,
+            "feedback": None
+        }
+        self.state = cast(BaseCompilerState, initial_state)
         
-        # Initialize knowledge acquisition system
+        # Initialize knowledge system
         self.knowledge_system = KnowledgeAcquisitionSystem(
             KnowledgeAcquisitionConfig(**config["knowledge_acquisition"])
         )
@@ -184,135 +219,193 @@ class ResearchAgent(LLMCompiler):
             LoRATrainingConfig(**config["lora_training"])
         )
         
-        # Initialize system state
-        self.system_state = {
-            "domain_name": config.get("domain_name", "test_domain"),
-            "knowledge_sources": [],
-            "generated_questions": [],
-            "synthetic_knowledge": [],
-            "training_examples": [],
-            "model_metrics": {}
-        }
-        
-        # Initialize compiler state
-        compiler_state = self._get_compiler_state()
-        self.state = compiler_state
+        # Initialize web browser for search
+        self.browser = SimpleTextBrowser()
         
         # Register tools
-        self.register_tool("_research_topics", self._research_topics)
-        self.register_tool("_synthesize_knowledge", self._synthesize_knowledge)
-        self.register_tool("_generate_examples", self._generate_examples)
-        self.register_tool("_train_model", self._train_model)
+        self.register_tool("research_topics", self.research_topics)
+        self.register_tool("synthesize_knowledge", self.synthesize_knowledge)
+        self.register_tool("generate_examples", self.generate_examples)
+        self.register_tool("train_model", self.train_model)
         
         log_info_with_context("Research agent initialized", "Research")
         console.print(Panel("[bold green]Research Agent Initialized[/bold green]"))
 
-    def _get_compiler_state(self) -> CompilerState:
-        """Convert SystemState to CompilerState."""
-        return CompilerState(
-            content="",
-            domain_name=self.system_state["domain_name"],
-            plan=None,
-            results=[],
-            join_decision=None,
-            final_result=None,
-            error=None,
-            feedback=None,
-            knowledge_sources=list(self.system_state["knowledge_sources"]),
-            synthetic_knowledge=list(self.system_state["synthetic_knowledge"]),
-            training_examples=list(self.system_state["training_examples"]),
-            model_metrics=dict(self.system_state["model_metrics"])
-        )
+    async def research_topics(self, domain: str) -> Dict[str, Any]:
+        """Research topics in a domain."""
+        return await self._research_topics(domain)
+
+    async def synthesize_knowledge(self, sources: Dict[str, Any]) -> Dict[str, Any]:
+        """Synthesize knowledge from sources."""
+        return await self._synthesize_knowledge(sources)
+
+    async def generate_examples(self, knowledge: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate examples from knowledge."""
+        return await self._generate_examples(knowledge)
+
+    async def train_model(self, examples: Dict[str, Any]) -> Dict[str, Any]:
+        """Train model on examples."""
+        return await self._train_model(examples)
 
     async def _research_topics(self, domain: str) -> Dict[str, Any]:
-        """Research topics for a domain."""
+        """Research topics in a domain."""
         try:
-            log_info_with_context(f"Starting topic research for domain: {domain}", "Research")
-            
-            # Initialize knowledge acquisition system
+            # Initialize knowledge system with tracking
+            log_info_with_context("Initializing knowledge system", "Research")
             await self.knowledge_system.initialize()
             
-            # Perform web searches
+            # Track embeddings and tokens
+            total_tokens = 0
+            total_embeddings = 0
+            
+            # Get sources with rate limiting and tracking
+            max_retries = 3
+            base_delay = 2.0
+            
+            log_info_with_context(f"Starting source collection for domain: {domain}", "Research")
+            progress = await create_progress()
+            source_task = progress.add_task("[cyan]Collecting sources...", total=max_retries)
+            
+            for attempt in range(max_retries):
+                try:
+                    sources = await self._get_sources(domain)
+                    if sources:
+                        break
+                    await asyncio.sleep(base_delay * (2 ** attempt))
+                    progress.update(source_task, advance=1)
+                except Exception as e:
+                    if "429" in str(e) or "Resource exhausted" in str(e):
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(base_delay * (2 ** attempt))
+                            continue
+                    log_error_with_traceback(e, "Error getting sources")
+                    return {
+                        "knowledge_sources": [],
+                        "thought": "Error occurred during research",
+                        "metrics": {
+                            "total_tokens": total_tokens,
+                            "total_embeddings": total_embeddings,
+                            "sources_processed": 0,
+                            "entities_found": 0,
+                            "relationships_created": 0
+                        }
+                    }
+            
+            if not sources:
+                return {
+                    "knowledge_sources": [],
+                    "thought": "No sources found",
+                    "metrics": {
+                        "total_tokens": total_tokens,
+                        "total_embeddings": total_embeddings,
+                        "sources_processed": 0,
+                        "entities_found": 0,
+                        "relationships_created": 0
+                    }
+                }
+            
+            # Process sources with tracking
             knowledge_sources = []
-            search_queries = [
-                f"{domain} overview",
-                f"{domain} key concepts",
-                f"{domain} latest developments",
-                f"{domain} research papers"
-            ]
+            total_entities = 0
+            total_relationships = 0
             
-            # Track all web sources
-            web_sources = []
+            process_task = progress.add_task("[cyan]Processing sources...", total=len(sources))
             
-            for query in search_queries:
-                log_info_with_context(f"Searching for: {query}", "Search")
-                results = await web_search(query)
-                if results:
-                    # Parse the web search results to extract individual sources
-                    source_files = [f for f in os.listdir("web") if f.startswith("source_") and f.endswith(".txt")]
-                    for source_file in source_files:
-                        if source_file not in web_sources:
-                            web_sources.append(source_file)
-                            source_path = os.path.join("web", source_file)
-                            try:
-                                with open(source_path, "r", encoding="utf-8") as f:
-                                    content = f.read()
-                                    # Split into metadata and content
-                                    parts = content.split("---\n")
-                                    if len(parts) == 2:
-                                        metadata_str, content = parts
-                                        # Parse metadata
-                                        metadata = {}
-                                        for line in metadata_str.strip().split("\n"):
-                                            if ": " in line:
-                                                key, value = line.split(": ", 1)
-                                                metadata[key.lower()] = value
-                                        
-                                        # Add as knowledge source
-                                        knowledge_sources.append({
-                                            "content": content.strip(),
-                                            "metadata": {
-                                                "query": query,
-                                                "title": metadata.get("title", ""),
-                                                "url": metadata.get("url", ""),
-                                                "timestamp": datetime.now().isoformat(),
-                                                "source_type": "web",
-                                                "source_file": source_file
-                                            }
-                                        })
-                            except Exception as e:
-                                log_error_with_traceback(e, f"Error processing source file: {source_file}")
-                                continue
+            for i, source in enumerate(sources):
+                try:
+                    # Add delay between processing sources
+                    await asyncio.sleep(1.0)
+                    
+                    # Extract knowledge with tracking
+                    log_info_with_context(f"Processing source {i+1}/{len(sources)}", "Research")
+                    knowledge = await self._extract_knowledge(source)
+                    
+                    if knowledge:
+                        # Track metrics
+                        total_entities += len(knowledge.entities)
+                        total_relationships += len(knowledge.relationships)
+                        total_embeddings += 1  # Count embeddings generated
+                        
+                        # Store knowledge with ID
+                        knowledge_dict = knowledge.model_dump()
+                        knowledge_dict["id"] = i
+                        knowledge_sources.append(knowledge_dict)
+                        
+                        # Update state with knowledge sources
+                        self.state["knowledge_sources"] = knowledge_sources
+                        
+                        # Log progress
+                        console.print(f"[green]✓ Processed source {i+1}[/green]")
+                        console.print(f"  Entities found: {len(knowledge.entities)}")
+                        console.print(f"  Relationships created: {len(knowledge.relationships)}")
+                        console.print(f"  Confidence: {knowledge.confidence:.2f}")
+                    
+                    progress.update(process_task, advance=1)
+                    
+                except Exception as e:
+                    source_metadata = source.get("metadata", {})
+                    query = source_metadata.get("query", "unknown")
+                    log_error_with_traceback(e, f"Error processing source: {query}")
+                    progress.update(process_task, advance=1)
+                    continue
             
-            # Log research summary
-            console.print(Panel(f"""[bold cyan]Research Summary[/bold cyan]
-- Domain: {domain}
-- Queries performed: {len(search_queries)}
-- Sources gathered: {len(knowledge_sources)}
-- Total content: {sum(len(source.get('content', '')) for source in knowledge_sources)} chars"""))
+            # Generate final metrics
+            metrics = {
+                "total_tokens": total_tokens,
+                "total_embeddings": total_embeddings,
+                "sources_processed": len(knowledge_sources),
+                "entities_found": total_entities,
+                "relationships_created": total_relationships
+            }
             
             return {
                 "knowledge_sources": knowledge_sources,
-                "thought": f"Successfully gathered {len(knowledge_sources)} knowledge sources from {len(search_queries)} search queries"
+                "thought": f"Researched {len(knowledge_sources)} sources about {domain}",
+                "metrics": metrics
             }
-            
+                
         except Exception as e:
-            log_error_with_traceback(e, "Error in topic research")
-            raise
+            log_error_with_traceback(e, "Error in research topics")
+            return {
+                "knowledge_sources": [],
+                "thought": "Error occurred during research",
+                "metrics": {
+                    "total_tokens": 0,
+                    "total_embeddings": 0,
+                    "sources_processed": 0,
+                    "entities_found": 0,
+                    "relationships_created": 0
+                }
+            }
 
-    async def _synthesize_knowledge(self, sources: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def _synthesize_knowledge(self, sources: Dict[str, Any]) -> Dict[str, Any]:
         """Synthesize knowledge from sources."""
         try:
             # Initialize progress tracking
             progress = await create_progress()
-            synthesis_task = progress.add_task("[cyan]Synthesizing knowledge...", total=len(sources))
+            synthesis_task = progress.add_task("[cyan]Synthesizing knowledge...", total=len(sources.get("knowledge_sources", [])))
             
             # Track synthesized knowledge
             synthetic_knowledge = []
             
+            # Get knowledge sources from input
+            knowledge_sources = sources.get("knowledge_sources", [])
+            if not knowledge_sources:
+                log_warning_with_context("No knowledge sources found in input", "Knowledge Synthesis")
+                return {
+                    "synthetic_knowledge": [],
+                    "thought": "No knowledge sources available for synthesis"
+                }
+            
             # Process each source
-            for source in sources:
+            for source in knowledge_sources:
                 try:
+                    if isinstance(source, str):
+                        # Skip if source is a string
+                        log_warning_with_context("Invalid source format (string), skipping", "Knowledge Synthesis")
+                        progress.update(synthesis_task, advance=1)
+                        continue
+                        
                     # Extract content and metadata
                     content = source.get("content", "").strip()
                     metadata = source.get("metadata", {})
@@ -330,6 +423,36 @@ class ResearchAgent(LLMCompiler):
                             progress.update(synthesis_task, advance=1)
                             continue
                             
+                        # Add source metadata and ID
+                        if isinstance(knowledge, dict):
+                            # Get existing metadata
+                            knowledge_metadata = knowledge.get("metadata", {})
+                            # Convert metadata to dict if it's a Pydantic model
+                            if hasattr(knowledge_metadata, "model_dump"):
+                                knowledge_metadata = knowledge_metadata.model_dump()
+                            elif hasattr(knowledge_metadata, "dict"):
+                                knowledge_metadata = knowledge_metadata.dict()
+                                
+                            # Create new combined metadata
+                            combined_metadata = {**knowledge_metadata, **metadata}
+                            knowledge["metadata"] = combined_metadata
+                            
+                            # Add source ID to track relationships
+                            knowledge["source_id"] = source.get("id")
+                        
+                        # Convert relationships to dictionaries
+                        if "relationships" in knowledge:
+                            knowledge["relationships"] = [
+                                {
+                                    "source": rel.source,
+                                    "relation": rel.relation,
+                                    "target": rel.target,
+                                    "domain": rel.domain,
+                                    "confidence": rel.confidence
+                                }
+                                for rel in knowledge["relationships"]
+                            ]
+                        
                         # Add to synthetic knowledge
                         synthetic_knowledge.append(knowledge)
                         
@@ -337,9 +460,9 @@ class ResearchAgent(LLMCompiler):
                         progress.update(synthesis_task, advance=1)
                         console.print(f"[green]✓ Synthesized knowledge from source {metadata.get('source_file', 'unknown')}[/green]")
                         console.print(f"  Title: {metadata.get('title', 'Unknown')}")
-                        console.print(f"  Entities found: {len(knowledge.entities)}")
-                        console.print(f"  Relationships found: {len(knowledge.relationships)}")
-                        console.print(f"  Confidence: {knowledge.confidence:.2f}")
+                        console.print(f"  Entities found: {len(knowledge.get('entities', []))}")
+                        console.print(f"  Relationships found: {len(knowledge.get('relationships', []))}")
+                        console.print(f"  Confidence: {knowledge.get('confidence', 0.0):.2f}")
                         
                     except Exception as e:
                         log_error_with_traceback(e, "Error in knowledge extraction")
@@ -357,37 +480,42 @@ class ResearchAgent(LLMCompiler):
             
             knowledge_path = os.path.join(results_dir, "synthetic_knowledge.json")
             with open(knowledge_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    [k.model_dump() for k in synthetic_knowledge],
-                    f,
-                    indent=2,
-                    ensure_ascii=False
-                )
+                # Convert any remaining Pydantic models to dicts before saving
+                serializable_knowledge = []
+                for k in synthetic_knowledge:
+                    if isinstance(k, dict):
+                        # If it's already a dict, just append it
+                        serializable_knowledge.append(k)
+                    elif hasattr(k, "model_dump"):
+                        # If it's a Pydantic v2 model
+                        serializable_knowledge.append(k.model_dump())
+                    elif hasattr(k, "dict"):
+                        # If it's a Pydantic v1 model
+                        serializable_knowledge.append(k.dict())
+                    else:
+                        # If it's something else, try to convert to dict
+                        try:
+                            serializable_knowledge.append(dict(k))
+                        except:
+                            # If conversion fails, just append as is
+                            serializable_knowledge.append(k)
+                json.dump(serializable_knowledge, f, indent=2, ensure_ascii=False)
             
-            # Log synthesis summary
-            avg_confidence = 0
-            total_entities = 0
-            total_relationships = 0
-            if synthetic_knowledge:
-                avg_confidence = sum(k.confidence for k in synthetic_knowledge) / len(synthetic_knowledge)
-                total_entities = sum(len(k.entities) for k in synthetic_knowledge)
-                total_relationships = sum(len(k.relationships) for k in synthetic_knowledge)
+            # Update state with synthetic knowledge
+            self.state["synthetic_knowledge"] = synthetic_knowledge
             
-            console.print(Panel(f"""[bold cyan]Knowledge Synthesis Summary[/bold cyan]
-- Sources processed: {len(sources)}
-- Knowledge entries created: {len(synthetic_knowledge)}
-- Total entities: {total_entities}
-- Total relationships: {total_relationships}
-- Average confidence: {avg_confidence:.2f}"""))
+            # Store serializable knowledge in system state for example generation
+            self.state["synthetic_knowledge"] = serializable_knowledge
             
-            # Update state
-            self.system_state["synthetic_knowledge"] = synthetic_knowledge
+            # Count total entities and relationships
+            total_entities = sum(len(k.get('entities', [])) for k in synthetic_knowledge)
+            total_relationships = sum(len(k.get('relationships', [])) for k in synthetic_knowledge)
             
             return {
                 "synthetic_knowledge": synthetic_knowledge,
-                "thought": f"Successfully synthesized knowledge from {len(sources)} sources with {total_entities} entities and {total_relationships} relationships"
+                "thought": f"Successfully synthesized knowledge from {len(sources.get('knowledge_sources', []))} sources with {total_entities} entities and {total_relationships} relationships"
             }
-            
+                
         except Exception as e:
             log_error_with_traceback(e, "Error in knowledge synthesis")
             return {
@@ -395,58 +523,50 @@ class ResearchAgent(LLMCompiler):
                 "thought": f"Error synthesizing knowledge: {str(e)}"
             }
 
-    async def _generate_examples(self, knowledge: List[ExtractedKnowledge]) -> Dict[str, Any]:
-        """Generate training examples from knowledge."""
-        examples = []
-        
-        with Progress() as progress:
-            example_task = progress.add_task("Generating examples...", total=len(knowledge))
+    async def _generate_examples(self, synthetic_knowledge: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate training examples from synthetic knowledge."""
+        try:
+            examples = []
+            knowledge_list = synthetic_knowledge.get("synthetic_knowledge", [])
             
-            # Process each knowledge entry
-            for entry in knowledge:
-                try:
-                    # Extract content and metadata
-                    content = entry.content
-                    metadata = entry.metadata
-                    
-                    if not content:
-                        log_warning_with_context("Empty content, skipping entry", "Example Generation")
-                        progress.update(example_task, advance=1)
-                        continue
-                        
-                    # Generate examples from content
-                    examples_result = await self.example_generator.generate_examples(content)
-                    if examples_result and examples_result.examples:
-                        examples.extend(examples_result.examples)
-                        
-                    progress.update(example_task, advance=1)
-                    
-                except Exception as e:
-                    log_error_with_traceback(e, "Error generating examples from knowledge entry")
-                    progress.update(example_task, advance=1)
+            if not knowledge_list:
+                return {
+                    "training_examples": [],
+                    "thought": "No synthetic knowledge available for example generation"
+                }
+            
+            for knowledge in knowledge_list:
+                if not isinstance(knowledge, dict):
                     continue
+                
+                # Generate examples using the knowledge
+                example = {
+                    "input_text": knowledge.get("content", ""),
+                    "output_text": json.dumps({
+                        "entities": knowledge.get("entities", []),
+                        "relationships": knowledge.get("relationships", [])
+                    }),
+                    "metadata": knowledge.get("metadata", {})
+                }
+                examples.append(example)
             
-            # Save training examples to disk
-            results_dir = os.path.join("results", self.config.get("domain_name", "test_domain"))
+            # Save examples to file
+            results_dir = os.path.join("results", self.state["domain_name"])
             os.makedirs(results_dir, exist_ok=True)
-            
             examples_path = os.path.join(results_dir, "training_examples.json")
             with open(examples_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    [ex.model_dump() for ex in examples],
-                    f,
-                    indent=2,
-                    ensure_ascii=False
-                )
+                json.dump(examples, f, indent=2, ensure_ascii=False)
             
-            await cleanup_progress()
             return {
-                "examples": examples,
-                "thought": f"Successfully generated {len(examples)} examples from {len(knowledge)} knowledge entries"
+                "training_examples": examples,
+                "thought": f"Generated {len(examples)} training examples"
             }
-                
-    async def _train_model(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Train model on generated examples."""
+        except Exception as e:
+            logger.error(f"Error generating examples: {str(e)}")
+            return {"training_examples": [], "thought": f"Error generating examples: {str(e)}"}
+
+    async def _train_model(self, examples: Dict[str, Any]) -> Dict[str, Any]:
+        """Train model on examples."""
         try:
             if not examples:
                 return {
@@ -455,7 +575,7 @@ class ResearchAgent(LLMCompiler):
                     },
                     "thought": "Failed to train model: no examples available"
                 }
-                
+            
             # Initialize progress tracking
             progress = await create_progress()
             
@@ -592,224 +712,224 @@ class ResearchAgent(LLMCompiler):
                 },
                 "thought": f"Error training model: {str(e)}"
             }
-
-    def _dict_to_compiler_state(self, state_dict: Dict[str, Any]) -> CompilerState:
-        """Convert dictionary to CompilerState."""
-        return CompilerState(**{
-            "domain_name": str(state_dict.get("domain_name", "")),
-            "content": str(state_dict.get("content", "")),
-            "plan": state_dict.get("plan"),
-            "results": list(state_dict.get("results", [])),
-            "thought": str(state_dict.get("thought", "")),
-            "join_decision": None,
-            "final_result": None,
-            "error": None,
-            "feedback": None,
-            "knowledge_sources": [],
-            "synthetic_knowledge": [],
-            "training_examples": [],
-            "model_metrics": {}
-        })
-
-    async def run(self, initial_state: Optional[Dict[str, Any]] = None) -> None:
-        """Run the research workflow."""
-        try:
-            # Initialize state if not provided
-            if initial_state is None:
-                initial_state = {
-                    "domain_name": "test_domain",
-                    "content": "",
-                    "plan": None,
-                    "results": [],
-                    "thought": "Starting research workflow"
-                }
-            
-            # Convert to CompilerState
-            self.state = self._dict_to_compiler_state(initial_state)
-            
-            log_info_with_context(f"Starting research workflow for domain: {initial_state['domain_name']}", "Research")
-            
-            # Create execution plan
-            tasks = [
-                Task(
-                    idx=0,
-                    tool="_research_topics",  # Use actual method name
-                    args={"domain": initial_state['domain_name']},
-                    dependencies=[]
-                ),
-                Task(
-                    idx=1,
-                    tool="_synthesize_knowledge",  # Use actual method name
-                    args={"sources": []},  # Will be filled from research results
-                    dependencies=[0]
-                ),
-                Task(
-                    idx=2,
-                    tool="_generate_examples",  # Use actual method name
-                    args={"knowledge": []},  # Will be filled from synthesis results
-                    dependencies=[1]
-                ),
-                Task(
-                    idx=3,
-                    tool="_train_model",  # Use actual method name
-                    args={"examples": []},  # Will be filled from example generation results
-                    dependencies=[2]
-                )
-            ]
-            
-            # Create plan
-            plan = Plan(tasks=tasks, thought="Execute research workflow in sequence: research -> synthesis -> examples -> training")
-            self.state["plan"] = plan
-            
-            # Execute tasks
-            log_info_with_context("Starting execution of 4 tasks", "Execution")
-            results = []
-            
-            for task in tasks:
+        finally:
+            # Cleanup
+            if hasattr(self, 'knowledge_system'):
                 try:
-                    # Check dependencies
-                    deps_met = all(
-                        any(r.task_id == dep and not r.error for r in results)
-                        for dep in task.dependencies
-                    )
-                    if not deps_met:
-                        log_warning_with_context(f"Dependencies not met for task {task.idx}", "Execution")
-                        continue
-                    
-                    log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
-                    
-                    # Update task args based on previous results
-                    if task.tool == "_synthesize_knowledge":
-                        # Get knowledge sources from research results
-                        research_result = next(
-                            (r.result for r in results if r.task_id == 0 and not r.error),
-                            None
-                        )
-                        if research_result and "knowledge_sources" in research_result:
-                            task.args["sources"] = research_result["knowledge_sources"]
-                            log_info_with_context(f"Found {len(task.args['sources'])} sources for synthesis", "Execution")
-                    
-                    elif task.tool == "_generate_examples":
-                        # Get synthetic knowledge from synthesis results
-                        synthesis_result = next(
-                            (r.result for r in results if r.task_id == 1 and not r.error),
-                            None
-                        )
-                        if synthesis_result and "synthetic_knowledge" in synthesis_result:
-                            task.args["knowledge"] = synthesis_result["synthetic_knowledge"]
-                            log_info_with_context(f"Found {len(task.args['knowledge'])} knowledge entries for example generation", "Execution")
-                    
-                    elif task.tool == "_train_model":
-                        # Get examples from example generation results
-                        examples_result = next(
-                            (r.result for r in results if r.task_id == 2 and not r.error),
-                            None
-                        )
-                        if examples_result and "examples" in examples_result:
-                            task.args["examples"] = examples_result["examples"]
-                            log_info_with_context(f"Found {len(task.args['examples'])} examples for training", "Execution")
-                    
-                    # Execute task
-                    result = await getattr(self, task.tool)(**task.args)
-                    
-                    # Update system state based on task
-                    if task.tool == "_research_topics" and "knowledge_sources" in result:
-                        self.system_state["knowledge_sources"] = result["knowledge_sources"]
-                    elif task.tool == "_synthesize_knowledge" and "synthetic_knowledge" in result:
-                        self.system_state["synthetic_knowledge"] = result["synthetic_knowledge"]
-                    elif task.tool == "_generate_examples" and "examples" in result:
-                        self.system_state["training_examples"] = result["examples"]
-                    elif task.tool == "_train_model" and "metrics" in result:
-                        self.system_state["model_metrics"] = result["metrics"]
-                    
-                    # Add result
-                    results.append(TaskResult(
-                        task_id=task.idx,
-                        result=result,
-                        error=None
-                    ))
-                    
+                    # Get session attribute if it exists
+                    session = getattr(self.knowledge_system, '_session', None) or getattr(self.knowledge_system, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
                 except Exception as e:
-                    log_error_with_traceback(e, f"Error executing task {task.idx}")
-                    results.append(TaskResult(
-                        task_id=task.idx,
-                        result=None,
-                        error=str(e)
-                    ))
-            
-            # Update state with results
-            self.state["results"] = results
-            
-            # Make join decision
-            log_info_with_context("Making join decision", "Decision")
-            join_decision = await self.make_join_decision(self.state)
-            self.state["join_decision"] = join_decision
-            
-            console.print("\nMaking Join Decision...")
-            console.print(Panel(f"""[bold]Join Decision[/bold]
-Status: {join_decision.complete}
-Thought: {join_decision.thought}
-Feedback: {join_decision.feedback or 'None'}"""))
-            
-            # Generate final result
-            log_info_with_context("Generating final result", "Compiler")
-            final_result = await self._generate_final_result(self.state)
-            self.state["final_result"] = final_result
-            
-            log_info_with_context("Research workflow completed successfully", "Research")
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Error in research workflow")
-            raise
+                    logger.error(f"Error closing knowledge system session: {str(e)}")
+            if hasattr(self, 'qa_system'):
+                try:
+                    # Get session attribute if it exists
+                    session = getattr(self.qa_system, '_session', None) or getattr(self.qa_system, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
+                except Exception as e:
+                    logger.error(f"Error closing QA system session: {str(e)}")
+            if hasattr(self, 'browser'):
+                try:
+                    # Get session attribute if it exists
+                    session = getattr(self.browser, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
+                except Exception as e:
+                    logger.error(f"Error closing browser session: {str(e)}")
+            await cleanup_progress()
 
-    async def _extract_knowledge(self, source: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Extract knowledge from a source."""
+    async def run(self, initial_state: Dict[str, Any]) -> CompilerStateDict:
+        """Run the research agent with the given initial state."""
         try:
-            # Extract key concepts and relationships
-            content = source.get("content", "")
-            if not content:
-                return None
-            
-            # Use knowledge acquisition system to extract knowledge
-            knowledge = await self.knowledge_system.process_source(content)
-            if not knowledge:
-                return None
-            
-            # Get entities and relationships from knowledge object
-            entities = getattr(knowledge, "entities", []) or []
-            knowledge_relationships = getattr(knowledge, "relationships", []) or []
-            confidence = getattr(knowledge, "confidence", 0.5)
-            
-            # Create synthetic knowledge entry
-            return {
-                "content": content[:500],  # First 500 chars as summary
-                "entities": entities,
-                "relationships": knowledge_relationships,
-                "confidence": confidence,
-                "metadata": {
-                    "source_type": "synthesis",
-                    "timestamp": datetime.now().isoformat(),
-                    "source_id": source.get("id", "unknown"),
-                    "num_entities": len(entities),
-                    "num_relationships": len(knowledge_relationships)
-                }
+            # Initialize state with required fields
+            state_dict: CompilerStateDict = {
+                "content": initial_state.get("content", ""),
+                "domain_name": initial_state.get("domain_name", ""),
+                "results": initial_state.get("results", []),
+                "knowledge_sources": initial_state.get("knowledge_sources", []),
+                "synthetic_knowledge": initial_state.get("synthetic_knowledge", []),
+                "training_examples": initial_state.get("training_examples", []),
+                "model_metrics": initial_state.get("model_metrics", {}),
+                "error": initial_state.get("error"),
+                "feedback": initial_state.get("feedback"),
+                "plan": initial_state.get("plan"),
+                "join_decision": initial_state.get("join_decision")
             }
             
+            self.state = cast(BaseCompilerState, state_dict)
+            
+            # Create plan
+            plan = await self.generate_plan(self.state)
+            state_dict["plan"] = plan
+            self.state = cast(BaseCompilerState, state_dict)
+            
+            # Execute tasks
+            results = await self.execute_tasks(plan.tasks, self.state)
+            state_dict["results"] = results
+            self.state = cast(BaseCompilerState, state_dict)
+            
+            # Generate final result
+            final_result = await self._generate_final_result(self.state)
+            state_dict["join_decision"] = final_result
+            self.state = cast(BaseCompilerState, state_dict)
+            
+            return state_dict
         except Exception as e:
-            log_error_with_traceback(e, "Error extracting knowledge")
+            logger.error(f"Error in research agent: {str(e)}")
+            error_state: CompilerStateDict = {
+                    "content": "",
+                "domain_name": "",
+                    "results": [],
+                "knowledge_sources": [],
+                "synthetic_knowledge": [],
+                "training_examples": [],
+                "model_metrics": {},
+                "error": str(e),
+                    "feedback": None,
+                "plan": None,
+                "join_decision": None
+            }
+            return error_state
+        finally:
+            # Cleanup
+            if hasattr(self, 'knowledge_system'):
+                try:
+                    # Get session attribute if it exists
+                    session = getattr(self.knowledge_system, '_session', None) or getattr(self.knowledge_system, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
+                except Exception as e:
+                    logger.error(f"Error closing knowledge system session: {str(e)}")
+            if hasattr(self, 'qa_system'):
+                try:
+                    # Get session attribute if it exists
+                    session = getattr(self.qa_system, '_session', None) or getattr(self.qa_system, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
+                except Exception as e:
+                    logger.error(f"Error closing QA system session: {str(e)}")
+            if hasattr(self, 'browser'):
+                try:
+                    # Get session attribute if it exists
+                    session = getattr(self.browser, 'session', None)
+                    if session and hasattr(session, 'close'):
+                        await session.close()
+                except Exception as e:
+                    logger.error(f"Error closing browser session: {str(e)}")
+            await cleanup_progress()
+
+    async def _extract_knowledge(self, source: Dict[str, Any]) -> Optional[ExtractedKnowledge]:
+        """Extract knowledge from a source."""
+        try:
+            # Get content and metadata
+            content = source.get("content", "").strip()
+            source_metadata = source.get("metadata", {})
+            
+            if not content:
+                log_warning_with_context("Empty content, skipping source", "Knowledge Extraction")
+                return None
+            
+            # Generate QA pairs for content
+            log_info_with_context("Generating QA pairs", "Knowledge Extraction")
+            questions = await self.qa_system.generate_questions(content, num_questions=5)
+            
+            # Track QA metrics
+            qa_metrics = {
+                "questions_generated": len(questions),
+                "questions_answered": 0,
+                "average_confidence": 0.0
+            }
+            
+            # Process each question
+            answers = []
+            total_confidence = 0.0
+            
+            for question in questions:
+                try:
+                    response = await self.qa_system.process_qa_chain(question.question)
+                    if response and response.answer:
+                        answers.append({
+                            "question": question.question,
+                            "answer": response.answer,
+                            "confidence": response.confidence,
+                            "sources": response.sources
+                        })
+                        total_confidence += response.confidence
+                        qa_metrics["questions_answered"] += 1
+                except Exception as e:
+                    log_error_with_traceback(e, f"Error processing question: {question.question}")
+                    continue
+            
+            if qa_metrics["questions_answered"] > 0:
+                qa_metrics["average_confidence"] = total_confidence / qa_metrics["questions_answered"]
+            
+            # Process source with knowledge system
+            log_info_with_context("Extracting knowledge", "Knowledge Extraction")
+            result = await self.knowledge_system.process_source(content)
+            if not result or not isinstance(result, dict):
+                log_warning_with_context("No knowledge extracted, skipping source", "Knowledge Extraction")
+                return None
+            
+            # Create metadata from dict
+            metadata_dict = result.get("metadata", {})
+            if isinstance(metadata_dict, dict):
+                # Create new metadata object
+                metadata = SourceMetadata(
+                    source_type=metadata_dict.get("source_type", "text"),
+                    confidence_score=metadata_dict.get("confidence_score", 0.8),
+                    domain_relevance=metadata_dict.get("domain_relevance", 0.8),
+                    timestamp=metadata_dict.get("timestamp", datetime.now().isoformat()),
+                    validation_status=metadata_dict.get("validation_status", "pending"),
+                    domain=metadata_dict.get("domain", "medical"),
+                    qa_metrics=qa_metrics  # Add QA metrics to metadata
+                )
+                
+                # Update with source metadata
+                if isinstance(source_metadata, dict):
+                    metadata = SourceMetadata(
+                        source_type=source_metadata.get("source_type", metadata.source_type),
+                        confidence_score=source_metadata.get("confidence_score", metadata.confidence_score),
+                        domain_relevance=source_metadata.get("domain_relevance", metadata.domain_relevance),
+                        timestamp=source_metadata.get("timestamp", metadata.timestamp),
+                        validation_status=source_metadata.get("validation_status", metadata.validation_status),
+                        domain=source_metadata.get("domain", metadata.domain),
+                        qa_metrics=qa_metrics
+                    )
+            else:
+                metadata = metadata_dict
+            
+            # Create ExtractedKnowledge
+            extracted = ExtractedKnowledge(
+                content=result.get("content", ""),
+                entities=result.get("entities", []),
+                relationships=result.get("relationships", []),
+                metadata=metadata,
+                confidence=result.get("confidence", 0.5),
+                domain=metadata.domain if hasattr(metadata, "domain") else "medical",
+                qa_pairs=answers  # Add QA pairs to extracted knowledge
+            )
+            return extracted
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error in knowledge extraction")
             return None
 
-    def _split_data(self, examples: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def _split_data(self, examples: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Split examples into training and evaluation sets."""
         try:
+            # Get examples list from input
+            example_list = examples.get("training_examples", [])
+            
             # If no examples, return empty lists
-            if not examples:
+            if not example_list:
                 return [], []
             
             # Split into train/eval sets (80/20)
-            split_idx = int(len(examples) * 0.8)
-            train_data = examples[:split_idx]
-            eval_data = examples[split_idx:]
+            split_idx = int(len(example_list) * 0.8)
+            train_data = example_list[:split_idx]
+            eval_data = example_list[split_idx:]
             
             return train_data, eval_data
             
@@ -859,14 +979,17 @@ Feedback: {join_decision.feedback or 'None'}"""))
             log_error_with_traceback(e, "Error getting LoRA config")
             return {}
 
-    async def make_join_decision(self, state: CompilerState) -> JoinDecision:
+    async def make_join_decision(self, state: BaseCompilerState) -> JoinDecision:
         """Make join decision based on task results."""
         try:
             log_info_with_context("Making join decision", "Decision")
             console.print("\n[bold green]Making Join Decision...[/bold green]")
             
+            # Convert state to dictionary for access
+            state_dict = cast(CompilerStateDict, dict(state))
+            
             # Get task results
-            results = state.get("results", [])
+            results = state_dict["results"]
             if not results:
                 return JoinDecision(
                     complete=False,
@@ -885,7 +1008,7 @@ Feedback: {join_decision.feedback or 'None'}"""))
                     successful_tasks.append(result.task_id)
                     
             # Analyze task dependencies
-            plan = state.get("plan")
+            plan = state_dict["plan"]
             if plan and plan.tasks:
                 tasks_by_id = {task.idx: task for task in plan.tasks}
                 
@@ -955,7 +1078,7 @@ Feedback: {join_decision.feedback or 'None'}"""))
                 replan=True,
                 feedback="Need to generate execution plan"
             )
-            
+                
         except Exception as e:
             log_error_with_traceback(e, "Error in join decision")
             return JoinDecision(
@@ -965,28 +1088,86 @@ Feedback: {join_decision.feedback or 'None'}"""))
                 feedback="Error occurred during join decision"
             )
 
+    async def _get_sources(self, domain: str) -> List[Dict[str, Any]]:
+        """Get sources for a domain."""
+        try:
+            # Get actual domain name from state if needed
+            if domain == "{state}":
+                state_dict = self._get_state_dict()
+                domain = state_dict["domain_name"]
+            
+            log_info_with_context(f"Starting topic research for domain: {domain}", "Research")
+            
+            # Perform searches
+            sources = []
+            search_queries = [
+                f"{domain} overview",
+                f"{domain} key concepts",
+                f"{domain} latest developments"
+            ]
+            
+            for query in search_queries:
+                log_info_with_context(f"Searching for: {query}", "Search")
+                results = await web_search(query, self.config)
+                if results and "No results found" not in results:
+                    sources.append({
+                        "content": results,
+                        "metadata": {
+                            "query": query,
+                            "timestamp": datetime.now().isoformat(),
+                            "source_type": "web_search"
+                        }
+                    })
+            
+            return sources
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error getting sources")
+            return []
+
+    def _get_state_dict(self) -> CompilerStateDict:
+        """Get current state as a dictionary."""
+        return cast(CompilerStateDict, dict(self.state))
+
 async def main():
-    """Main entry point"""
+    """Main entry point."""
     try:
         # Parse arguments
-        parser = argparse.ArgumentParser(description="Run research agent")
-        parser.add_argument("--config", required=True, help="Path to config file")
+        parser = argparse.ArgumentParser(description='Run research agent')
+        parser.add_argument('--config', type=str, default='config.json', help='Path to config file')
         args = parser.parse_args()
         
         # Load config
-        async with aiofiles.open(args.config) as f:
+        async with aiofiles.open(args.config, 'r') as f:
             config = json.loads(await f.read())
         
-        # Initialize and run agent
         log_info_with_context("Initializing research agent", "Main")
         agent = ResearchAgent(config)
         
         log_info_with_context("Starting research agent", "Main")
-        await agent.run()
+        
+        # Create initial state
+        initial_state = {
+            "content": "",
+            "domain_name": config.get("domain_name", ""),
+            "plan": None,
+            "results": [],
+            "join_decision": None,
+            "final_result": None,
+            "error": None,
+            "feedback": None,
+            "knowledge_sources": [],
+            "synthetic_knowledge": [],
+            "training_examples": [],
+            "model_metrics": {}
+        }
+        
+        # Run agent
+        await agent.run(initial_state)
         
     except Exception as e:
         log_error_with_traceback(e, "Fatal error in research agent")
-        sys.exit(1)
+        raise
 
 if __name__ == "__main__":
     # Set up argparse at module level

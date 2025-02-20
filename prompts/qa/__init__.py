@@ -7,6 +7,7 @@ from .qa_prompt import (
 
 from .question_generation import (
     Question,
+    QuestionList,
     get_question_generation_prompt
 )
 

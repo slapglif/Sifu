@@ -45,7 +45,7 @@ from scripts.logging_config import (
     create_progress,
     log_extraction_results
 )
-from scripts.text_web_browser import SimpleTextBrowser, web_search
+from scripts.text_web_browser_fixed import SimpleTextBrowser, web_search
 from scripts.mdconvert import MarkdownConverter
 from scripts.visual_qa import VisualAnalyzer
 from scripts.text_inspector_tool import TextInspector, TextAnalysis
@@ -66,6 +66,12 @@ from prompts.knowledge_acquisition import (
     get_plan_generation_prompt,
     get_join_decision_prompt
 )
+from langchain.prompts import ChatPromptTemplate
+from bs4 import BeautifulSoup, Comment
+import hashlib
+from tqdm.rich import tqdm
+import re
+import google.api_core.exceptions
 
 # Type variables for async functions
 T = TypeVar('T')
@@ -290,8 +296,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             try:
                 self.embeddings = OllamaEmbeddings(
                     model='bge-m3',  # Using a more reliable model
-                    base_url='http://localhost:11434',
-
+                    base_url='http://localhost:11434'
                 )
                 log_info_with_context("Embeddings initialized", "KnowledgeAcquisition")
             except Exception as e:
@@ -362,19 +367,29 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                     knowledge = await self.process_source(chunk)
                     if not knowledge:
                         return None
-                        
+                    
                     # Generate embeddings (will be batched later)
                     embeddings = await self._generate_embeddings(chunk)
                     if not embeddings:
                         return None
-                        
+                    
+                    # Convert knowledge to serializable format
+                    if isinstance(knowledge, dict):
+                        knowledge_dict = knowledge
+                    elif hasattr(knowledge, "model_dump"):
+                        knowledge_dict = knowledge.model_dump()
+                    elif hasattr(knowledge, "dict"):
+                        knowledge_dict = knowledge.dict()
+                    else:
+                        knowledge_dict = dict(knowledge)
+                    
                     # Create document
                     doc = Document(
                         page_content=chunk,
                         metadata={
                             "source": source_path,
                             "type": source_type,
-                            "knowledge": knowledge.model_dump() if hasattr(knowledge, "model_dump") else knowledge,
+                            "knowledge": knowledge_dict,
                             "embeddings": embeddings
                         }
                     )
@@ -426,7 +441,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                     ])
                 except Exception as e:
                     log_error_with_traceback(e, "Failed to batch add to graph", include_locals=True)
-                    
+            
             log_info_with_context(
                 f"Processed {len(documents)} documents from {source_path}",
                 "KnowledgeAcquisition",
@@ -438,154 +453,243 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             log_error_with_traceback(e, f"Failed to add source: {source_path}", include_locals=True)
             raise
 
-    async def process_source(self, content: str) -> ExtractedKnowledge:
-        """Process a source and extract knowledge"""
+    async def process_source(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Process a source document to extract knowledge."""
         try:
-            log_info_with_context(f"Starting source processing with content length: {len(content)}", "KnowledgeAcquisition")
+            logger.info(f"Starting source processing with content length: {len(content)}")
             
-            # Log content preview
-            preview = content[:200] + "..." if len(content) > 200 else content
-            log_info_with_context(f"Content preview:\n{preview}", "KnowledgeAcquisition")
-            
+            # Preview content
+            if isinstance(content, dict):
+                logger.info(f"Content preview: {str(content)[:500]}...")
+            else:
+                logger.info(f"Content preview: {str(content)[:500]}...")
+                
             # Extract entities
-            log_info_with_context("Extracting entities...", "KnowledgeAcquisition")
-            try:
-                entities = await self._extract_entities(content)
-                if not entities:
-                    log_warning_with_context("No entities extracted", "KnowledgeAcquisition", include_locals=True)
-                    entities = ["general_concept"]  # Default entity to prevent empty list
-                else:
-                    log_info_with_context(f"Extracted {len(entities)} entities: {entities}", "KnowledgeAcquisition")
-            except Exception as e:
-                log_error_with_traceback(e, "Error extracting entities", include_locals=True)
-                entities = ["error_processing"]
-            
+            logger.info("Extracting entities...")
+            entities = await self._extract_entities(content)
+            if not entities:
+                logger.warning("No entities extracted")
+                return {"content": content, "entities": [], "relationships": [], "metadata": self._create_default_metadata(), "confidence": 0.0}
+
+            logger.info(f"Extracted and validated {len(entities)} entities: {entities}")
+                
             # Extract relationships
-            log_info_with_context("Extracting relationships...", "KnowledgeAcquisition")
-            try:
-                relationships = await self._extract_relationships(content)
-                if not relationships:
-                    # Create at least one default relationship if entities exist
-                    if len(entities) >= 2:
-                        relationships = [Relationship(
-                            source=entities[0],
-                            relation="related_to",
-                            target=entities[1],
-                            confidence=0.5
-                        )]
-                    else:
-                        relationships = []
-                log_info_with_context(f"Extracted {len(relationships)} relationships", "KnowledgeAcquisition")
-                for rel in relationships:
-                    if isinstance(rel, dict):
-                        rel = Relationship(**rel)
-                    log_info_with_context(f"Relationship: {rel.source} -> {rel.relation} -> {rel.target}", "KnowledgeAcquisition")
-            except Exception as e:
-                log_error_with_traceback(e, "Error extracting relationships", include_locals=True)
-                relationships = []
-            
+            logger.info("Extracting relationships...")
+            relationships = await self._extract_relationships(content, entities)
+                
             # Generate metadata
-            log_info_with_context("Generating metadata...", "KnowledgeAcquisition")
-            try:
-                metadata = await self._generate_metadata(content)
-                if not metadata:
-                    metadata = self._create_default_metadata()
-                else:
-                    metadata_str = metadata.model_dump() if hasattr(metadata, 'model_dump') else str(metadata)
-                    log_info_with_context(f"Generated metadata: {metadata_str}", "KnowledgeAcquisition")
-            except Exception as e:
-                log_error_with_traceback(e, "Error generating metadata", include_locals=True)
-                metadata = self._create_default_metadata()
-            
+            logger.info("Generating metadata...")
+            source_metadata = self._create_default_metadata()
+            if metadata:
+                if isinstance(metadata, dict):
+                    # Create new metadata object with combined fields
+                    source_metadata = SourceMetadata(
+                        **{
+                            **source_metadata.model_dump(),
+                            **metadata
+                        }
+                    )
+                elif isinstance(metadata, SourceMetadata):
+                    # Update fields from other metadata object
+                    source_metadata = SourceMetadata(
+                        **{
+                            **source_metadata.model_dump(),
+                            **metadata.model_dump()
+                        }
+                    )
+            logger.info(f"Generated metadata: {source_metadata}")
+
             # Evaluate confidence
-            log_info_with_context("Evaluating confidence...", "KnowledgeAcquisition")
-            try:
-                confidence_eval = await self._evaluate_confidence(content, entities, relationships)
-                confidence_score = (
-                    confidence_eval.confidence 
-                    if hasattr(confidence_eval, 'confidence') 
-                    else confidence_eval.factors.overall
-                    if hasattr(confidence_eval, 'factors')
-                    else 0.5
-                )
-                log_info_with_context(f"Confidence score: {confidence_score}", "KnowledgeAcquisition")
-            except Exception as e:
-                log_error_with_traceback(e, "Error evaluating confidence", include_locals=True)
-                confidence_score = 0.5
+            logger.info("Evaluating confidence...")
+            confidence = await self._evaluate_confidence(entities, relationships)
+            logger.info(f"Confidence score: {confidence}")
+
+            # Return full knowledge object
+            return {
+                "content": content,
+                "entities": entities,
+                "relationships": relationships,
+                "metadata": source_metadata,
+                "confidence": confidence
+            }
+        except Exception as e:
+            log_error_with_traceback(e, "Error processing source")
+            return {
+                "content": content,
+                "entities": [],
+                "relationships": [],
+                "metadata": self._create_default_metadata(),
+                "confidence": 0.0
+            }
+
+    async def _clean_content(self, content: str) -> str:
+        """Clean and normalize content."""
+        try:
+            # Remove HTML
+            soup = BeautifulSoup(content, "html.parser")
             
-            # Update metadata with confidence
-            if isinstance(metadata, dict):
-                metadata = SourceMetadata(**metadata)
-            metadata.confidence_score = confidence_score
+            # Remove unwanted elements
+            for element in soup(["script", "style", "nav", "header", "footer", "aside"]):
+                element.decompose()
+                
+            # Remove comments
+            for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+                comment.extract()
+                
+            # Get main content
+            main_content = ""
+            main_tags = soup.find_all(["article", "main", "div[role='main']"])
+            if main_tags:
+                main_content = " ".join(tag.get_text(strip=True, separator=" ") for tag in main_tags)
+            else:
+                body = soup.find("body")
+                if body:
+                    main_content = body.get_text(strip=True, separator=" ")
+                else:
+                    main_content = soup.get_text(strip=True, separator=" ")
+                    
+            # Clean up text
+            main_content = re.sub(r'\s+', ' ', main_content)  # Normalize whitespace
+            main_content = re.sub(r'\[.*?\]', '', main_content)  # Remove square bracket content
+            main_content = re.sub(r'[^\x00-\x7F]+', '', main_content)  # Remove non-ASCII
+            main_content = re.sub(r'(\w)\1{3,}', r'\1\1', main_content)  # Normalize repeated chars
             
-            # Create knowledge object
-            knowledge = ExtractedKnowledge(
-                content=content,
-                entities=entities,
-                relationships=relationships,
-                metadata=metadata,
-                confidence=confidence_score
-            )
-            
-            log_extraction_results(knowledge)
-            return knowledge
+            return main_content.strip()
             
         except Exception as e:
-            log_error_with_traceback(e, "Failed to process source", include_locals=True)
-            # Create minimal knowledge object rather than failing completely
-            return ExtractedKnowledge(
-                content=content,
-                entities=["error_processing"],
-                relationships=[],
-                metadata=self._create_default_metadata(),
-                confidence=0.1
-            )
-
+            log_error_with_traceback(e, "Error cleaning content")
+            return content
+            
     async def _add_to_graph(self, knowledge: ExtractedKnowledge) -> None:
         """Add extracted knowledge to graph database"""
         try:
-            # Add relationships
-            for rel in knowledge.relationships:
+            # Track graph operations
+            graph_metrics = {
+                "entities_added": 0,
+                "relationships_added": 0,
+                "failed_operations": 0
+            }
+            
+            # Add entities first
+            for entity in knowledge.entities:
                 try:
-                    # Convert dict to Relationship if needed
-                    if isinstance(rel, dict):
-                        rel = Relationship(**rel)
-                    
                     # Define synchronous function for graph operation
-                    def add_relationship() -> None:
+                    def add_entity() -> None:
                         if self.graph is not None:
-                            # First ensure entities exist
+                            # Create entity with metadata
                             self.graph.query(
                                 """
-                                MERGE (s:Entity {name: $source})
-                                MERGE (t:Entity {name: $target})
+                                MERGE (e:Entity {name: $name})
+                                SET e.domain = $domain,
+                                    e.confidence = $confidence,
+                                    e.timestamp = $timestamp,
+                                    e.source = $source
                                 """,
                                 {
-                                    "source": rel.source,
-                                    "target": rel.target
-                                }
-                            )
-                            
-                            # Then create relationship
-                            self.graph.query(
-                                """
-                                MATCH (s:Entity {name: $source})
-                                MATCH (t:Entity {name: $target})
-                                MERGE (s)-[r:RELATES {type: $relation, confidence: $confidence}]->(t)
-                                """,
-                                {
-                                    "source": rel.source,
-                                    "target": rel.target,
-                                    "relation": rel.relation,
-                                    "confidence": float(knowledge.confidence)
+                                    "name": entity,
+                                    "domain": knowledge.domain,
+                                    "confidence": float(knowledge.confidence),
+                                    "timestamp": datetime.now().isoformat(),
+                                    "source": knowledge.metadata.source_type if hasattr(knowledge.metadata, "source_type") else "unknown"
                                 }
                             )
                     
                     # Run in thread pool
-                    await asyncio.to_thread(cast(Callable[[], None], add_relationship))
+                    await asyncio.to_thread(cast(Callable[[], None], add_entity))
+                    graph_metrics["entities_added"] += 1
+                    log_info_with_context(f"Added entity to graph: {entity}", "Graph")
+                    
                 except Exception as e:
-                    log_error_with_traceback(e, f"Failed to add relationship: {rel}", include_locals=True)
+                    log_error_with_traceback(e, f"Failed to add entity: {entity}", include_locals=True)
+                    graph_metrics["failed_operations"] += 1
                     continue
+            
+            # Add relationships with retries
+            max_retries = 3
+            for rel in knowledge.relationships:
+                success = False
+                for attempt in range(max_retries):
+                    try:
+                        # Convert dict to Relationship if needed
+                        if isinstance(rel, dict):
+                            rel = Relationship(**rel)
+                        
+                        # Define synchronous function for graph operation
+                        def add_relationship() -> None:
+                            if self.graph is not None:
+                                # First ensure entities exist
+                                self.graph.query(
+                                    """
+                                    MERGE (s:Entity {name: $source})
+                                    ON CREATE SET s.domain = $domain,
+                                                s.confidence = $confidence,
+                                                s.timestamp = $timestamp
+                                    MERGE (t:Entity {name: $target})
+                                    ON CREATE SET t.domain = $domain,
+                                                t.confidence = $confidence,
+                                                t.timestamp = $timestamp
+                                    """,
+                                    {
+                                        "source": rel.source,
+                                        "target": rel.target,
+                                        "domain": knowledge.domain,
+                                        "confidence": float(knowledge.confidence),
+                                        "timestamp": datetime.now().isoformat()
+                                    }
+                                )
+                                
+                                # Then create relationship with metadata
+                                self.graph.query(
+                                    """
+                                    MATCH (s:Entity {name: $source})
+                                    MATCH (t:Entity {name: $target})
+                                    MERGE (s)-[r:RELATES {type: $relation}]->(t)
+                                    SET r.confidence = $confidence,
+                                        r.domain = $domain,
+                                        r.timestamp = $timestamp,
+                                        r.source = $source_type,
+                                        r.bidirectional = $bidirectional
+                                    """,
+                                    {
+                                        "source": rel.source,
+                                        "target": rel.target,
+                                        "relation": rel.relation,
+                                        "confidence": float(knowledge.confidence),
+                                        "domain": knowledge.domain,
+                                        "timestamp": datetime.now().isoformat(),
+                                        "source_type": knowledge.metadata.source_type if hasattr(knowledge.metadata, "source_type") else "unknown",
+                                        "bidirectional": rel.relation in ["similar_to", "related_to"]
+                                    }
+                                )
+                        
+                        # Run in thread pool
+                        await asyncio.to_thread(cast(Callable[[], None], add_relationship))
+                        graph_metrics["relationships_added"] += 1
+                        log_info_with_context(f"Added relationship to graph: {rel.source} -{rel.relation}-> {rel.target}", "Graph")
+                        success = True
+                        break
+                        
+                    except Exception as e:
+                        if attempt == max_retries - 1:
+                            log_error_with_traceback(e, f"Failed to add relationship after {max_retries} attempts: {rel}", include_locals=True)
+                            graph_metrics["failed_operations"] += 1
+                        await asyncio.sleep(1)  # Wait before retry
+                        continue
+                
+                if not success:
+                    continue
+            
+            # Log final metrics
+            log_info_with_context(
+                f"Graph operations completed - Added {graph_metrics['entities_added']} entities, "
+                f"{graph_metrics['relationships_added']} relationships, "
+                f"{graph_metrics['failed_operations']} operations failed",
+                "Graph"
+            )
+            
+            # Store metrics in knowledge metadata
+            if hasattr(knowledge.metadata, "graph_metrics"):
+                knowledge.metadata.graph_metrics = graph_metrics
                     
         except Exception as e:
             log_error_with_traceback(e, "Failed to add knowledge to graph", include_locals=True)
@@ -615,27 +719,60 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def _extract_entities(self, content: str) -> List[str]:
         """Extract entities from content"""
         try:
+            # Clean HTML content first
+            soup = BeautifulSoup(content, "html.parser")
+            
+            # Remove navigation, headers, footers etc
+            for element in soup(["nav", "header", "footer", "aside", "script", "style"]):
+                element.decompose()
+            
+            # Get clean text
+            clean_content = soup.get_text(separator=" ", strip=True)
+            
             # First try using the entity extraction prompt
             prompt = get_entity_extraction_prompt()
             chain = prompt | self.llm | self.entity_parser
-            result = await chain.ainvoke({"content": content})  # Note: changed text to content to match prompt
+            result = await chain.ainvoke({"content": clean_content})
             entities = result.entities if hasattr(result, 'entities') else []
             
             # If no entities found, try using the knowledge extraction prompt as backup
             if not entities:
                 knowledge_prompt = get_knowledge_extraction_prompt()
                 knowledge_chain = knowledge_prompt | self.llm
-                knowledge_result = await knowledge_chain.ainvoke({"text": content})
+                knowledge_result = await knowledge_chain.ainvoke({"text": clean_content})
                 if isinstance(knowledge_result, dict) and "entities" in knowledge_result:
                     entities = knowledge_result["entities"]
             
             # If still no entities, extract some basic ones from the content
             if not entities:
-                # Split content into words and take unique non-stop words as entities
-                words = set(content.split())
-                stop_words = {"a", "an", "the", "in", "on", "at", "to", "for", "of", "with", "by"}
-                entities = [word for word in words if word.lower() not in stop_words and len(word) > 2][:5]
-            
+                # Extract capitalized phrases and medical terms
+                words = clean_content.split()
+                phrases = []
+                current_phrase = []
+                
+                medical_indicators = [
+                    "disease", "syndrome", "disorder", "treatment", "therapy",
+                    "medicine", "drug", "symptom", "patient", "clinical",
+                    "medical", "health", "brain", "neural", "immune",
+                    "inflammation", "gut", "vagus", "nerve", "axis"
+                ]
+                
+                for word in words:
+                    # Check if word starts with capital letter
+                    if word[0].isupper() or any(ind in word.lower() for ind in medical_indicators):
+                        current_phrase.append(word)
+                    elif current_phrase:
+                        if len(current_phrase) > 0:
+                            phrases.append(" ".join(current_phrase))
+                        current_phrase = []
+                        
+                # Add any remaining phrase
+                if current_phrase:
+                    phrases.append(" ".join(current_phrase))
+                    
+                # Use extracted phrases as entities
+                entities = list(set(phrases))[:10]  # Limit to top 10 unique entities
+                
             # Ensure we have at least one entity
             if not entities:
                 entities = ["general_concept"]
@@ -647,12 +784,122 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             # Return a default entity rather than empty list
             return ["general_concept"]
 
-    async def _extract_relationships(self, content: str) -> List[Relationship]:
+    async def _validate_entities(self, entities: List[str], domain: str) -> List[str]:
+        """Validate extracted entities against domain ontology."""
+        try:
+            # Get domain config
+            domain_config = next(
+                (d for d in self.config.domains if d.name == domain),
+                next(iter(self.config.domains))  # Fallback to first domain
+            )
+            
+            # Get valid entity classes from ontology
+            valid_classes = {cls.name.lower(): cls for cls in domain_config.classes}
+            
+            # Track validated entities
+            validated = []
+            for entity in entities:
+                # Clean entity text
+                clean_entity = entity.strip()
+                if not clean_entity:
+                    continue
+                    
+                # Check if entity matches any ontology class
+                entity_type = None
+                for class_name, cls in valid_classes.items():
+                    # Check direct match
+                    if clean_entity.lower() == class_name:
+                        entity_type = class_name
+                        break
+                        
+                    # Check if class name appears in entity
+                    if class_name in clean_entity.lower():
+                        entity_type = class_name
+                        break
+                        
+                    # Check properties
+                    for prop in cls.properties:
+                        if prop.lower() in clean_entity.lower():
+                            entity_type = class_name
+                            break
+                            
+                    if entity_type:
+                        break
+                        
+                # Validate entity
+                if entity_type:
+                    # Entity matches ontology - keep as is
+                    validated.append(clean_entity)
+                else:
+                    # Try to map to ontology
+                    mapped_entity = await self._map_to_ontology(clean_entity, valid_classes)
+                    if mapped_entity:
+                        validated.append(mapped_entity)
+                    else:
+                        # Keep original entity if it seems medical/scientific
+                        medical_indicators = [
+                            "disease", "syndrome", "disorder", "treatment", "therapy",
+                            "medicine", "drug", "symptom", "patient", "clinical",
+                            "medical", "health", "brain", "neural", "immune",
+                            "inflammation", "gut", "vagus", "nerve", "axis"
+                        ]
+                        if any(ind in clean_entity.lower() for ind in medical_indicators):
+                            validated.append(clean_entity)
+                    
+            # Ensure we have at least one entity
+            if not validated:
+                validated = ["general_medical_concept"]
+                
+            return validated
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error validating entities")
+            return entities  # Return original list on error
+
+    async def _map_to_ontology(self, entity: str, valid_classes: Dict[str, Any]) -> Optional[str]:
+        """Map an entity to the closest matching ontology class."""
+        try:
+            # Create mapping prompt
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """Map the given entity to the most appropriate ontology class.
+The entity should be mapped to one of the following classes:
+{classes}
+
+Rules:
+1. Only map if there is a clear semantic match
+2. Consider synonyms and related terms
+3. Return null if no good match exists
+4. Maintain proper medical terminology
+5. Preserve specificity where possible"""),
+                ("human", "Entity to map: {entity}")
+            ])
+            
+            # Get mapping
+            result = await self.llm.ainvoke(
+                prompt.format_messages(
+                    classes="\n".join(f"- {name}: {cls.description}" for name, cls in valid_classes.items()),
+                    entity=entity
+                )
+            )
+            
+            # Parse result
+            if result and isinstance(result, str):
+                mapped = result.strip()
+                if mapped.lower() in valid_classes:
+                    return mapped
+                    
+            return None
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error mapping to ontology")
+            return None
+
+    async def _extract_relationships(self, content: str, entities: List[str]) -> List[Relationship]:
         """Extract relationships from content"""
         try:
             prompt = get_relationship_extraction_prompt()
             chain = prompt | self.llm | self.relationship_parser
-            result = await chain.ainvoke({"content": content})
+            result = await chain.ainvoke({"content": content, "entities": entities})
             relationships = result.relationships if hasattr(result, 'relationships') else []
             
             # Convert any dict relationships to Relationship objects
@@ -792,7 +1039,7 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                         converted_rel.confidence = confidence
                         
                         # Only add if confidence meets threshold
-                        if confidence >= self.config.confidence_thresholds.get("relationship", 0.5):
+                        if confidence >= self.config.confidence_thresholds.get("relationship", 0.3):
                             converted_relationships.append(converted_rel)
                         else:
                             log_warning_with_context(
@@ -822,8 +1069,8 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             target_pos = context.lower().find(relationship.target.lower())
             if source_pos >= 0 and target_pos >= 0:
                 distance = abs(source_pos - target_pos)
-                # Higher confidence for closer entities
-                proximity_confidence = max(0.0, 1.0 - (distance / 1000))
+                # Higher confidence for closer entities (more lenient distance scaling)
+                proximity_confidence = max(0.0, 1.0 - (distance / 2000))  # Increased from 1000
             
             # Check if relationship is explicitly stated
             explicit_confidence = 0.0
@@ -857,9 +1104,17 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
                 if term.lower() in context.lower():
                     explicit_confidence = 0.9
                     break
+            
+            # If no explicit terms found but entities are close, give some confidence
+            if explicit_confidence == 0.0 and proximity_confidence > 0.5:
+                explicit_confidence = 0.4  # Added base confidence for proximity
                 
-            # Calculate overall confidence
-            confidence = (type_confidence + proximity_confidence + explicit_confidence) / 3
+            # Calculate overall confidence with adjusted weights
+            confidence = (
+                type_confidence * 0.4 +  # Increased from 0.33
+                proximity_confidence * 0.3 +  # Same weight
+                explicit_confidence * 0.3  # Decreased from 0.33
+            )
             
             return min(1.0, max(0.0, confidence))
             
@@ -879,14 +1134,14 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
             return None
 
     def _create_default_metadata(self) -> SourceMetadata:
-        """Create default metadata"""
+        """Create default metadata object."""
         return SourceMetadata(
             source_type="text",
-            confidence_score=0.5,
-            domain_relevance=0.5,
+            confidence_score=0.8,  # Increased from 0.5
+            domain_relevance=0.8,  # Increased from 0.5
             timestamp=datetime.now().isoformat(),
             validation_status="pending",
-            domain=self.config.default_domain
+            domain=self.config.domains[0].name if self.config.domains else "medical"  # Use first configured domain or fallback to medical
         )
 
     async def _ensure_initialized(self) -> None:
@@ -898,51 +1153,91 @@ class KnowledgeAcquisitionSystem(LLMCompiler):
     async def _load_chunks(self, source_path: str, source_type: str = "text") -> List[str]:
         """Load and split content into chunks"""
         try:
-            # Define synchronous loading functions
-            def load_pdf() -> List[Document]:
-                loader = PyPDFLoader(source_path)
-                return loader.load()
+            # Load content
+            loader = TextLoader(source_path)
+            docs = await asyncio.to_thread(loader.load)
             
-            def load_text() -> List[Document]:
-                loader = TextLoader(source_path)
-                return loader.load()
+            # Split into chunks with metadata
+            chunks = []
+            for doc in tqdm(docs, desc="Processing documents"):
+                # Get metadata
+                metadata = doc.metadata.copy()
+                
+                # Split content
+                text_chunks = self.text_splitter.split_text(doc.page_content)
+                
+                # Create chunks with metadata
+                for i, chunk in enumerate(text_chunks):
+                    chunk_metadata = metadata.copy()
+                    chunk_metadata.update({
+                        "chunk_id": f"{metadata.get('source_id', 'unknown')}_{i}",
+                        "chunk_index": i,
+                        "total_chunks": len(text_chunks)
+                    })
+                    chunks.append(Document(page_content=chunk, metadata=chunk_metadata))
             
-            def split_documents(docs: List[Document]) -> List[str]:
-                chunks = self.text_splitter.split_documents(docs)
-                return [chunk.page_content for chunk in chunks]
-            
-            # Load content based on source type
-            docs = await asyncio.to_thread(
-                cast(Callable[[], List[Document]], load_pdf if source_type == "pdf" else load_text)
-            )
-            
-            # Split into chunks
-            chunks = await asyncio.to_thread(split_documents, docs)
-            return chunks
+            return [chunk.page_content for chunk in chunks]
             
         except Exception as e:
             log_error_with_traceback(e, f"Failed to load chunks from {source_path}", include_locals=True)
             return []
 
-    async def _evaluate_confidence(self, content: str, entities: List[str], relationships: Sequence[Union[Relationship, Dict[str, Any]]]) -> ConfidenceEvaluation:
+    async def _evaluate_confidence(self, entities: List[str], relationships: List[Relationship]) -> float:
         """Evaluate confidence in extracted knowledge"""
-        try:
-            prompt = get_confidence_evaluation_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ConfidenceEvaluation)
-            result = await chain.ainvoke({
-                "content": content,
-                "entities": entities,
-                "relationships": [
-                    rel.model_dump() if isinstance(rel, Relationship) else rel 
-                    for rel in relationships
-                ],
-                "source_type": "text"
-            })
-            return result
-        except Exception as e:
-            log_error_with_traceback(e, "Failed to evaluate confidence", include_locals=True)
-            return ConfidenceEvaluation(
-                confidence=0.5,
-                factors=ConfidenceFactors(),
-                reasoning="Failed to evaluate confidence"
-            )
+        max_retries = 3
+        base_delay = 1.0
+        
+        for attempt in range(max_retries):
+            try:
+                prompt = get_confidence_evaluation_prompt()
+                chain = prompt | self.llm | PydanticOutputParser(pydantic_object=ConfidenceEvaluation)
+                
+                # Convert relationships to dicts
+                rel_dicts = []
+                for rel in relationships:
+                    if isinstance(rel, dict):
+                        rel_dicts.append(rel)
+                    else:
+                        # Assuming rel is a Pydantic model
+                        rel_dicts.append({
+                            'source': rel.source,
+                            'relation': rel.relation,
+                            'target': rel.target,
+                            'confidence': getattr(rel, 'confidence', 1.0)
+                        })
+                
+                result = await chain.ainvoke({
+                    "entities": entities,
+                    "relationships": rel_dicts,
+                    "source_type": "text"
+                })
+                return result.confidence
+            except Exception as e:
+                if isinstance(e, google.api_core.exceptions.ResourceExhausted):
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)  # Exponential backoff
+                        log_warning_with_context(
+                            f"Rate limit hit, retrying in {delay} seconds (attempt {attempt + 1}/{max_retries})",
+                            "Confidence Evaluation"
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                
+                # If we've exhausted retries or hit a different error, fall back to calculated confidence
+                log_error_with_traceback(e, "Failed to evaluate confidence", include_locals=True)
+                
+                # Calculate fallback confidence based on available data
+                entity_confidence = min(1.0, len(entities) * 0.2) if entities else 0.3
+                relationship_confidence = min(1.0, len(relationships) * 0.2) if relationships else 0.3
+                
+                # Weight the components
+                confidence = (entity_confidence * 0.6) + (relationship_confidence * 0.4)
+                
+                log_warning_with_context(
+                    f"Using fallback confidence calculation: {confidence:.2f}",
+                    "Confidence Evaluation"
+                )
+                return confidence
+        
+        # If we somehow exit the loop without returning, use a safe default
+        return 0.5

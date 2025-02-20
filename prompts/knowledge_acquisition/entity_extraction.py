@@ -17,7 +17,7 @@ def get_entity_extraction_prompt() -> ChatPromptTemplate:
     parser = PydanticOutputParser(pydantic_object=EntityResponse)
     format_instructions = parser.get_format_instructions()
     
-    system_template = """You are an expert at extracting meaningful entities from text.
+    system_template = """You are an expert at extracting medical and scientific entities from research text.
 {format_instructions}
 
 CRITICAL RULES:
@@ -30,39 +30,81 @@ CRITICAL RULES:
 7. The response should look exactly like this:
 {{
     "entities": [
-        "Machine Learning",
-        "Neural Networks",
-        "TensorFlow"
+        "PANDAS",
+        "Streptococcal Infection",
+        "Gut-Brain Axis",
+        "Vagus Nerve",
+        "Plant-Based Therapy"
     ]
 }}
 
-GUIDELINES for entity extraction:
-1. Extract meaningful terms, concepts, and entities:
-   - Technical concepts and terminology
-   - Domain-specific terms
-   - Named entities (people, organizations, products)
-   - Key processes or methodologies
-   - Important tools or technologies
-   - Core principles or theories
-2. Include both specific and general concepts
-3. Clean and normalize entity text:
-   - Remove unnecessary punctuation
-   - Standardize capitalization
-   - Keep acronyms in uppercase
-4. Return as many entities as you can find (aim for at least 5-10)
-5. If no clear entities, extract key themes or topics
-6. Ensure each entity is self-contained and meaningful
-7. Avoid overly generic terms unless they're domain-specific"""
+GUIDELINES for medical entity extraction:
+1. Extract meaningful medical and scientific terms:
+   - Medical conditions and diseases
+   - Anatomical structures and systems
+   - Biological mechanisms and pathways
+   - Therapeutic approaches and treatments
+   - Biomarkers and clinical indicators
+   - Research methodologies and protocols
+   - Patient outcomes and symptoms
+   - Drug classes and compounds
+   - Plant-based and alternative therapies
 
-    human_template = """Extract entities from this text:
+2. Entity Categories to Extract:
+   - Diseases and Conditions:
+     * Primary conditions (e.g., "PANDAS", "Autoimmune Encephalitis")
+     * Related disorders
+     * Comorbidities
+   
+   - Anatomical/Biological:
+     * Body systems (e.g., "Gut-Brain Axis", "Immune System")
+     * Organs and tissues
+     * Neural pathways
+     * Cellular components
+   
+   - Therapeutic:
+     * Treatment modalities
+     * Medications and compounds
+     * Natural remedies
+     * Therapeutic approaches
+   
+   - Clinical:
+     * Symptoms and signs
+     * Diagnostic tests
+     * Biomarkers
+     * Clinical outcomes
+
+3. Entity Validation Rules:
+   - Must be recognized medical/scientific terms
+   - Should be specific rather than general
+   - Must be relevant to the medical domain
+   - Should be supported by context
+   - Must be properly normalized (e.g., "IL-6" for "Interleukin 6")
+
+4. Formatting Guidelines:
+   - Use standard medical terminology
+   - Maintain proper capitalization for proper nouns
+   - Keep acronyms in uppercase (e.g., "TNF-α", "IL-6")
+   - Use full names for clarity
+   - Include both common and scientific names where relevant
+
+5. Quality Requirements:
+   - Extract at least 10-15 entities per text
+   - Ensure balanced coverage across categories
+   - Focus on domain-relevant entities
+   - Include both specific and general terms
+   - Capture key relationships and hierarchies"""
+
+    human_template = """Extract medical and scientific entities from this text, focusing on PANDAS, gut-brain axis, and therapeutic relationships:
 
 {content}
 
 Remember:
 1. Return ONLY a valid JSON object
-2. Include all entities you find
-3. Use proper JSON formatting
-4. Do not include any text before or after the JSON"""
+2. Extract medical/scientific entities only
+3. Use proper medical terminology
+4. Ensure entities are domain-relevant
+5. Include all entity categories (diseases, anatomical, therapeutic, clinical)"""
 
     prompt = ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),

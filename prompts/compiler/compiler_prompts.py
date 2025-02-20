@@ -48,6 +48,10 @@ class CompilerState(TypedDict):
     final_result: Optional[Any]
     error: Optional[str]
     feedback: Optional[str]
+    knowledge_sources: List[Dict[str, Any]]
+    synthetic_knowledge: List[Dict[str, Any]]
+    training_examples: List[Dict[str, Any]]
+    model_metrics: Dict[str, Any]
 
 def get_plan_generation_prompt() -> ChatPromptTemplate:
     """Get the prompt template for plan generation."""

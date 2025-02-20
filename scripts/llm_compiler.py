@@ -14,6 +14,7 @@ from pydantic import ValidationError, SecretStr
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, BaseMessage
 from langchain_core.language_models.chat_models import BaseChatModel
+from rich.progress import Progress
 
 from prompts.compiler import (
     Task,
@@ -71,7 +72,11 @@ class LLMCompiler:
                 "join_decision": None,
                 "final_result": None,
                 "error": None,
-                "feedback": None
+                "feedback": None,
+                "knowledge_sources": [],
+                "synthetic_knowledge": [],
+                "training_examples": [],
+                "model_metrics": {}
             }
             self.tools: Dict[str, Callable[..., Awaitable[Dict[str, Any]]]] = {}
             log_info_with_context("Initialized LLM compiler", "Compiler")
@@ -187,8 +192,8 @@ class LLMCompiler:
                 for key, value in task.args.items():
                     if isinstance(value, str):
                         if value == "{state}":
-                            if task.tool == "research_topics" and key == "domain" and "domain_name" in state:
-                                task.args[key] = "{state[domain_name]}"
+                            if task.tool == "research_topics" and key == "domain":
+                                task.args[key] = state.get("domain_name", "")  # Use actual domain name
                             else:
                                 error_msg = f"Invalid state variable format in task {task.idx}. Use {{state[variable_name]}} instead of {{state}}"
                                 log_error_with_context(error_msg, "Planning")
@@ -197,6 +202,8 @@ class LLMCompiler:
                             error_msg = f"Invalid state variable format in task {task.idx}. Use {{state[variable_name]}} instead of {value}"
                             log_error_with_context(error_msg, "Planning")
                             raise PlanningError(error_msg)
+                        elif value == "{state[domain_name]}":
+                            task.args[key] = state.get("domain_name", "")  # Use actual domain name
             
             return response
 
@@ -288,85 +295,59 @@ class LLMCompiler:
             raise PlanningError("Failed to parse plan response") from e
 
     async def execute_tasks(self, tasks: List[Task], state: CompilerState) -> List[TaskResult]:
-        """Execute tasks in order."""
-        try:
-            log_info_with_context(f"Starting execution of {len(tasks)} tasks", "Execution")
-            
-            # Initialize progress
-            progress = await create_progress()
-            task_progress = progress.add_task("[cyan]Executing tasks...", total=len(tasks))
-            
-            # Track results
-            results: List[TaskResult] = []
-            result_map: Dict[int, Any] = {}  # Map task IDs to their results
-            
-            # Execute tasks in order
-            for task in tasks:
-                try:
-                    log_info_with_context(f"Executing task {task.idx}: {task.tool}", "Execution")
-                    
-                    # Check dependencies and gather their results
-                    dep_results = {}
-                    deps_met = True
-                    for dep in task.dependencies:
-                        if dep not in result_map:
-                            deps_met = False
-                            error_msg = f"Dependency {dep} not found for task {task.idx}"
-                            log_error_with_context(error_msg, "Execution")
-                            break
-                        dep_results[dep] = result_map[dep]
-                    
-                    if not deps_met:
-                        error_msg = f"Dependencies not met for task {task.idx}"
-                        log_error_with_context(error_msg, "Execution")
-                        results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
-                        continue
-                    
-                    # Format task args with state variables and dependency results
-                    formatted_args = {}
-                    for arg_name, arg_value in task.args.items():
-                        if isinstance(arg_value, str):
-                            # Handle dependency results
-                            if arg_value.startswith("{") and arg_value.endswith("}"):
-                                try:
-                                    dep_id = int(arg_value.strip("{}"))
-                                    if dep_id in result_map:
-                                        formatted_args[arg_name] = result_map[dep_id].get("knowledge_sources", [])
-                                    else:
-                                        formatted_args[arg_name] = arg_value
-                                except ValueError:
-                                    # Not a dependency ID, use value as is
-                                    formatted_args[arg_name] = arg_value
+        """Execute a list of tasks in order."""
+        progress = Progress()
+        task_progress = progress.add_task("Executing tasks...", total=len(tasks))
+        results = []
+        result_map = {}
+        
+        for task in tasks:
+            try:
+                # Check dependencies
+                deps_met = True
+                for dep in task.dependencies:
+                    if dep not in result_map:
+                        logger.warning(f"Dependency {dep} not found for task {task.idx}")
+                        deps_met = False
+                        break
+                
+                if not deps_met:
+                    logger.warning(f"Dependencies not met for task {task.idx}")
+                    continue
+                
+                # Format arguments using dependency results
+                formatted_args = {}
+                for arg_name, arg_value in task.args.items():
+                    if isinstance(arg_value, list) and len(arg_value) > 0 and isinstance(arg_value[0], dict) and "id" in arg_value[0]:
+                        # This is a reference to a dependency result
+                        dep_id = arg_value[0]["id"]
+                        if dep_id in result_map:
+                            dep_result = result_map[dep_id]
+                            if task.tool == "_train_model" and "training_examples" in dep_result:
+                                formatted_args["examples"] = dep_result["training_examples"]
+                            elif task.tool == "_generate_examples" and "synthetic_knowledge" in dep_result:
+                                formatted_args["knowledge"] = dep_result["synthetic_knowledge"]
                             else:
-                                formatted_args[arg_name] = arg_value
+                                formatted_args[arg_name] = dep_result
                         else:
                             formatted_args[arg_name] = arg_value
-                    
-                    # Execute task
-                    try:
-                        result = await getattr(self, f"_{task.tool}")(**formatted_args)
-                        results.append(TaskResult(task_id=task.idx, result=result, error=None))
-                        result_map[task.idx] = result  # Store result for dependencies
-                    except Exception as e:
-                        error_msg = f"Task {task.idx} failed: {str(e)}"
-                        log_error_with_traceback(e, error_msg)
-                        results.append(TaskResult(task_id=task.idx, result=None, error=error_msg))
-                    
-                    # Update progress
-                    progress.update(task_progress, advance=1)
-                    
-                except Exception as e:
-                    log_error_with_traceback(e, f"Error executing task {task.idx}")
-                    results.append(TaskResult(task_id=task.idx, result=None, error=str(e)))
-            
-            # Clean up progress
-            await cleanup_progress()
-            return results
-            
-        except Exception as e:
-            log_error_with_traceback(e, "Error in task execution")
-            await cleanup_progress()
-            raise
+                    else:
+                        formatted_args[arg_name] = arg_value
+                
+                # Execute task
+                result = await getattr(self, task.tool)(**formatted_args)
+                results.append(TaskResult(task_id=task.idx, result=result, error=None))
+                result_map[task.idx] = result
+                progress.update(task_progress, advance=1)
+                
+            except Exception as e:
+                error_msg = f"Task {task.idx} failed: {str(e)}"
+                logger.error(error_msg)
+                logger.error(f"Local Variables: {locals()}")
+                results.append(TaskResult(task_id=task.idx, result=None, error=str(e)))
+                progress.update(task_progress, advance=1)
+        
+        return results
 
     def _parse_task_result(self, response: Union[str, TaskResult, Dict[str, Any]], task_id: int) -> TaskResult:
         """Parse and validate task result."""
@@ -495,7 +476,11 @@ class LLMCompiler:
                 "join_decision": None,
                 "final_result": None,
                 "error": None,
-                "feedback": None
+                "feedback": None,
+                "knowledge_sources": initial_state.get("knowledge_sources", []),
+                "synthetic_knowledge": initial_state.get("synthetic_knowledge", []),
+                "training_examples": initial_state.get("training_examples", []),
+                "model_metrics": initial_state.get("model_metrics", {})
             }
             
             # Generate plan
