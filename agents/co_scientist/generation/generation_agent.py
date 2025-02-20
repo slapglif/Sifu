@@ -4,19 +4,22 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import PydanticOutputParser
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain.schema import HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableSerializable
 
 from ..base_agent import BaseAgent, AgentState
 
 class Hypothesis(BaseModel):
-    """Research hypothesis model."""
+    """Model for research hypotheses."""
     id: str = Field(description="Unique identifier for this hypothesis")
-    statement: str = Field(description="The hypothesis statement")
-    rationale: str = Field(description="Reasoning behind the hypothesis")
-    evidence: List[str] = Field(description="Supporting evidence from literature")
-    novelty_score: float = Field(description="Estimated novelty (0-1)", ge=0.0, le=1.0)
-    feasibility_score: float = Field(description="Estimated feasibility (0-1)", ge=0.0, le=1.0)
+    statement: str = Field(description="Clear hypothesis statement")
+    rationale: str = Field(description="Detailed reasoning behind the hypothesis")
+    evidence: List[str] = Field(description="Supporting evidence points")
+    novelty_score: float = Field(description="Novelty score (0-1)", ge=0.0, le=1.0)
+    feasibility_score: float = Field(description="Feasibility score (0-1)", ge=0.0, le=1.0)
     assumptions: List[str] = Field(description="Key assumptions")
-    testability: Dict[str, Any] = Field(description="Information about how to test the hypothesis")
+    testability: Dict[str, Any] = Field(description="Testability information")
     references: List[str] = Field(description="Literature references")
 
 class GenerationState(AgentState):
@@ -36,6 +39,10 @@ class GenerationAgent(BaseAgent):
         system_prompt: Optional[str] = None
     ):
         """Initialize the generation agent."""
+        # Create output parser
+        parser = PydanticOutputParser(pydantic_object=Hypothesis)
+        format_instructions = parser.get_format_instructions()
+        
         if system_prompt is None:
             system_prompt = """You are the generation agent responsible for creating novel research hypotheses.
 Your role is to:
@@ -55,40 +62,49 @@ Follow these guidelines:
 - Maintain clear documentation of your reasoning
 - Assess practical feasibility of testing
 
-Your output must be a JSON object with the following structure:
-{
-    "id": "unique_hypothesis_id",
-    "statement": "clear hypothesis statement",
-    "rationale": "detailed reasoning behind the hypothesis",
-    "evidence": [
-        "Evidence point 1: Description of supporting evidence",
-        "Evidence point 2: Additional supporting evidence"
-    ],
-    "novelty_score": 0.85,  # between 0 and 1
-    "feasibility_score": 0.75,  # between 0 and 1
-    "assumptions": [
-        "Assumption 1: Description of key assumption",
-        "Assumption 2: Description of another assumption"
-    ],
-    "testability": {
-        "methods": ["method1", "method2"],
-        "required_resources": ["resource1", "resource2"],
-        "estimated_duration": "duration estimate"
-    },
-    "references": [
-        "Author et al. (2023) Title of paper, Journal Name",
-        "Author et al. (2022) Another paper title, Journal Name"
-    ]
-}
+{format_instructions}"""
 
-IMPORTANT: All evidence, assumptions, and references must be simple strings, not objects or dictionaries."""
+        # Create prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessagePromptTemplate.from_template(system_prompt),
+            HumanMessagePromptTemplate.from_template("""Please generate a research hypothesis based on the following:
+
+Research Goal: {goal}
+Domain: {domain}
+Web Knowledge: {web_knowledge}
+Previous Hypotheses: {previous_hypotheses}
+Current Strategy: {strategy}
+
+Use the web knowledge to inform your hypothesis generation. Each web source contains:
+- title: Title of the source
+- url: URL of the source
+- content: Main content
+- summary: Brief summary
+- metadata: Additional metadata
+
+Your response MUST include ALL of the following fields:
+1. id: A unique identifier for the hypothesis
+2. statement: A clear hypothesis statement
+3. rationale: Detailed reasoning behind the hypothesis
+4. evidence: List of supporting evidence points
+5. novelty_score: A number between 0 and 1
+6. feasibility_score: A number between 0 and 1
+7. assumptions: List of key assumptions
+8. testability: Object with methods, required_resources, and estimated_duration
+9. references: List of literature references
+
+Generate a single, well-formed hypothesis that follows the required format.
+Focus on drug repurposing opportunities for treating the specified condition.
+Ensure the hypothesis is novel, testable, and grounded in the available literature.
+Do not omit any required fields.""")
+        ])
 
         super().__init__(
             llm=llm,
             agent_id=agent_id,
             agent_type="generation",
             system_prompt=system_prompt,
-            output_parser=PydanticOutputParser(pydantic_object=Hypothesis)
+            output_parser=parser
         )
         
         # Initialize generation-specific state
@@ -101,17 +117,34 @@ IMPORTANT: All evidence, assumptions, and references must be simple strings, not
             current_strategy=None
         )
         
+        # Create chain with format instructions
+        self.chain = prompt | self.llm | parser
+        
     async def generate_hypothesis(self, research_goal: Dict[str, Any], context: Dict[str, Any]) -> Hypothesis:
         """Generate a new research hypothesis."""
         # Update context
         self.state.literature_context.update(context.get("literature", {}))
         
+        # Format web knowledge for prompt
+        web_knowledge_summary = []
+        for source in context.get("web_knowledge", []):
+            if isinstance(source, dict):
+                summary = {
+                    "title": source.get("title", ""),
+                    "url": source.get("url", ""),
+                    "summary": source.get("summary", ""),
+                    "key_points": source.get("content", "")[:500] + "..."  # First 500 chars
+                }
+                web_knowledge_summary.append(summary)
+        
         # Generate hypothesis using LLM
-        result = await self.arun({
-            "goal": research_goal,
-            "context": context,
+        result = await self.chain.ainvoke({
+            "format_instructions": PydanticOutputParser(pydantic_object=Hypothesis).get_format_instructions(),
+            "goal": research_goal.get("goal", ""),
+            "domain": research_goal.get("domain", ""),
+            "web_knowledge": web_knowledge_summary if web_knowledge_summary else "No web knowledge available",
             "previous_hypotheses": [h.dict() for h in self.state.hypotheses],
-            "strategy": self.state.current_strategy
+            "strategy": self.state.current_strategy or "Generate novel hypotheses based on available literature"
         })
         
         # Create hypothesis object
