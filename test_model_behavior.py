@@ -19,8 +19,8 @@ def test_model_behavior():
     
     # Initialize LLM with json format
     llm = ChatOllama(
-        model="MFDoom/deepseek-r1-tool-calling:1.5b",
-        temperature=0.7,
+        model="deepscaler",
+        temperature=0.2,
         format="json",
         mirostat=2,
         mirostat_eta=0.1,

@@ -26,10 +26,10 @@ IMPORTANT RULES:
 
     human_template = """Identify knowledge gaps based on:
 
-Question: {{question}}
-Answer: {{answer}}
-Confidence: {{confidence}}
-Context: {{context}}
+Question: {question}
+Answer: {answer}
+Confidence: {confidence}
+Context: {context}
 
 Output ONLY a valid JSON object following the format instructions."""
 

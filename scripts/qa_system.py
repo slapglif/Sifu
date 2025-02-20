@@ -1,16 +1,19 @@
 from typing import List, Dict, Optional, Any
 from langchain_core.output_parsers import PydanticOutputParser
-
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 from loguru import logger
 from langchain_ollama import ChatOllama
 import json
+import os
 from rich.console import Console
-from scripts.logging_config import log_error_with_traceback
+from scripts.logging_config import log_error_with_traceback, log_warning_with_context
 from scripts.llm_compiler import LLMCompiler, Task, Plan, TaskResult, JoinDecision, CompilerState
-
+from scripts.chat_langchain import ChatLangChain
+from pydantic import SecretStr
+from langchain_core.language_models.chat_models import BaseChatModel
 from prompts.qa import (
     Question,
+    QuestionList,
     get_question_generation_prompt,
     Answer,
     get_answer_generation_prompt,
@@ -28,9 +31,18 @@ console = Console()
 class QASystem(LLMCompiler):
     """Question answering system."""
 
-    def __init__(self, graph: Neo4jGraph, llm: Optional[Any] = None, model: str = "MFDoom/deepseek-r1-tool-calling:1.5b", temperature: float = 0.7):
+    def __init__(self, graph: Neo4jGraph, llm: Optional[BaseChatModel] = None, model: str = "deepscaler", temperature: float = 0.7):
         """Initialize with graph database and language model."""
-        llm = llm if llm is not None else ChatOllama(model=model, temperature=temperature, format="json", mirostat=2, mirostat_eta=0.1, mirostat_tau=5.0)
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise EnvironmentError("GOOGLE_API_KEY environment variable must be set")
+            
+        llm = llm if llm is not None else ChatLangChain(
+            api_key=SecretStr(api_key),
+            model="gemini-1.5-flash",
+            temperature=temperature,
+            pydantic_schema=QAResponse
+        )
         super().__init__(llm)
         self.graph = graph
         self.current_topic = ""
@@ -42,7 +54,10 @@ class QASystem(LLMCompiler):
         try:
             # Get prompt and parser
             prompt = get_question_generation_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Question)
+            parser = PydanticOutputParser(pydantic_object=QuestionList)
+            format_instructions = parser.get_format_instructions()
+            
+            chain = prompt | self.llm | parser
             
             # Get context from graph
             context = await self._get_topic_context(topic)
@@ -51,14 +66,83 @@ class QASystem(LLMCompiler):
             result = await chain.ainvoke({
                 "topic": topic,
                 "context": context,
+                "format_instructions": format_instructions,
                 "num_questions": num_questions
             })
             
-            return result.questions if hasattr(result, 'questions') else []
+            questions = result.questions if hasattr(result, 'questions') else []
+            
+            # Validate and filter questions
+            validated_questions = []
+            for question in questions:
+                # Validate question quality
+                if await self._validate_question(question, context):
+                    validated_questions.append(question)
+            
+            return validated_questions
             
         except Exception as e:
             log_error_with_traceback(e, "Error generating questions")
             return []
+
+    async def _validate_question(self, question: Question, context: str) -> bool:
+        """Validate a generated question."""
+        try:
+            # Check if question is answerable from context
+            answer = await self._generate_answer_task(question.question, context)
+            if not answer or not answer.get("answer"):
+                log_warning_with_context(f"Question not answerable: {question.question}", "QA")
+                return False
+            
+            # Check confidence with lower threshold
+            if answer.get("confidence", 0.0) < 0.5:  # Reduced from 0.6
+                log_warning_with_context(f"Low confidence answer: {question.question}", "QA")
+                return False
+            
+            # Check if question is too simple/generic
+            if len(question.question.split()) < 3:  # Reduced from 4
+                log_warning_with_context(f"Question too short: {question.question}", "QA")
+                return False
+            
+            # Check if question is relevant to topic
+            if not any(term.lower() in question.question.lower() for term in question.topic.lower().split()):
+                log_warning_with_context(f"Question not relevant to topic: {question.question}", "QA")
+                return False
+            
+            # Check question type distribution with more permissive limits
+            if not hasattr(self, '_question_types'):
+                self._question_types = {
+                    'knowledge_recall': 0,
+                    'concept_application': 0,
+                    'analysis': 0,
+                    'problem_solving': 0,
+                    'critical_thinking': 0
+                }
+            
+            # Ensure balanced distribution of question types with more permissive limits
+            current_count = self._question_types.get(question.type, 0)
+            max_per_type = max(5, self.num_questions // 2)  # More permissive limit
+            if current_count >= max_per_type:
+                log_warning_with_context(f"Too many questions of type {question.type}", "QA")
+                return False
+            
+            self._question_types[question.type] = current_count + 1
+            return True
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error validating question")
+            return False
+
+    def _map_question_type(self, qa_type: str) -> str:
+        """Map QA system question type to example type."""
+        mapping = {
+            'knowledge_recall': 'knowledge_recall',
+            'concept_application': 'concept_application',
+            'analysis': 'analysis',
+            'problem_solving': 'problem_solving',
+            'critical_thinking': 'critical_thinking'
+        }
+        return mapping.get(qa_type, "knowledge_recall")
 
     async def _get_topic_context(self, topic: str) -> str:
         """Get context for a topic from the graph."""
@@ -250,34 +334,164 @@ class QASystem(LLMCompiler):
             raise
 
     async def _generate_answer_task(self, question: str, context: str) -> Dict[str, Any]:
-        """Generate answer using context"""
+        """Generate answer for a question."""
         try:
+            # Get prompt and parser
             prompt = get_answer_generation_prompt()
-            chain = prompt | self.llm | PydanticOutputParser(pydantic_object=Answer)
+            parser = PydanticOutputParser(pydantic_object=Answer)
+            format_instructions = parser.get_format_instructions()
+            
+            chain = prompt | self.llm | parser
+            
+            # Generate answer
             result = await chain.ainvoke({
                 "question": question,
-                "context": context
+                "context": context,
+                "format_instructions": format_instructions
             })
-            return result.model_dump()
+            
+            # Validate answer quality
+            if result:
+                answer_quality = await self._assess_answer_quality(result)
+                if answer_quality < 0.5:  # Reduced from 0.6
+                    log_warning_with_context(f"Low quality answer for: {question}", "QA")
+                    return {
+                        "answer": None,
+                        "confidence": 0.0,
+                        "sources": []
+                    }
+                
+                # Update confidence based on quality
+                result_dict = result.dict() if hasattr(result, 'dict') else result
+                result_dict["confidence"] = answer_quality
+                return result_dict
+            
+            return {
+                "answer": None,
+                "confidence": 0.0,
+                "sources": []
+            }
             
         except Exception as e:
             log_error_with_traceback(e, "Error generating answer")
-            raise
+            return {
+                "answer": "Error generating answer",
+                "confidence": 0.0,
+                "sources": []
+            }
+
+    async def _assess_answer_quality(self, answer: Answer) -> float:
+        """Assess the quality of a generated answer."""
+        try:
+            # Initialize quality factors
+            factors = {
+                "completeness": 0.0,  # How complete is the answer
+                "relevance": 0.0,     # How relevant to the question
+                "clarity": 0.0,       # How clear and well-structured
+                "support": 0.0        # How well supported by sources/reasoning
+            }
+            
+            # Check completeness
+            if answer.answer and len(answer.answer.split()) >= 15:  # Reduced from 25
+                factors["completeness"] = 0.8
+            elif answer.answer and len(answer.answer.split()) >= 8:  # Reduced from 10
+                factors["completeness"] = 0.5
+            
+            # Check relevance via reasoning
+            if answer.reasoning and len(answer.reasoning.split()) >= 15:  # Reduced from 20
+                factors["relevance"] = 0.8
+            elif answer.reasoning:
+                factors["relevance"] = 0.5
+            
+            # Check clarity
+            if answer.answer:
+                has_structure = "." in answer.answer and "," in answer.answer
+                has_connectors = any(word in answer.answer.lower() for word in ["because", "therefore", "however", "additionally"])
+                if has_structure and has_connectors:
+                    factors["clarity"] = 0.8
+                elif has_structure:
+                    factors["clarity"] = 0.5
+            
+            # Check support
+            if answer.sources and len(answer.sources) >= 1:  # Reduced from 2
+                factors["support"] = 0.8
+            elif answer.sources:
+                factors["support"] = 0.5
+            
+            # Calculate overall quality
+            weights = {
+                "completeness": 0.3,
+                "relevance": 0.3,
+                "clarity": 0.2,
+                "support": 0.2
+            }
+            
+            quality = sum(score * weights[factor] for factor, score in factors.items())
+            return quality
+            
+        except Exception as e:
+            log_error_with_traceback(e, "Error assessing answer quality")
+            return 0.5  # Default quality on error
 
     async def _validate_answer_task(self, answer: Dict[str, Any]) -> Dict[str, Any]:
         """Validate generated answer"""
         try:
-            # Simple validation based on confidence and reasoning
-            confidence = answer.get("confidence", 0.0)
+            # Extract key components
+            answer_text = answer.get("answer", "")
             reasoning = answer.get("reasoning", "")
+            sources = answer.get("sources", [])
             
-            if confidence >= 0.7 and reasoning.strip():
+            # Initialize confidence factors
+            completeness = 0.0  # How complete is the answer
+            relevance = 0.0    # How relevant is it to the question
+            support = 0.0      # How well is it supported by sources
+            coherence = 0.0    # How coherent/well-structured is it
+            
+            # Check answer completeness
+            if answer_text and len(answer_text.split()) >= 25:
+                completeness = 0.8
+            elif answer_text and len(answer_text.split()) >= 10:
+                completeness = 0.5
+            
+            # Check relevance via reasoning
+            if reasoning and len(reasoning.split()) >= 20:
+                relevance = 0.8
+            elif reasoning:
+                relevance = 0.5
+            
+            # Check source support
+            if sources and len(sources) >= 2:
+                support = 0.9
+            elif sources:
+                support = 0.6
+            
+            # Check coherence
+            if answer_text and "." in answer_text and "," in answer_text:
+                coherence = 0.8
+            elif answer_text and "." in answer_text:
+                coherence = 0.5
+            
+            # Calculate overall confidence
+            confidence = (completeness + relevance + support + coherence) / 4
+            
+            # Determine validation status
+            if confidence >= 0.7:
                 validation_status = "validated"
             else:
                 validation_status = "failed"
                 confidence = max(0.0, confidence - 0.2)  # Penalize confidence
             
-            return {**answer, "validation_status": validation_status, "confidence": confidence}
+            return {
+                **answer,
+                "validation_status": validation_status,
+                "confidence": confidence,
+                "validation_metrics": {
+                    "completeness": completeness,
+                    "relevance": relevance,
+                    "support": support,
+                    "coherence": coherence
+                }
+            }
             
         except Exception as e:
             log_error_with_traceback(e, "Error validating answer")

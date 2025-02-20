@@ -1,4 +1,4 @@
-from typing import List, Dict, Literal, Optional
+from typing import List, Dict, Literal, Optional, Any
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 
@@ -39,6 +39,11 @@ class KnowledgeAcquisitionConfig(BaseModel):
     chunk_overlap: int = Field(default=400, description="Overlap between text chunks")
     max_tokens: int = Field(default=32000, description="Maximum tokens for model context")
     enable_web_search: bool = Field(default=False, description="Whether to enable web search enrichment")
+    collection_name: str = Field(default="knowledge_base", description="Name of the vector store collection")
+    persist_directory: str = Field(default="./data/vector_store", description="Directory to persist vector store")
+    neo4j_uri: str = Field(default="bolt://localhost:7687", description="Neo4j database URI")
+    neo4j_username: str = Field(default="neo4j", description="Neo4j username")
+    neo4j_password: str = Field(default="password", description="Neo4j password")
 
     @validator("domains")
     def validate_domains(cls, v):
@@ -56,26 +61,84 @@ class KnowledgeAcquisitionConfig(BaseModel):
 class Relationship(BaseModel):
     """Schema for knowledge relationships"""
     source: str = Field(description="Source entity")
-    relation: Literal["is_a", "has_part", "related_to"] = Field(description="Type of relationship")
+    relation: Literal[
+        # Methodology relationships
+        "uses", "applies", "implements",
+        # Performance relationships
+        "improves", "outperforms", "achieves",
+        # Component relationships
+        "contains", "consists_of", "part_of",
+        # Comparison relationships
+        "better_than", "similar_to", "different_from",
+        # Causal relationships
+        "leads_to", "causes", "affects",
+        # Temporal relationships
+        "precedes", "follows", "concurrent_with",
+        # Legacy relationships
+        "is_a", "has_part", "related_to"
+    ] = Field(description="Type of relationship")
     target: str = Field(description="Target entity")
     domain: str = Field(default="knowledge", description="Domain this relationship belongs to")
     confidence: float = Field(default=1.0, description="Confidence in this relationship", ge=0.0, le=1.0)
 
     @validator("relation")
     def validate_relation(cls, v):
-        valid_relations = ["is_a", "has_part", "related_to"]
+        valid_relations = [
+            # Methodology relationships
+            "uses", "applies", "implements",
+            # Performance relationships
+            "improves", "outperforms", "achieves",
+            # Component relationships
+            "contains", "consists_of", "part_of",
+            # Comparison relationships
+            "better_than", "similar_to", "different_from",
+            # Causal relationships
+            "leads_to", "causes", "affects",
+            # Temporal relationships
+            "precedes", "follows", "concurrent_with",
+            # Legacy relationships
+            "is_a", "has_part", "related_to"
+        ]
         if v not in valid_relations:
             raise ValueError(f"relation must be one of: {valid_relations}")
         return v
 
 class SourceMetadata(BaseModel):
-    """Model for source metadata"""
-    source_type: str = Field(description="Type of source (academic, web, etc)")
-    confidence_score: float = Field(description="Confidence in source reliability")
-    domain_relevance: float = Field(description="Relevance to current domain")
-    timestamp: str = Field(description="When the source was processed")
-    validation_status: str = Field(description="Validation status of the source")
-    domain: str = Field(default="knowledge", description="Domain this source belongs to")
+    """Metadata for a knowledge source."""
+    source_type: str = Field(description="Type of source (text, pdf, web, etc)")
+    confidence_score: float = Field(description="Confidence score between 0.0 and 1.0", ge=0.0, le=1.0)
+    domain_relevance: float = Field(description="Domain relevance score between 0.0 and 1.0", ge=0.0, le=1.0)
+    timestamp: str = Field(description="ISO format timestamp")
+    validation_status: Literal["pending", "processed", "failed"] = Field(default="pending", description="Validation status")
+    domain: str = Field(description="Domain this source belongs to")
+    
+    # Add metrics tracking
+    qa_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "questions_generated": 0,
+            "questions_answered": 0,
+            "average_confidence": 0.0
+        },
+        description="Metrics from QA processing"
+    )
+    
+    graph_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "entities_added": 0,
+            "relationships_added": 0,
+            "failed_operations": 0
+        },
+        description="Metrics from graph operations"
+    )
+    
+    embedding_metrics: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "embeddings_generated": 0,
+            "total_tokens": 0,
+            "average_vector_length": 0.0
+        },
+        description="Metrics from embedding operations"
+    )
 
     @validator("timestamp")
     def validate_timestamp(cls, v):
@@ -103,10 +166,11 @@ class ExtractedKnowledge(BaseModel):
     """Model for extracted knowledge"""
     content: str = Field(description="The content or summary of the source")
     entities: List[str] = Field(description="List of extracted entities")
-    relationships: List[Relationship] = Field(description="List of relationships between entities")
+    relationships: List[Relationship] = Field(default_factory=list, description="List of relationships between entities")
     confidence: float = Field(default=1.0, description="Overall confidence score for the extraction", ge=0.0, le=1.0)
     metadata: Optional[SourceMetadata] = Field(None, description="Additional metadata about the extraction")
     domain: str = Field(default="knowledge", description="Domain this knowledge belongs to")
+    qa_pairs: List[Dict[str, Any]] = Field(default_factory=list, description="Question-answer pairs generated from content")
 
     @validator("content")
     def validate_content(cls, v):
@@ -119,12 +183,6 @@ class ExtractedKnowledge(BaseModel):
         if not v:
             raise ValueError("entities list cannot be empty")
         return [e.strip() for e in v if e.strip()]
-
-    @validator("relationships")
-    def validate_relationships(cls, v):
-        if not v:
-            raise ValueError("relationships list cannot be empty")
-        return v
 
 class LLMResponse(BaseModel):
     """Model for LLM responses"""
@@ -152,4 +210,23 @@ class DocumentProcessingInput(BaseModel):
     """Input for document processing"""
     source_path: str = Field(description="Path to source document")
     source_type: str = Field(description="Type of source")
-    domain: str = Field(default="knowledge", description="Domain for processing") 
+    domain: str = Field(default="knowledge", description="Domain for processing")
+
+class ConfidenceFactors(BaseModel):
+    """Model for confidence evaluation factors"""
+    content_quality: float = Field(default=0.5, description="Quality of the content", ge=0.0, le=1.0)
+    entity_confidence: float = Field(default=0.5, description="Confidence in entity extraction", ge=0.0, le=1.0)
+    relationship_validity: float = Field(default=0.5, description="Validity of relationships", ge=0.0, le=1.0)
+    source_reliability: float = Field(default=0.5, description="Reliability of the source", ge=0.0, le=1.0)
+    context_relevance: float = Field(default=0.5, description="Relevance to context", ge=0.0, le=1.0)
+    overall: float = Field(default=0.5, description="Overall confidence score", ge=0.0, le=1.0)
+
+    def get(self, key: str, default: float = 0.5) -> float:
+        """Get factor value with default"""
+        return getattr(self, key, default)
+
+class ConfidenceEvaluation(BaseModel):
+    """Model for confidence evaluation"""
+    confidence: float = Field(description="Overall confidence score", ge=0.0, le=1.0)
+    factors: ConfidenceFactors = Field(description="Detailed confidence factors")
+    reasoning: str = Field(description="Reasoning behind confidence evaluation") 

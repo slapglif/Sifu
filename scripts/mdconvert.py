@@ -31,6 +31,7 @@ import requests
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import SRTFormatter
+import urllib3
 
 
 class _CustomMarkdownify(markdownify.MarkdownConverter):
@@ -815,11 +816,58 @@ class MarkdownConverter:
         return result
 
     def convert_url(self, url: str, **kwargs: Any) -> DocumentConverterResult:  # TODO: fix kwargs type
-        # Send a HTTP request to the URL
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0"
-        response = self._requests_session.get(url, stream=True, headers={"User-Agent": user_agent})
-        response.raise_for_status()
-        return self.convert_response(response, **kwargs)
+        # Configure robust request handling
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Cache-Control": "max-age=0",
+            "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Microsoft Edge";v="122"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1"
+        }
+        
+        # Configure session
+        if not self._requests_session:
+            self._requests_session = requests.Session()
+        
+        # Configure retries
+        retries = urllib3.util.Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "HEAD"]
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retries)
+        self._requests_session.mount("http://", adapter)
+        self._requests_session.mount("https://", adapter)
+        
+        try:
+            # Make request with configured session
+            response = self._requests_session.get(
+                url,
+                stream=True,
+                headers=headers,
+                timeout=30,
+                verify=False
+            )
+            response.raise_for_status()
+            return self.convert_response(response, **kwargs)
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error requesting {url}: {str(e)}")
+            return DocumentConverterResult(text_content=f"Error accessing content: {str(e)}")
+            
+        except Exception as e:
+            print(f"Error converting {url}: {str(e)}")
+            return DocumentConverterResult(text_content=f"Error converting content: {str(e)}")
 
     def convert_response(
         self, response: requests.Response, **kwargs: Any

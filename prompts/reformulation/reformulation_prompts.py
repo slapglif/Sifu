@@ -36,10 +36,10 @@ You must respond in the following format:
   "reasoning": "your reasoning here"}}"""
 
     human_template = """Earlier you were asked:
-{{original_task}}
+{original_task}
 
 Here is the conversation transcript:
-{{conversation}}
+{conversation}
 
 Reformulate a clear, concise answer following the format instructions."""
 

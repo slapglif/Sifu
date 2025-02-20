@@ -53,7 +53,7 @@ IMPORTANT RULES:
 
     human_template = """Identify patterns in this data:
 
-{{data}}"""
+{data}"""
 
     return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
@@ -77,7 +77,7 @@ IMPORTANT RULES:
 
     human_template = """Generate hypotheses based on these patterns:
 
-{{patterns}}"""
+{patterns}"""
 
     return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
@@ -99,7 +99,7 @@ IMPORTANT RULES:
 
     human_template = """Infer meaningful relationships from these hypotheses:
 
-{{hypotheses}}
+{hypotheses}
 
 Focus on identifying relationships that reveal the domain's structure."""
 
@@ -125,9 +125,9 @@ IMPORTANT RULES:
 
     human_template = """Synthesize knowledge from:
 
-Patterns: {{patterns}}
-Hypotheses: {{hypotheses}}
-Relationships: {{relationships}}
+Patterns: {patterns}
+Hypotheses: {hypotheses}
+Relationships: {relationships}
 
 Focus on creating a coherent understanding of the domain."""
 

@@ -8,21 +8,8 @@ import json
 import requests
 from dotenv import load_dotenv
 
-# Core imports
-from pydantic import BaseModel, Field
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from langchain_core.documents import Document
-from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
-
-# UI imports
-from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
-from rich.panel import Panel
-from rich.table import Table
-
+from langchain_core.runnables import RunnableLambda
 # Image processing
 from PIL import Image
 

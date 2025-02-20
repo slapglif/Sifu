@@ -44,8 +44,8 @@ IMPORTANT RULES:
 
     human_template = """Answer this question based on the provided context:
 
-Question: {{question}}
-Context: {{context}}"""
+Question: {question}
+Context: {context}"""
 
     return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
@@ -67,9 +67,9 @@ IMPORTANT RULES:
 
     human_template = """Identify knowledge gaps based on this Q&A:
 
-Question: {{question}}
-Answer: {{answer}}
-Context: {{context}}"""
+Question: {question}
+Answer: {answer}
+Context: {context}"""
 
     return ChatPromptTemplate.from_messages([
         SystemMessage(content=system_template),
@@ -92,8 +92,8 @@ IMPORTANT RULES:
 
     human_template = """Answer this question based on the provided context:
 
-Question: {{question}}
-Context: {{context}}
+Question: {question}
+Context: {context}
 
 Output ONLY a valid JSON object following the format instructions."""
 

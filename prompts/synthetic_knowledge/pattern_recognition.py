@@ -26,7 +26,7 @@ IMPORTANT RULES:
 
     human_template = """Identify meaningful patterns in this text:
 
-{{content}}
+{content}
 
 Focus on identifying patterns that reveal important insights about the domain.
 Output ONLY a valid JSON object following the format instructions."""
