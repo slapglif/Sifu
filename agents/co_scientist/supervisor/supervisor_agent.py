@@ -97,16 +97,7 @@ Your output MUST be a valid JSON object with the following structure:
         # Create prompt template with escaped brackets
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=system_prompt),
-            HumanMessage(content="""Please create a research plan based on:
-
-Goal: {{{{goal}}}}
-Available Agents: {{{{available_agents}}}}
-Context: {{{{context}}}}
-
-{format_instructions}
-
-Generate a single, well-formed JSON plan that follows the required format exactly.
-Do not omit any required fields or deviate from the specified formats.""")
+            HumanMessage(content="Please create a research plan based on:\n\nGoal: {goal}\nAvailable Agents: {available_agents}\nContext: {context}\n\n{format_instructions}\n\nGenerate a single, well-formed JSON plan that follows the required format exactly.\nDo not omit any required fields or deviate from the specified formats.")
         ])
 
         super().__init__(
