@@ -53,7 +53,35 @@ Follow these guidelines:
 - Consider multiple research directions
 - Break down complex ideas into testable parts
 - Maintain clear documentation of your reasoning
-- Assess practical feasibility of testing"""
+- Assess practical feasibility of testing
+
+Your output must be a JSON object with the following structure:
+{
+    "id": "unique_hypothesis_id",
+    "statement": "clear hypothesis statement",
+    "rationale": "detailed reasoning behind the hypothesis",
+    "evidence": [
+        "Evidence point 1: Description of supporting evidence",
+        "Evidence point 2: Additional supporting evidence"
+    ],
+    "novelty_score": 0.85,  # between 0 and 1
+    "feasibility_score": 0.75,  # between 0 and 1
+    "assumptions": [
+        "Assumption 1: Description of key assumption",
+        "Assumption 2: Description of another assumption"
+    ],
+    "testability": {
+        "methods": ["method1", "method2"],
+        "required_resources": ["resource1", "resource2"],
+        "estimated_duration": "duration estimate"
+    },
+    "references": [
+        "Author et al. (2023) Title of paper, Journal Name",
+        "Author et al. (2022) Another paper title, Journal Name"
+    ]
+}
+
+IMPORTANT: All evidence, assumptions, and references must be simple strings, not objects or dictionaries."""
 
         super().__init__(
             llm=llm,
@@ -87,7 +115,11 @@ Follow these guidelines:
         })
         
         # Create hypothesis object
-        hypothesis = Hypothesis(**result)
+        if isinstance(result, dict):
+            hypothesis = Hypothesis(**result)
+        else:
+            # If result is already a Hypothesis (from output parser), use it directly
+            hypothesis = result
         
         # Update state
         self.state.hypotheses.append(hypothesis)

@@ -296,6 +296,7 @@ async def web_search(query: str, config: Dict[str, Any]) -> str:
             
         # Get domain from config and extract key terms
         domain = config.get("domain_name", "general")
+        disable_progress = config.get("disable_progress", False)
         
         # Generate diverse search queries using LLM
         search_queries = await generate_diverse_queries(query, domain)
@@ -363,8 +364,12 @@ async def web_search(query: str, config: Dict[str, Any]) -> str:
             
             # Process queries with tqdm progress
             tasks = []
-            for query, group in tqdm(search_queries, desc="Processing search queries"):
-                tasks.append(process_query(query, group))
+            if disable_progress:
+                for query, group in search_queries:
+                    tasks.append(process_query(query, group))
+            else:
+                for query, group in tqdm(search_queries, desc="Processing search queries"):
+                    tasks.append(process_query(query, group))
                 
             # Wait for all queries to complete
             all_results = await asyncio.gather(*tasks)
@@ -376,22 +381,40 @@ async def web_search(query: str, config: Dict[str, Any]) -> str:
                         web_contents.append(content)
             
             # Save results to files with progress bar
-            for i, content in enumerate(tqdm(web_contents, desc="Saving results"), 1):
-                filename = f"web/source_{i}.txt"
-                os.makedirs("web", exist_ok=True)  # Ensure directory exists
-                with open(filename, "w", encoding="utf-8") as f:
-                    f.write(f"title: {content.title}\n")
-                    f.write(f"url: {content.url}\n")
-                    f.write(f"query: {content.metadata.query}\n")
-                    f.write(f"query_group: {content.metadata.query_group}\n")
-                    f.write(f"source: {content.metadata.source}\n")
-                    f.write(f"published_date: {content.metadata.published_date or ''}\n")
-                    f.write(f"timestamp: {content.timestamp}\n")
-                    f.write("---\n")
-                    f.write(content.content)
-                
-                formatted_results.append(str(content.model_dump()))
-                formatted_results.append("---")
+            if disable_progress:
+                for i, content in enumerate(web_contents, 1):
+                    filename = f"web/source_{i}.txt"
+                    os.makedirs("web", exist_ok=True)  # Ensure directory exists
+                    with open(filename, "w", encoding="utf-8") as f:
+                        f.write(f"title: {content.title}\n")
+                        f.write(f"url: {content.url}\n")
+                        f.write(f"query: {content.metadata.query}\n")
+                        f.write(f"query_group: {content.metadata.query_group}\n")
+                        f.write(f"source: {content.metadata.source}\n")
+                        f.write(f"published_date: {content.metadata.published_date or ''}\n")
+                        f.write(f"timestamp: {content.timestamp}\n")
+                        f.write("---\n")
+                        f.write(content.content)
+                    
+                    formatted_results.append(str(content.model_dump()))
+                    formatted_results.append("---")
+            else:
+                for i, content in enumerate(tqdm(web_contents, desc="Saving results"), 1):
+                    filename = f"web/source_{i}.txt"
+                    os.makedirs("web", exist_ok=True)  # Ensure directory exists
+                    with open(filename, "w", encoding="utf-8") as f:
+                        f.write(f"title: {content.title}\n")
+                        f.write(f"url: {content.url}\n")
+                        f.write(f"query: {content.metadata.query}\n")
+                        f.write(f"query_group: {content.metadata.query_group}\n")
+                        f.write(f"source: {content.metadata.source}\n")
+                        f.write(f"published_date: {content.metadata.published_date or ''}\n")
+                        f.write(f"timestamp: {content.timestamp}\n")
+                        f.write("---\n")
+                        f.write(content.content)
+                    
+                    formatted_results.append(str(content.model_dump()))
+                    formatted_results.append("---")
                 
         return "\n".join(formatted_results) if formatted_results else "No results found"
             

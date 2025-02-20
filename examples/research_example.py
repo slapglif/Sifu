@@ -3,6 +3,7 @@
 import asyncio
 from rich.console import Console
 from langchain_ollama import ChatOllama
+from langchain_core.output_parsers import PydanticOutputParser
 
 from agents.co_scientist.main import AICoScientist
 
@@ -15,9 +16,11 @@ async def main():
     try:
         # Initialize language model
         llm = ChatOllama(
-            model="deepscaler",
+            model="llama2",  # Using llama2 as base model
             format="json",  # Ensure JSON output format
-            temperature=0.7
+            temperature=0.7,
+            stop=["\n\n"],  # Add stop sequence for better output control
+            timeout=120  # Increase timeout for longer generations
         )
         
         # Initialize AI co-scientist
@@ -50,32 +53,39 @@ async def main():
         console.print("\n[bold blue]Research Summary[/bold blue]")
         
         # Print key findings from each cycle
-        console.print("\n[bold]Key Findings by Cycle:[/bold]")
-        for i, cycle in enumerate(results["cycles"], 1):
-            console.print(f"\n[bold]Cycle {i}:[/bold]")
-            overview = cycle["overview"]
-            for finding in overview["key_findings"]:
-                console.print(f"- {finding}")
-                
-        # Print top hypotheses
-        console.print("\n[bold]Top Ranked Hypotheses:[/bold]")
-        final_cycle = results["cycles"][-1]
-        for h_id, score in final_cycle["rankings"][:3]:
-            for h in final_cycle["hypotheses"]:
-                if h["id"] == h_id:
-                    console.print(f"\nHypothesis: {h['statement']}")
-                    console.print(f"Score: {score:.2f}")
-                    console.print(f"Evidence: {', '.join(h['evidence'])}")
+        if results.get("cycles"):
+            console.print("\n[bold]Key Findings by Cycle:[/bold]")
+            for i, cycle in enumerate(results["cycles"], 1):
+                console.print(f"\n[bold]Cycle {i}:[/bold]")
+                overview = cycle["overview"]
+                for finding in overview["key_findings"]:
+                    console.print(f"- {finding}")
                     
-        # Print research directions
-        console.print("\n[bold]Promising Research Directions:[/bold]")
-        for direction in final_cycle["overview"]["promising_directions"]:
-            console.print(f"\n- {direction['title']}")
-            if "rationale" in direction:
-                console.print(f"  Rationale: {direction['rationale']}")
+            # Print top hypotheses
+            if results["cycles"]:
+                console.print("\n[bold]Top Ranked Hypotheses:[/bold]")
+                final_cycle = results["cycles"][-1]
+                for h_id, score in final_cycle["rankings"][:3]:
+                    for h in final_cycle["hypotheses"]:
+                        if h["id"] == h_id:
+                            console.print(f"\nHypothesis: {h['statement']}")
+                            console.print(f"Score: {score:.2f}")
+                            console.print(f"Evidence: {', '.join(h['evidence'])}")
+                            
+                # Print research directions
+                console.print("\n[bold]Promising Research Directions:[/bold]")
+                for direction in final_cycle["overview"]["promising_directions"]:
+                    console.print(f"\n- {direction['title']}")
+                    if "rationale" in direction:
+                        console.print(f"  Rationale: {direction['rationale']}")
+        else:
+            console.print("\n[bold red]No research cycles were completed.[/bold red]")
+            console.print("Please check the system status and logs for more information.")
                 
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        import traceback
+        console.print(traceback.format_exc())
         raise
         
 if __name__ == "__main__":

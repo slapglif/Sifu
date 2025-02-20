@@ -82,7 +82,10 @@ class BaseAgent:
     async def arun(self, input_data: Dict[str, Any]) -> Any:
         """Run the agent's chain asynchronously."""
         try:
-            result = await self.chain.ainvoke(input_data)
+            from rich.console import Console
+            console = Console()
+            with console.status(f"[bold cyan]{self.state.agent_type}[/bold cyan] agent thinking..."):
+                result = await self.chain.ainvoke(input_data)
             return result
         except Exception as e:
             raise RuntimeError(f"Agent {self.state.agent_id} failed: {str(e)}")

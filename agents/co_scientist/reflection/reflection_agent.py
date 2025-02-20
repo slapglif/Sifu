@@ -9,16 +9,16 @@ from ..base_agent import BaseAgent, AgentState
 from ..generation.generation_agent import Hypothesis
 
 class Review(BaseModel):
-    """Review of a research hypothesis."""
-    review_id: str = Field(description="Unique identifier for this review")
+    """Model for hypothesis reviews."""
     hypothesis_id: str = Field(description="ID of the hypothesis being reviewed")
-    review_type: Literal["initial", "full", "deep_verification", "observation", "simulation", "tournament"] = Field(description="Type of review")
-    score: float = Field(description="Overall review score (0-1)", ge=0.0, le=1.0)
+    review_type: str = Field(description="Type of review conducted")
+    score: float = Field(description="Overall review score")
+    confidence: float = Field(description="Confidence in the review")
+    key_points: List[str] = Field(default_factory=list, description="Key points from the review")
     strengths: List[str] = Field(description="Identified strengths")
     weaknesses: List[str] = Field(description="Identified weaknesses")
-    suggestions: List[str] = Field(description="Improvement suggestions")
-    verification_results: Optional[Dict[str, Any]] = Field(description="Results of verification checks")
-    confidence: float = Field(description="Reviewer confidence (0-1)", ge=0.0, le=1.0)
+    suggestions: List[str] = Field(description="Suggestions for improvement")
+    timestamp: str = Field(description="When the review was conducted")
 
 class ReflectionState(AgentState):
     """Reflection agent state."""
@@ -62,7 +62,33 @@ Follow these guidelines:
 - Identify potential issues early
 - Suggest concrete improvements
 - Maintain scientific rigor
-- Be constructive in criticism"""
+- Be constructive in criticism
+
+Your output must be a JSON object with the following structure:
+{
+    "review_id": "unique_review_id",
+    "hypothesis_id": "id_of_hypothesis_being_reviewed",
+    "review_type": "initial",  # one of: initial, full, deep_verification, observation, simulation, tournament
+    "score": 0.85,  # between 0 and 1
+    "strengths": [
+        "strength point 1",
+        "strength point 2"
+    ],
+    "weaknesses": [
+        "weakness point 1",
+        "weakness point 2"
+    ],
+    "suggestions": [
+        "improvement suggestion 1",
+        "improvement suggestion 2"
+    ],
+    "verification_results": {
+        "assumption_checks": ["check1", "check2"],
+        "evidence_validation": ["validation1", "validation2"],
+        "feasibility_assessment": ["assessment1", "assessment2"]
+    },
+    "confidence": 0.9  # between 0 and 1
+}"""
 
         super().__init__(
             llm=llm,
@@ -94,12 +120,16 @@ Follow these guidelines:
             "hypothesis": hypothesis.dict(),
             "review_type": review_type,
             "context": context,
-            "previous_reviews": self.state.reviews.get(hypothesis.id, []),
+            "previous_reviews": [r.dict() for r in self.state.reviews.get(hypothesis.id, [])],
             "verification_tools": list(self.state.verification_tools.keys())
         })
         
         # Create review object
-        review = Review(**result)
+        if isinstance(result, dict):
+            review = Review(**result)
+        else:
+            # If result is already a Review (from output parser), use it directly
+            review = result
         
         # Update state
         if hypothesis.id not in self.state.reviews:

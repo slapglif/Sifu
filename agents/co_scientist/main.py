@@ -3,12 +3,14 @@
 from typing import Any, Dict, List, Optional, Literal, cast
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain.graphs import Graph
+import networkx as nx
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich import box
 import asyncio
+from scripts.text_web_browser_fixed import web_search, WebContent
+from rich.progress import Progress, track
 
 from .supervisor.supervisor_agent import SupervisorAgent, ResearchGoal
 from .generation.generation_agent import GenerationAgent, Hypothesis
@@ -43,7 +45,7 @@ class AICoScientist:
         self.meta_review = MetaReviewAgent(llm)
         
         # Initialize system graph
-        self.system_graph = Graph()
+        self.system_graph = nx.DiGraph()
         self._initialize_system_graph()
         
         # Print initialization status
@@ -63,69 +65,67 @@ class AICoScientist:
         ]:
             self.system_graph.add_node(
                 agent.state.agent_id,
-                properties={
-                    "type": agent.state.agent_type,
-                    "state": agent.state.dict()
-                }
+                type=agent.state.agent_type,
+                state=agent.state.dict()
             )
             
         # Add relationships
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.generation.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.reflection.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.ranking.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.evolution.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.proximity.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         self.system_graph.add_edge(
             self.supervisor.state.agent_id,
             self.meta_review.state.agent_id,
-            "coordinates"
+            relationship="coordinates"
         )
         
         # Add data flow relationships
         self.system_graph.add_edge(
             self.generation.state.agent_id,
             self.reflection.state.agent_id,
-            "sends_hypotheses"
+            relationship="sends_hypotheses"
         )
         self.system_graph.add_edge(
             self.reflection.state.agent_id,
             self.ranking.state.agent_id,
-            "sends_reviews"
+            relationship="sends_reviews"
         )
         self.system_graph.add_edge(
             self.ranking.state.agent_id,
             self.evolution.state.agent_id,
-            "sends_rankings"
+            relationship="sends_rankings"
         )
         self.system_graph.add_edge(
             self.evolution.state.agent_id,
             self.proximity.state.agent_id,
-            "sends_refinements"
+            relationship="sends_refinements"
         )
         self.system_graph.add_edge(
             self.proximity.state.agent_id,
             self.meta_review.state.agent_id,
-            "sends_clusters"
+            relationship="sends_clusters"
         )
         
     def _print_initialization_status(self) -> None:
@@ -174,72 +174,202 @@ class AICoScientist:
         if not self.supervisor.state.research_goal:
             raise ValueError("Research goal must be set before running a cycle")
             
-        # Create research plan
-        plan = await self.supervisor.create_research_plan()
+        self.console.print("\n[bold cyan]Starting Research Cycle[/bold cyan]")
         
+        # Gather web knowledge
+        self.console.print("\n[bold yellow]1. Gathering Research Knowledge[/bold yellow]")
+        config = {
+            "domain_name": self.supervisor.state.research_goal.domain,
+            "search_depth": 2,
+            "max_results": 10,
+            "disable_progress": True  # Disable tqdm progress bars
+        }
+        search_query = f"{self.supervisor.state.research_goal.goal} {self.supervisor.state.research_goal.domain}"
+        self.console.print(f"Searching for: {search_query}")
+        
+        self.console.print("[cyan]Searching web...[/cyan]")
+        web_results = await web_search(search_query, config)
+            
+        # Parse web results
+        web_contents = []
+        for result in web_results.split("---"):
+            if result.strip():
+                try:
+                    content = eval(result)  # Convert string representation to dict
+                    if isinstance(content, dict):
+                        web_contents.append(content)
+                except:
+                    continue
+                    
+        self.console.print(f"Found {len(web_contents)} relevant sources")
+        
+        # Create research plan with web knowledge
+        self.console.print("\n[bold yellow]2. Creating Research Plan[/bold yellow]")
+        plan = await self.supervisor.create_research_plan(context={"web_knowledge": web_contents})
+        self.console.print(Panel(
+            f"[bold]Research Plan Created[/bold]\n"
+            f"Number of tasks: {len(plan.tasks)}\n"
+            f"Focus areas: {', '.join(task.get('name', '') for task in plan.tasks)}"
+        ))
+            
         # Generate hypotheses
+        self.console.print("\n[bold yellow]3. Generating Hypotheses[/bold yellow]")
         hypotheses = []
-        for _ in range(plan.tasks[0].get("num_hypotheses", 3)):
-            hypothesis = await self.generation.generate_hypothesis(
-                self.supervisor.state.research_goal.dict(),
-                {"plan": plan.dict()}
-            )
-            hypotheses.append(hypothesis)
+        with Progress() as progress:
+            hypothesis_task = progress.add_task("[cyan]Generating hypotheses...", total=plan.tasks[0].get("num_hypotheses", 3))
+            
+            for i in range(plan.tasks[0].get("num_hypotheses", 3)):
+                hypothesis = await self.generation.generate_hypothesis(
+                    self.supervisor.state.research_goal.dict(),
+                    {
+                        "plan": plan.dict(),
+                        "web_knowledge": web_contents
+                    }
+                )
+                self.console.print(Panel(
+                    f"[bold]Hypothesis {i+1}[/bold]\n"
+                    f"Statement: {hypothesis.statement}\n"
+                    f"Novelty: {hypothesis.novelty_score:.2f}\n"
+                    f"Feasibility: {hypothesis.feasibility_score:.2f}\n"
+                    f"Evidence: {', '.join(hypothesis.evidence[:2])}\n"
+                    f"Key assumptions: {', '.join(hypothesis.assumptions[:2])}"
+                ))
+                hypotheses.append(hypothesis)
+                progress.update(hypothesis_task, advance=1)
             
         # Review hypotheses
+        self.console.print("\n[bold yellow]4. Reviewing Hypotheses[/bold yellow]")
         reviews = []
         review_types: List[ReviewType] = ["initial", "full", "deep_verification"]
-        for hypothesis in hypotheses:
-            for review_type in review_types:
-                review = await self.reflection.review_hypothesis(
-                    hypothesis,
-                    review_type,
-                    {"plan": plan.dict()}
-                )
-                reviews.append(review)
+        
+        with Progress() as progress:
+            review_task = progress.add_task(
+                "[cyan]Reviewing hypotheses...", 
+                total=len(hypotheses) * len(review_types)
+            )
+            
+            for hypothesis in hypotheses:
+                self.console.print(f"\n[bold]Reviewing: {hypothesis.statement[:100]}...[/bold]")
+                for review_type in review_types:
+                    review = await self.reflection.review_hypothesis(
+                        hypothesis,
+                        review_type,
+                        {
+                            "plan": plan.dict(),
+                            "web_knowledge": web_contents
+                        }
+                    )
+                    self.console.print(
+                        f"- {review_type.replace('_', ' ').title()} Review:\n"
+                        f"  Score: {review.score:.2f}\n"
+                        f"  Confidence: {review.confidence:.2f}\n"
+                        f"  Key points: {review.key_points[:2] if review.key_points else 'None'}"
+                    )
+                    reviews.append(review)
+                    progress.update(review_task, advance=1)
                 
         # Conduct tournament
-        for i, h1 in enumerate(hypotheses):
-            for h2 in hypotheses[i+1:]:
-                match = await self.ranking.conduct_match(
-                    h1, h2,
-                    {"reviews": [r.dict() for r in reviews]}
-                )
+        self.console.print("\n[bold yellow]5. Conducting Tournament[/bold yellow]")
+        matches = []
+        with Progress() as progress:
+            match_task = progress.add_task(
+                "[cyan]Conducting matches...", 
+                total=len(hypotheses) * (len(hypotheses) - 1) // 2
+            )
+            
+            for i, h1 in enumerate(hypotheses):
+                for h2 in hypotheses[i+1:]:
+                    match = await self.ranking.conduct_match(
+                        h1, h2,
+                        {
+                            "reviews": [r.dict() for r in reviews],
+                            "web_knowledge": web_contents
+                        }
+                    )
+                    self.console.print(
+                        f"\nMatch: {h1.id} vs {h2.id}\n"
+                        f"Winner: {match.winner}\n"
+                        f"Scores: {match.score_a:.2f} vs {match.score_b:.2f}"
+                    )
+                    matches.append(match)
+                    progress.update(match_task, advance=1)
+                
+        # Get rankings
+        rankings = self.ranking.get_rankings()
+        self.console.print("\n[bold green]Current Rankings:[/bold green]")
+        for rank, (h_id, score) in enumerate(rankings, 1):
+            hypothesis = next(h for h in hypotheses if h.id == h_id)
+            self.console.print(f"{rank}. {hypothesis.statement[:100]}... (Score: {score:.2f})")
                 
         # Refine top hypotheses
-        rankings = self.ranking.get_rankings()
+        self.console.print("\n[bold yellow]6. Refining Top Hypotheses[/bold yellow]")
         refinements = []
-        for h_id, _ in rankings[:3]:  # Refine top 3
-            hypothesis = next(h for h in hypotheses if h.id == h_id)
-            refinement = await self.evolution.refine_hypothesis(
-                hypothesis,
-                strategy_id="literature_enhancement"
-            )
-            refinements.append(refinement)
+        with Progress() as progress:
+            refine_task = progress.add_task("[cyan]Refining hypotheses...", total=3)
+            
+            for h_id, _ in rankings[:3]:  # Refine top 3
+                hypothesis = next(h for h in hypotheses if h.id == h_id)
+                refinement = await self.evolution.refine_hypothesis(
+                    hypothesis,
+                    strategy_id="literature_enhancement",
+                    context={"web_knowledge": web_contents}
+                )
+                self.console.print(Panel(
+                    f"[bold]Refinement for {hypothesis.id}[/bold]\n"
+                    f"Original: {hypothesis.statement}\n"
+                    f"Refined: {refinement.refined_hypothesis.statement}\n"
+                    f"Improvements:\n" + "\n".join(f"- {imp}" for imp in refinement.improvements)
+                ))
+                refinements.append(refinement)
+                progress.update(refine_task, advance=1)
             
         # Cluster hypotheses
-        clusters = await self.proximity.cluster_hypotheses(
-            hypotheses + [r.refined_hypothesis for r in refinements]
-        )
+        self.console.print("\n[bold yellow]7. Clustering Hypotheses[/bold yellow]")
+        all_hypotheses = hypotheses + [r.refined_hypothesis for r in refinements]
+        clusters = await self.proximity.cluster_hypotheses(all_hypotheses)
+        
+        self.console.print(Panel(
+            f"[bold]Clustering Results[/bold]\n"
+            f"Number of clusters: {len(clusters)}\n\n" +
+            "\n".join(
+                f"Cluster {i+1}: {cluster.theme}\n"
+                f"Size: {len(cluster.hypotheses)} hypotheses\n"
+                f"Key features: {', '.join(cluster.key_features)}\n"
+                for i, cluster in enumerate(clusters)
+            )
+        ))
         
         # Generate overview
+        self.console.print("\n[bold yellow]8. Generating Research Overview[/bold yellow]")
         overview = await self.meta_review.generate_overview(
-            hypotheses + [r.refined_hypothesis for r in refinements],
+            all_hypotheses,
             reviews,
             {
                 "plan": plan.dict(),
                 "rankings": rankings,
-                "clusters": [c.dict() for c in clusters]
+                "clusters": [c.dict() for c in clusters],
+                "web_knowledge": web_contents
             }
         )
         
+        self.console.print(Panel(
+            "[bold]Research Cycle Summary[/bold]\n\n"
+            "[bold cyan]Key Findings:[/bold cyan]\n" +
+            "\n".join(f"- {finding}" for finding in overview.key_findings) +
+            "\n\n[bold cyan]Promising Directions:[/bold cyan]\n" +
+            "\n".join(f"- {direction['title']}" for direction in overview.promising_directions) +
+            "\n\n[bold cyan]Next Steps:[/bold cyan]\n" +
+            "\n".join(f"- {step}" for step in overview.next_steps)
+        ))
+            
         return {
             "hypotheses": [h.dict() for h in hypotheses],
             "reviews": [r.dict() for r in reviews],
             "rankings": rankings,
             "refinements": [r.dict() for r in refinements],
             "clusters": [c.dict() for c in clusters],
-            "overview": overview.dict()
+            "overview": overview.dict(),
+            "web_knowledge": web_contents
         }
         
     def get_system_status(self) -> Dict[str, Any]:

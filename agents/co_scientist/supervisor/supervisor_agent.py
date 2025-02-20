@@ -7,7 +7,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableSerializable
-from langchain.graphs import Graph
+import networkx as nx
 
 from ..base_agent import BaseAgent, AgentState
 
@@ -21,9 +21,9 @@ class ResearchGoal(BaseModel):
 class ResearchPlan(BaseModel):
     """Research plan configuration."""
     goal: ResearchGoal
-    tasks: List[Dict[str, Any]] = Field(description="List of research tasks")
-    agent_assignments: Dict[str, List[str]] = Field(description="Map of tasks to agent IDs")
-    dependencies: Dict[str, List[str]] = Field(description="Task dependencies")
+    tasks: List[Dict[str, Any]] = Field(default_factory=list, description="List of research tasks")
+    agent_assignments: Dict[str, List[str]] = Field(default_factory=dict, description="Map of tasks to agent IDs")
+    dependencies: Dict[str, List[str]] = Field(default_factory=dict, description="Task dependencies")
 
 class SupervisorState(AgentState):
     """Supervisor agent state."""
@@ -61,7 +61,33 @@ Follow these guidelines:
 - Maintain context and state across the system
 - Handle errors and adapt plans as needed
 - Optimize resource utilization
-- Ensure research quality and novelty"""
+- Ensure research quality and novelty
+
+Your output must be a JSON object with the following structure:
+{
+    "goal": {
+        "goal": "research goal statement",
+        "domain": "research domain",
+        "constraints": ["constraint1", "constraint2"],
+        "preferences": {"key1": "value1", "key2": "value2"}
+    },
+    "tasks": [
+        {
+            "id": "task1",
+            "name": "task name",
+            "description": "task description",
+            "expected_duration": "duration estimate"
+        }
+    ],
+    "agent_assignments": {
+        "task1": ["agent1", "agent2"],
+        "task2": ["agent3"]
+    },
+    "dependencies": {
+        "task2": ["task1"],
+        "task3": ["task1", "task2"]
+    }
+}"""
 
         super().__init__(
             llm=llm,
@@ -82,17 +108,15 @@ Follow these guidelines:
         )
         
         # Initialize agent graph
-        self.agent_graph = Graph()
+        self.agent_graph = nx.DiGraph()
         
     def register_agent(self, agent: BaseAgent) -> None:
         """Register a specialized agent with the supervisor."""
         self.state.active_agents[agent.state.agent_id] = agent.state
         self.agent_graph.add_node(
             agent.state.agent_id,
-            properties={
-                "type": agent.state.agent_type,
-                "state": agent.state.dict()
-            }
+            type=agent.state.agent_type,
+            state=agent.state.dict()
         )
         
     def set_research_goal(self, goal: ResearchGoal) -> None:
@@ -100,8 +124,12 @@ Follow these guidelines:
         self.state.research_goal = goal
         self.update_memory("current_goal", goal.dict())
         
-    async def create_research_plan(self) -> ResearchPlan:
-        """Create a research plan for the current goal."""
+    async def create_research_plan(self, context: Optional[Dict[str, Any]] = None) -> ResearchPlan:
+        """Create a research plan for the current goal.
+        
+        Args:
+            context: Optional additional context for plan creation
+        """
         if not self.state.research_goal:
             raise ValueError("No research goal set")
             
@@ -112,13 +140,20 @@ Follow these guidelines:
                 {
                     "id": agent_id,
                     "type": state.agent_type,
-                    "capabilities": state.tools.keys()
+                    "capabilities": list(state.tools.keys())
                 }
                 for agent_id, state in self.state.active_agents.items()
-            ]
+            ],
+            "context": context or {}
         })
         
-        plan = ResearchPlan(**result)
+        # Create plan object
+        if isinstance(result, dict):
+            plan = ResearchPlan(**result)
+        else:
+            # If result is already a ResearchPlan (from output parser), use it directly
+            plan = result
+            
         self.state.research_plan = plan
         return plan
         

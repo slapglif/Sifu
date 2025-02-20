@@ -10,12 +10,13 @@ from ..generation.generation_agent import Hypothesis
 from ..reflection.reflection_agent import Review
 
 class ResearchOverview(BaseModel):
-    """High-level overview of research progress."""
-    key_findings: List[str] = Field(description="Main research findings")
-    emerging_themes: List[Dict[str, Any]] = Field(description="Identified research themes")
-    promising_directions: List[Dict[str, Any]] = Field(description="Promising research directions")
-    challenges: List[Dict[str, Any]] = Field(description="Identified challenges")
-    recommendations: List[Dict[str, Any]] = Field(description="Recommendations for next steps")
+    """Model for research cycle overview."""
+    key_findings: List[str] = Field(description="Key findings from the research cycle")
+    promising_directions: List[Dict[str, str]] = Field(description="Promising research directions")
+    next_steps: List[str] = Field(default_factory=list, description="Recommended next steps")
+    insights: List[str] = Field(description="Important insights gained")
+    challenges: List[str] = Field(description="Identified challenges")
+    recommendations: List[str] = Field(description="Recommendations for future work")
 
 class MetaReviewState(AgentState):
     """Meta-review agent state."""
@@ -98,7 +99,7 @@ Follow these guidelines:
             "num_hypotheses": len(hypotheses),
             "num_reviews": len(reviews),
             "key_findings": len(overview.key_findings),
-            "emerging_themes": len(overview.emerging_themes)
+            "emerging_themes": len(overview.promising_directions)
         })
         
         # Update metrics
@@ -112,22 +113,22 @@ Follow these guidelines:
         
         # Track theme evolution
         theme_counts = metrics.get("theme_counts", {})
-        for theme in overview.emerging_themes:
-            theme_name = theme["name"]
+        for theme in overview.promising_directions:
+            theme_name = theme["theme"]
             theme_counts[theme_name] = theme_counts.get(theme_name, 0) + 1
         metrics["theme_counts"] = theme_counts
         
         # Track challenge types
         challenge_types = metrics.get("challenge_types", {})
         for challenge in overview.challenges:
-            challenge_type = challenge["type"]
+            challenge_type = challenge
             challenge_types[challenge_type] = challenge_types.get(challenge_type, 0) + 1
         metrics["challenge_types"] = challenge_types
         
         # Track recommendation categories
         recommendation_categories = metrics.get("recommendation_categories", {})
         for rec in overview.recommendations:
-            category = rec["category"]
+            category = rec
             recommendation_categories[category] = recommendation_categories.get(category, 0) + 1
         metrics["recommendation_categories"] = recommendation_categories
         
@@ -142,8 +143,8 @@ Follow these guidelines:
         
         # Organize recommendations by priority
         prioritized_recommendations = {}
-        for rec in overview.recommendations:
-            priority = rec.get("priority", "medium")
+        for rec in overview.next_steps:
+            priority = rec.split(":")[0]
             if priority not in prioritized_recommendations:
                 prioritized_recommendations[priority] = []
             prioritized_recommendations[priority].append(rec)
@@ -151,7 +152,7 @@ Follow these guidelines:
         # Organize directions by theme
         themed_directions = {}
         for direction in overview.promising_directions:
-            theme = direction.get("theme", "other")
+            theme = direction["theme"]
             if theme not in themed_directions:
                 themed_directions[theme] = []
             themed_directions[theme].append(direction)
@@ -159,8 +160,8 @@ Follow these guidelines:
         return {
             "current_status": {
                 "key_findings": overview.key_findings,
-                "main_themes": [t["name"] for t in overview.emerging_themes],
-                "critical_challenges": [c for c in overview.challenges if c.get("severity", "low") == "high"]
+                "main_themes": [t["theme"] for t in overview.promising_directions],
+                "critical_challenges": [c for c in overview.challenges if c.startswith("high")]
             },
             "next_steps": {
                 "immediate_priorities": prioritized_recommendations.get("high", []),
@@ -168,7 +169,7 @@ Follow these guidelines:
                 "long_term": prioritized_recommendations.get("low", [])
             },
             "research_directions": {
-                theme: [d["title"] for d in directions]
+                theme: [d["theme"] for d in directions]
                 for theme, directions in themed_directions.items()
             }
         }
@@ -188,7 +189,7 @@ Follow these guidelines:
         
         for overview in self.state.research_overviews:
             metric_evolution["findings_per_overview"].append(len(overview.key_findings))
-            metric_evolution["themes_per_overview"].append(len(overview.emerging_themes))
+            metric_evolution["themes_per_overview"].append(len(overview.promising_directions))
             metric_evolution["challenges_per_overview"].append(len(overview.challenges))
             metric_evolution["recommendations_per_overview"].append(len(overview.recommendations))
             
@@ -208,8 +209,8 @@ Follow these guidelines:
         # Analyze theme evolution
         theme_evolution = {}
         for i, overview in enumerate(self.state.research_overviews):
-            for theme in overview.emerging_themes:
-                theme_name = theme["name"]
+            for theme in overview.promising_directions:
+                theme_name = theme["theme"]
                 if theme_name not in theme_evolution:
                     theme_evolution[theme_name] = {"first_seen": i, "occurrences": 0}
                 theme_evolution[theme_name]["occurrences"] += 1
@@ -224,7 +225,7 @@ Follow these guidelines:
         challenge_patterns = {}
         for overview in self.state.research_overviews:
             for challenge in overview.challenges:
-                challenge_type = challenge["type"]
+                challenge_type = challenge
                 if challenge_type not in challenge_patterns:
                     challenge_patterns[challenge_type] = {
                         "count": 0,
@@ -232,7 +233,7 @@ Follow these guidelines:
                     }
                 stats = challenge_patterns[challenge_type]
                 stats["count"] += 1
-                severity = challenge.get("severity", "medium")
+                severity = "high" if challenge.startswith("high") else "medium"
                 stats["severity_distribution"][severity] += 1
                 
         return {
