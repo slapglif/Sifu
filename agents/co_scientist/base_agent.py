@@ -48,10 +48,17 @@ class BaseAgent:
         self.output_parser = output_parser
         
         # Create base prompt template
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content="{input}")
-        ]
+        if output_parser:
+            format_instructions = output_parser.get_format_instructions()
+            messages = [
+                SystemMessage(content=system_prompt.format(format_instructions=format_instructions)),
+                HumanMessage(content="{input}")
+            ]
+        else:
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content="{input}")
+            ]
         self.prompt = ChatPromptTemplate.from_messages(messages)
         
         # Create chain

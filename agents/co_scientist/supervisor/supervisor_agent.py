@@ -63,33 +63,35 @@ Follow these guidelines:
 - Optimize resource utilization
 - Ensure research quality and novelty
 
-Your output MUST be a valid JSON object with the following structure:
+{format_instructions}
+
+IMPORTANT: Your response MUST be a valid JSON object with the exact structure shown in the format instructions.
+The goal field MUST be a ResearchGoal object containing the EXACT values from the input.
+Do not omit any required fields or deviate from the specified formats.
+
+Example valid response:
 {{
     "goal": {{
-        "goal": "string - research goal statement",
-        "domain": "string - research domain",
-        "constraints": ["string - constraint1", "string - constraint2"],
-        "preferences": {{"key1": "value1", "key2": "value2"}}
+        "goal": "Investigate potential drug repurposing candidates for treating acute myeloid leukemia (AML)",
+        "domain": "drug_repurposing",
+        "constraints": ["Focus on FDA-approved drugs"],
+        "preferences": {{"prioritize_novel_mechanisms": true}}
     }},
     "tasks": [
         {{
-            "id": "string - task1",
-            "name": "string - task name",
-            "description": "string - task description",
-            "expected_duration": "string - duration estimate"
+            "id": "task1",
+            "name": "Literature Review",
+            "description": "Review existing literature on AML drug repurposing",
+            "expected_duration": "2 days"
         }}
     ],
     "agent_assignments": {{
-        "task1": ["string - agent1", "string - agent2"],
-        "task2": ["string - agent3"]
+        "task1": ["generation", "reflection"]
     }},
     "dependencies": {{
-        "task2": ["string - task1"],
-        "task3": ["string - task1", "string - task2"]
+        "task1": []
     }}
-}}
-
-{format_instructions}"""
+}}"""
 
         # Create output parser
         parser = PydanticOutputParser(pydantic_object=ResearchPlan)
@@ -97,7 +99,23 @@ Your output MUST be a valid JSON object with the following structure:
         # Create prompt template with escaped brackets
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=system_prompt),
-            HumanMessage(content="Please create a research plan based on:\n\nGoal: {goal}\nAvailable Agents: {available_agents}\nContext: {context}\n\n{format_instructions}\n\nGenerate a single, well-formed JSON plan that follows the required format exactly.\nDo not omit any required fields or deviate from the specified formats.")
+            HumanMessage(content="""Please create a research plan based on:
+
+Research Goal: {goal}
+Available Agents: {available_agents}
+Context: {context}
+
+The research goal contains:
+- goal: The research goal statement
+- domain: The research domain
+- constraints: List of research constraints
+- preferences: Dictionary of research preferences
+
+Your response MUST be a valid JSON object with the exact structure shown in the format instructions.
+The goal field MUST be a ResearchGoal object containing the EXACT values from the input.
+Do not omit any required fields or deviate from the specified formats.
+
+{format_instructions}""")
         ])
 
         super().__init__(
@@ -146,7 +164,12 @@ Your output MUST be a valid JSON object with the following structure:
             
         # Generate plan using LLM
         result = await self.arun({
-            "goal": self.state.research_goal.dict(),
+            "goal": {
+                "goal": self.state.research_goal.goal,
+                "domain": self.state.research_goal.domain,
+                "constraints": self.state.research_goal.constraints,
+                "preferences": self.state.research_goal.preferences
+            },
             "available_agents": [
                 {
                     "id": agent_id,
