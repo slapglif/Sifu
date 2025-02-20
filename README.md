@@ -1,189 +1,143 @@
-# Knowledge Graph Generation System
+# 🧬 AI Co-Scientist System
 
-A flexible, domain-agnostic knowledge graph generation system that combines RAG, synthetic knowledge generation, and fine-tuning capabilities.
+> 🤖 An autonomous research system for scientific discovery and hypothesis generation
 
-## Features
+## 🌟 Overview
 
-1. **Multi-Modal Knowledge Acquisition**
-   - Configurable search across multiple sources
-   - Domain-adaptive search strategies
-   - Multi-format document processing
-   - Pluggable source interfaces
+The AI Co-Scientist is a sophisticated multi-agent system designed to autonomously conduct scientific research, generate and evaluate hypotheses, and synthesize findings. The system employs a collaborative network of specialized agents, each responsible for different aspects of the research process.
 
-2. **Question-Answer System**
-   - Dynamic question generation
-   - Self-questioning for validation
-   - Answer synthesis with source validation
-   - Iterative refinement loops
+## 🚀 Features
 
-3. **Synthetic Knowledge Generation**
-   - Novel insight generation
-   - Cross-reference validation
-   - Hypothesis generation
-   - Pattern recognition
-   - Confidence scoring
+- 🧪 Autonomous hypothesis generation and evaluation
+- 📊 Systematic research planning and execution
+- 🔍 Advanced hypothesis clustering and similarity analysis
+- 🏆 Tournament-based hypothesis ranking
+- 🔄 Continuous hypothesis refinement and evolution
+- 📈 Comprehensive research synthesis and meta-review
 
-4. **LoRA Training Integration**
-   - Domain-specific adaptation
-   - Continuous learning
-   - Parameter-efficient fine-tuning
-   - Performance monitoring
+## 🏗️ System Architecture
 
-5. **Knowledge Graph Evolution**
-   - Dynamic schema adaptation
-   - Relationship strength weighting
-   - Temporal knowledge tracking
-   - Source attribution
-   - Contradiction resolution
+The system consists of seven specialized agents:
 
-## Prerequisites
+1. 👨‍💼 **Supervisor Agent**: Orchestrates the research process and manages agent interactions
+2. 💡 **Generation Agent**: Creates novel research hypotheses based on goals and context
+3. 🔬 **Reflection Agent**: Evaluates hypotheses through multiple review types
+4. 🎯 **Ranking Agent**: Conducts tournament-style comparisons between hypotheses
+5. 📈 **Evolution Agent**: Refines and improves promising hypotheses
+6. 🔗 **Proximity Agent**: Analyzes relationships and clusters similar hypotheses
+7. 📊 **Meta-Review Agent**: Synthesizes findings and generates research overviews
 
-1. **Python Environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+## ⚙️ Current Progress
 
-2. **Neo4j Database**
-   - Install Neo4j Desktop or use Docker:
-     ```bash
-     docker run \
-       --name neo4j \
-       -p 7474:7474 -p 7687:7687 \
-       -e NEO4J_AUTH=neo4j/password \
-       -e NEO4J_PLUGINS='["apoc"]' \
-       neo4j:latest
-     ```
+### Core Functionality
+- [x] Basic agent framework and communication
+- [x] Research goal setting and planning
+- [x] Hypothesis generation with LLM integration
+- [x] Multi-stage hypothesis review system
+- [x] Tournament-based hypothesis ranking
+- [x] Hypothesis refinement and evolution
+- [x] Clustering and similarity analysis
+- [x] Research synthesis and meta-review
 
-3. **Ollama Setup**
-   - Install Ollama: https://ollama.ai/
-   - Pull the Falcon model:
-     ```bash
-     ollama pull falcon3:3b
-     ```
+### Output Handling
+- [x] Proper JSON formatting for LLM outputs
+- [x] Robust error handling for malformed responses
+- [x] Default fallback values for all agents
+- [x] Consistent data structures across agents
 
-## Configuration
+### Research Cycle
+- [x] Single research cycle completion
+- [ ] Multiple cycle management
+- [ ] Cycle termination conditions
+- [ ] Progress tracking across cycles
 
-1. **Environment Variables**
-   Create a `.env` file:
-   ```
-   NEO4J_URI=bolt://localhost:7687
-   NEO4J_USER=neo4j
-   NEO4J_PASSWORD=password
-   OLLAMA_BASE_URL=http://localhost:11434
-   ```
+### Advanced Features
+- [ ] Long-term memory and knowledge accumulation
+- [ ] Cross-cycle hypothesis evolution
+- [ ] Dynamic strategy adaptation
+- [ ] Automated experiment design
+- [ ] External knowledge integration
+- [ ] Collaborative research capabilities
 
-2. **Domain Configuration**
-   Create a domain config JSON file (see `sample_domain_config.json`):
-   ```json
-   {
-     "name": "your_domain",
-     "entity_types": [...],
-     "relation_types": [...],
-     "validation_rules": {...},
-     "search_strategies": {...}
-   }
-   ```
+### Quality and Validation
+- [ ] Hypothesis quality metrics
+- [ ] Research impact assessment
+- [ ] Validation frameworks
+- [ ] Performance benchmarks
+- [ ] Testing suite
 
-3. **Initial Queries**
-   Create a queries JSON file (see `sample_queries.json`):
-   ```json
-   [
-     "What are the latest treatments for...",
-     "Identify genetic pathways involved in...",
-     ...
-   ]
-   ```
+## 🛠️ Technical Requirements
 
-## Usage
+- Python 3.8+
+- LangChain
+- Pydantic
+- NumPy
+- scikit-learn
+- Rich (for console output)
 
-1. **Run the System**
-   ```bash
-   python knowledge_graph_runner.py \
-     --domain-config path/to/domain_config.json \
-     --initial-queries path/to/queries.json
-   ```
+## 📦 Installation
 
-2. **Run Integration Tests**
-   ```bash
-   # Start Neo4j test instance
-   docker run \
-     --name neo4j-test \
-     -p 7475:7474 -p 7688:7687 \
-     -e NEO4J_AUTH=neo4j/password \
-     neo4j:latest
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/ai-co-scientist.git
 
-   # Run tests
-   pytest tests/test_knowledge_graph_integration.py -v
-   ```
+# Install dependencies
+pip install -r requirements.txt
+```
 
-## Development
+## 🚀 Usage
 
-1. **Adding New Knowledge Sources**
-   - Implement new tools in `MultiModalKnowledgeAcquisition`
-   - Add source configuration to domain config
+```python
+from agents.co_scientist.main import AICoScientist
+from langchain_ollama import ChatOllama
 
-2. **Custom Model Adaptation**
-   - Modify LoRA configuration in `LoRATrainer`
-   - Adjust training parameters
+# Initialize the system
+llm = ChatOllama(model="deepscaler", format="json")
+scientist = AICoScientist(llm)
 
-3. **Schema Evolution**
-   - Update domain config
-   - System will automatically adapt
+# Define research goal
+research_goal = {
+    "goal": "Investigate potential drug repurposing candidates for treating AML",
+    "domain": "drug_repurposing",
+    "constraints": ["Focus on FDA-approved drugs"],
+    "preferences": {"prioritize_novel_mechanisms": True}
+}
 
-## Integration Testing
+# Run research process
+results = await scientist.run(research_goal)
+```
 
-The system includes comprehensive integration tests that verify:
+## 📄 License
 
-1. Knowledge Acquisition
-   - Source retrieval
-   - Content extraction
-   - Knowledge structuring
+The Unlicense
 
-2. Synthetic Knowledge
-   - Pattern recognition
-   - Hypothesis generation
-   - Confidence scoring
+This is free and unencumbered software released into the public domain.
 
-3. Temporal Tracking
-   - Time-based filtering
-   - Source freshness
-   - Historical tracking
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
 
-4. Model Adaptation
-   - Training effectiveness
-   - Domain specialization
-   - Performance metrics
+In jurisdictions that recognize copyright laws, the author or authors of this software dedicate any and all copyright interest in the software to the public domain. We make this dedication for the benefit of the public at large and to the detriment of our heirs and successors. We intend this dedication to be an overt act of relinquishment in perpetuity of all present and future rights to this software under copyright law.
 
-## Troubleshooting
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-1. **Neo4j Connection Issues**
-   ```bash
-   # Check Neo4j status
-   docker ps
-   docker logs neo4j
-   ```
+For more information, please refer to <http://unlicense.org/>
 
-2. **Ollama Issues**
-   ```bash
-   # Check Ollama service
-   ollama ps
-   ollama logs
-   ```
+## 🤝 Contributing
 
-3. **Model Adaptation**
-   - Check CUDA availability
-   - Verify VRAM requirements
-   - Monitor training logs
+Contributions are welcome! Feel free to:
 
-## Contributing
+- 🐛 Report bugs
+- 💡 Suggest features
+- 🔧 Submit pull requests
+- 📚 Improve documentation
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new features
-4. Submit a pull request
+## 📊 Project Status
 
-## License
+The system is currently in active development with basic functionality implemented. The core research cycle is working, and agents can successfully generate, evaluate, and refine hypotheses. Work is ongoing to implement advanced features and improve robustness.
 
-MIT License - See LICENSE file for details 
+### Next Steps
+
+1. 🔄 Implement proper cycle termination conditions
+2. 💾 Add persistent memory across research cycles
+3. 🔬 Develop automated experiment design
+4. 🤝 Enable multi-agent collaboration
+5. 📈 Implement comprehensive metrics and validation 
