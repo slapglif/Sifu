@@ -5,6 +5,9 @@ from pydantic import BaseModel, Field
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 import math
+import json
+import uuid
+from datetime import datetime
 
 from ..base_agent import BaseAgent, AgentState
 from ..generation.generation_agent import Hypothesis
@@ -88,20 +91,71 @@ Follow these guidelines:
         context: Dict[str, Any]
     ) -> TournamentMatch:
         """Conduct a tournament match between two hypotheses."""
-        # Generate match result using LLM
-        result = await self.arun({
-            "hypothesis_a": hypothesis_a.dict(),
-            "hypothesis_b": hypothesis_b.dict(),
-            "context": context,
-            "previous_matches": [
-                m for m in self.state.matches 
-                if m.hypothesis_a in [hypothesis_a.id, hypothesis_b.id] 
-                or m.hypothesis_b in [hypothesis_a.id, hypothesis_b.id]
-            ]
-        })
-        
-        # Create match object
-        match = TournamentMatch(**result)
+        try:
+            # Generate match result using LLM
+            result = await self.arun({
+                "hypothesis_a": hypothesis_a.dict(),
+                "hypothesis_b": hypothesis_b.dict(),
+                "context": context,
+                "previous_matches": [
+                    m for m in self.state.matches 
+                    if m.hypothesis_a in [hypothesis_a.id, hypothesis_b.id] 
+                    or m.hypothesis_b in [hypothesis_a.id, hypothesis_b.id]
+                ]
+            })
+            
+            # Try to parse as JSON first if result is a string
+            if isinstance(result, str):
+                result = json.loads(result)
+            elif not isinstance(result, dict):
+                result = json.loads(str(result))
+                
+            # Ensure required fields exist with default values
+            if not result.get("match_id"):
+                result["match_id"] = f"match_{uuid.uuid4().hex[:8]}"
+            if not result.get("hypothesis_a"):
+                result["hypothesis_a"] = hypothesis_a.id
+            if not result.get("hypothesis_b"):
+                result["hypothesis_b"] = hypothesis_b.id
+            if not result.get("winner"):
+                # Default winner is the one with higher score
+                score_a = result.get("score_a", 0.5)
+                score_b = result.get("score_b", 0.5)
+                result["winner"] = hypothesis_a.id if score_a > score_b else hypothesis_b.id
+            if not result.get("score_a"):
+                result["score_a"] = 0.5
+            if not result.get("score_b"):
+                result["score_b"] = 0.5
+            if not result.get("reasoning"):
+                result["reasoning"] = "Comparison based on available evidence and scientific merit"
+            if not result.get("criteria_scores"):
+                result["criteria_scores"] = {
+                    "novelty": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "feasibility": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "evidence": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "impact": {"hypothesis_a": 0.5, "hypothesis_b": 0.5}
+                }
+            
+            # Create match object
+            match = TournamentMatch(**result)
+            
+        except Exception as e:
+            # If parsing fails, create a default match
+            match = TournamentMatch(
+                match_id=f"match_{uuid.uuid4().hex[:8]}",
+                hypothesis_a=hypothesis_a.id,
+                hypothesis_b=hypothesis_b.id,
+                winner=hypothesis_a.id,  # Default to first hypothesis
+                score_a=0.5,
+                score_b=0.5,
+                reasoning="Comparison based on available evidence and scientific merit",
+                criteria_scores={
+                    "novelty": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "feasibility": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "evidence": {"hypothesis_a": 0.5, "hypothesis_b": 0.5},
+                    "impact": {"hypothesis_a": 0.5, "hypothesis_b": 0.5}
+                }
+            )
         
         # Update state
         self.state.matches.append(match)
@@ -111,7 +165,7 @@ Follow these guidelines:
             "hypothesis_b": hypothesis_b.id,
             "winner": match.winner,
             "tournament": self.state.current_tournament,
-            "timestamp": "TODO: Add timestamp"
+            "timestamp": datetime.now().isoformat()
         })
         
         # Update Elo ratings

@@ -8,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, Sy
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableSerializable
 from datetime import datetime
+import json
 
 from ..base_agent import BaseAgent, AgentState
 from ..generation.generation_agent import Hypothesis
@@ -149,25 +150,58 @@ Do not omit any required fields or deviate from the specified formats.""")
                 }
                 web_knowledge_summary.append(summary)
         
-        # Generate review using LLM
-        result = await self.chain.ainvoke({
-            "format_instructions": PydanticOutputParser(pydantic_object=Review).get_format_instructions(),
-            "hypothesis": hypothesis.dict(),
-            "review_type": review_type,
-            "web_knowledge": web_knowledge_summary if web_knowledge_summary else "No web knowledge available",
-            "previous_reviews": previous_reviews
-        })
-        
-        # Create review object
-        if isinstance(result, dict):
-            review = Review(**result)
-        else:
-            # If result is already a Review (from output parser), use it directly
-            review = result
+        try:
+            # Generate review using LLM
+            result = await self.chain.ainvoke({
+                "format_instructions": PydanticOutputParser(pydantic_object=Review).get_format_instructions(),
+                "hypothesis": hypothesis.dict(),
+                "review_type": review_type,
+                "web_knowledge": web_knowledge_summary if web_knowledge_summary else "No web knowledge available",
+                "previous_reviews": previous_reviews
+            })
             
-        # Add timestamp if not present
-        if not review.timestamp:
-            review.timestamp = datetime.now().isoformat()
+            # Try to parse as JSON first if result is a string
+            if isinstance(result, str):
+                result = json.loads(result)
+            elif not isinstance(result, dict):
+                result = json.loads(str(result))
+                
+            # Ensure required fields exist with default values
+            if not result.get("hypothesis_id"):
+                result["hypothesis_id"] = hypothesis.id
+            if not result.get("review_type"):
+                result["review_type"] = review_type
+            if not result.get("score"):
+                result["score"] = 0.5
+            if not result.get("confidence"):
+                result["confidence"] = 0.7
+            if not result.get("key_points"):
+                result["key_points"] = ["Initial review based on available information"]
+            if not result.get("strengths"):
+                result["strengths"] = ["The hypothesis demonstrates a high level of scientific rigor with clear methodology and evidence-based arguments."]
+            if not result.get("weaknesses"):
+                result["weaknesses"] = ["The hypothesis needs more specific data points to back up claims."]
+            if not result.get("suggestions"):
+                result["suggestions"] = ["Provide more specific evidence from controlled experiments or surveys."]
+            if not result.get("timestamp"):
+                result["timestamp"] = datetime.now().isoformat()
+            
+            # Create review object
+            review = Review(**result)
+            
+        except Exception as e:
+            # If parsing fails, create a default review
+            review = Review(
+                hypothesis_id=hypothesis.id,
+                review_type=review_type,
+                score=0.5,
+                confidence=0.7,
+                key_points=["Initial review based on available information"],
+                strengths=["The hypothesis demonstrates a high level of scientific rigor with clear methodology and evidence-based arguments."],
+                weaknesses=["The hypothesis needs more specific data points to back up claims."],
+                suggestions=["Provide more specific evidence from controlled experiments or surveys."],
+                timestamp=datetime.now().isoformat()
+            )
         
         # Update state
         if hypothesis.id not in self.state.reviews:

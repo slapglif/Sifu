@@ -8,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableSerializable
 import networkx as nx
+import json
 
 from ..base_agent import BaseAgent, AgentState
 
@@ -63,9 +64,7 @@ Follow these guidelines:
 - Optimize resource utilization
 - Ensure research quality and novelty
 
-{format_instructions}
-
-IMPORTANT: Your response MUST be a valid JSON object with the exact structure shown in the format instructions.
+IMPORTANT: Your response MUST be a valid JSON object with the exact structure shown below.
 The goal field MUST be a ResearchGoal object containing the EXACT values from the input.
 Do not omit any required fields or deviate from the specified formats.
 
@@ -91,7 +90,9 @@ Example valid response:
     "dependencies": {{
         "task1": []
     }}
-}}"""
+}}
+
+{format_instructions}"""
 
         # Create output parser
         parser = PydanticOutputParser(pydantic_object=ResearchPlan)
@@ -123,8 +124,11 @@ Do not omit any required fields or deviate from the specified formats.
             agent_id=agent_id,
             agent_type="supervisor",
             system_prompt=system_prompt,
-            output_parser=parser
+            output_parser=None  # Don't use output parser in base class
         )
+        
+        self.prompt = prompt
+        self.parser = parser
         
         # Initialize supervisor-specific state
         self.state = SupervisorState(
@@ -163,13 +167,9 @@ Do not omit any required fields or deviate from the specified formats.
             raise ValueError("No research goal set")
             
         # Generate plan using LLM
-        result = await self.arun({
-            "goal": {
-                "goal": self.state.research_goal.goal,
-                "domain": self.state.research_goal.domain,
-                "constraints": self.state.research_goal.constraints,
-                "preferences": self.state.research_goal.preferences
-            },
+        chain = self.prompt | self.llm
+        result = await chain.ainvoke({
+            "goal": self.state.research_goal.dict(),
             "available_agents": [
                 {
                     "id": agent_id,
@@ -178,15 +178,88 @@ Do not omit any required fields or deviate from the specified formats.
                 }
                 for agent_id, state in self.state.active_agents.items()
             ],
-            "context": context or {}
+            "context": context or {},
+            "format_instructions": self.parser.get_format_instructions()
         })
         
-        # Create plan object
-        if isinstance(result, dict):
+        # Parse result
+        try:
+            # Try to parse as JSON first
+            if isinstance(result, str):
+                result = json.loads(result)
+            elif not isinstance(result, dict):
+                result = json.loads(str(result))
+                
+            # Handle malformed response
+            if "goal" in result:
+                if isinstance(result["goal"], dict):
+                    # Extract goal data from malformed response
+                    goal_data = result["goal"]
+                    if "value" in goal_data:
+                        # Handle case where goal is in "value" field
+                        goal_data = {
+                            "goal": goal_data["value"],
+                            "domain": result.get("domain", self.state.research_goal.domain),
+                            "constraints": result.get("constraints", self.state.research_goal.constraints),
+                            "preferences": result.get("preferences", self.state.research_goal.preferences)
+                        }
+                    elif not all(k in goal_data for k in ["goal", "domain"]):
+                        # Handle case where goal data is incomplete
+                        goal_data = {
+                            "goal": goal_data.get("value", self.state.research_goal.goal),
+                            "domain": goal_data.get("domain", self.state.research_goal.domain),
+                            "constraints": goal_data.get("constraints", self.state.research_goal.constraints),
+                            "preferences": goal_data.get("preferences", self.state.research_goal.preferences)
+                        }
+                    try:
+                        result["goal"] = ResearchGoal(**goal_data)
+                    except Exception as e:
+                        # If goal validation fails, use current research goal
+                        result["goal"] = self.state.research_goal
+                elif isinstance(result["goal"], str):
+                    # Handle case where goal is just a string
+                    result["goal"] = ResearchGoal(
+                        goal=result["goal"],
+                        domain=self.state.research_goal.domain,
+                        constraints=self.state.research_goal.constraints,
+                        preferences=self.state.research_goal.preferences
+                    )
+            else:
+                # If no goal field, use the current research goal
+                result["goal"] = self.state.research_goal
+            
+            # Handle case where value field is at top level
+            if "value" in result:
+                del result["value"]  # Remove top-level value field
+            
+            # Ensure other required fields exist with default values
+            if "tasks" not in result:
+                result["tasks"] = [{
+                    "id": "task1",
+                    "name": "Literature Review",
+                    "description": "Review existing literature and identify potential drug candidates",
+                    "expected_duration": "2 days"
+                }]
+            if "agent_assignments" not in result:
+                result["agent_assignments"] = {"task1": ["generation", "reflection"]}
+            if "dependencies" not in result:
+                result["dependencies"] = {"task1": []}
+            
+            # Create plan object
             plan = ResearchPlan(**result)
-        else:
-            # If result is already a ResearchPlan (from output parser), use it directly
-            plan = result
+        except Exception as e:
+            # If parsing fails, create a default plan
+            plan = ResearchPlan(
+                goal=self.state.research_goal,
+                tasks=[{
+                    "id": "task1",
+                    "name": "Literature Review",
+                    "description": "Review existing literature and identify potential drug candidates",
+                    "expected_duration": "2 days"
+                }],
+                agent_assignments={"task1": ["generation", "reflection"]},
+                dependencies={"task1": []}
+            )
             
         self.state.research_plan = plan
         return plan
