@@ -82,21 +82,30 @@ Use the web knowledge to inform your hypothesis generation. Each web source cont
 - summary: Brief summary
 - metadata: Additional metadata
 
-Your response MUST include ALL of the following fields:
-1. id: A unique identifier for the hypothesis
-2. statement: A clear hypothesis statement
-3. rationale: Detailed reasoning behind the hypothesis
-4. evidence: List of supporting evidence points
-5. novelty_score: A number between 0 and 1
-6. feasibility_score: A number between 0 and 1
-7. assumptions: List of key assumptions
-8. testability: Object with methods, required_resources, and estimated_duration
-9. references: List of literature references
+Your response MUST include ALL of the following fields in the exact format specified:
+1. id: A unique identifier string for the hypothesis
+2. statement: A clear hypothesis statement string
+3. rationale: Detailed reasoning string behind the hypothesis
+4. evidence: Array of strings, each string being a complete evidence point (e.g., ["Evidence 1: description", "Evidence 2: description"])
+5. novelty_score: A number between 0 and 1 (e.g., 0.85)
+6. feasibility_score: A number between 0 and 1 (e.g., 0.75)
+7. assumptions: Array of strings, each string being a complete assumption (e.g., ["Assumption 1: description", "Assumption 2: description"])
+8. testability: Object with these exact fields:
+   - methods: Array of strings
+   - required_resources: Array of strings
+   - estimated_duration: String
+9. references: Array of strings, each string being a complete reference (e.g., ["Author et al. (2023) Title, Journal", "Author et al. (2022) Title, Journal"])
 
-Generate a single, well-formed hypothesis that follows the required format.
+Example evidence format:
+"Evidence 1: Studies have shown that drug X affects pathway Y in AML cells (Author et al., 2023)"
+
+Example assumption format:
+"Assumption 1: The identified molecular pathways are conserved across different AML subtypes"
+
+Generate a single, well-formed hypothesis that follows the required format exactly.
 Focus on drug repurposing opportunities for treating the specified condition.
 Ensure the hypothesis is novel, testable, and grounded in the available literature.
-Do not omit any required fields.""")
+Do not omit any required fields or deviate from the specified formats.""")
         ])
 
         super().__init__(
