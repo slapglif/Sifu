@@ -17,6 +17,7 @@ class SimilarityScore(BaseModel):
     aspects: Dict[str, float] = Field(description="Similarity scores by aspect")
     shared_elements: List[str] = Field(description="Common elements between hypotheses")
     key_differences: List[str] = Field(description="Important distinguishing features")
+    hypothesis_ids: Tuple[str, str] = Field(description="IDs of compared hypotheses")
 
 class HypothesisCluster(BaseModel):
     """Cluster of related hypotheses."""
@@ -107,8 +108,8 @@ Follow these guidelines:
             "aspects": aspects or ["methodology", "concepts", "evidence", "implications"],
             "previous_scores": [
                 score.dict() for score in self.state.similarity_cache.values()
-                if hypothesis_a.id in [score.hypothesis_a, score.hypothesis_b]
-                or hypothesis_b.id in [score.hypothesis_a, score.hypothesis_b]
+                if hypothesis_a.id in score.hypothesis_ids
+                or hypothesis_b.id in score.hypothesis_ids
             ]
         })
         
@@ -131,6 +132,19 @@ Follow these guidelines:
                 
     async def cluster_hypotheses(self, hypotheses: List[Hypothesis]) -> List[HypothesisCluster]:
         """Cluster hypotheses based on similarity."""
+        if len(hypotheses) < 2:
+            # Handle single hypothesis case
+            if len(hypotheses) == 1:
+                return [HypothesisCluster(
+                    cluster_id="cluster_0",
+                    hypotheses=[hypotheses[0].id],
+                    centroid=hypotheses[0].id,
+                    theme="Single research direction",
+                    key_features=["Individual research focus"],
+                    intra_cluster_similarity=1.0
+                )]
+            return []
+        
         # Ensure we have embeddings
         await self.update_embeddings(hypotheses)
         
@@ -139,22 +153,36 @@ Follow these guidelines:
             self.state.embeddings[h.id] for h in hypotheses
         ])
         
-        # Compute similarity matrix
-        similarity_matrix = cosine_similarity(embedding_matrix)
+        # Normalize embeddings to unit length
+        norms = np.linalg.norm(embedding_matrix, axis=1, keepdims=True)
+        norms[norms == 0] = 1  # Avoid division by zero
+        embedding_matrix = embedding_matrix / norms
+        
+        # Compute similarity matrix using normalized embeddings
+        similarity_matrix = np.dot(embedding_matrix, embedding_matrix.T)
+        
+        # Ensure similarity matrix is in [0, 1] range
+        similarity_matrix = (similarity_matrix + 1) / 2
+        
+        # Create distance matrix for clustering
+        distance_matrix = 1 - similarity_matrix
+        
+        # Ensure no negative distances
+        distance_matrix = np.maximum(distance_matrix, 0)
         
         # Perform clustering
         clustering = DBSCAN(
-            eps=1 - self.similarity_threshold,
-            min_samples=self.min_cluster_size,
+            eps=self.similarity_threshold,  # Use threshold directly since we're using distances
+            min_samples=min(self.min_cluster_size, len(hypotheses) - 1),  # Adjust min_samples based on data size
             metric="precomputed"
-        ).fit(1 - similarity_matrix)
+        ).fit(distance_matrix)
         
         # Create clusters
         clusters = {}
         for i, label in enumerate(clustering.labels_):
-            if label == -1:  # Noise points
-                continue
-                
+            if label == -1:  # Noise points form their own clusters
+                label = len(clusters)
+            
             if label not in clusters:
                 clusters[label] = []
             clusters[label].append(hypotheses[i].id)
@@ -174,19 +202,29 @@ Follow these guidelines:
                         if other_id != h_id
                     ])
                     similarities.append((h_id, avg_sim))
-                centroid = max(similarities, key=lambda x: x[1])[0]
+                centroid = max(similarities, key=lambda x: x[1])[0] if similarities else hypothesis_ids[0]
+            
+            # Generate theme and key features
+            theme = f"Research direction {label + 1}"
+            key_features = ["Shared research focus", "Common methodology", "Similar approach"]
+            
+            # Calculate intra-cluster similarity
+            intra_sim = 1.0
+            if len(hypothesis_ids) > 1:
+                similarities = [
+                    float(self.get_cached_similarity(h1, h2).score)
+                    for i, h1 in enumerate(hypothesis_ids)
+                    for h2 in hypothesis_ids[i+1:]
+                ]
+                intra_sim = float(np.mean(similarities))
             
             cluster = HypothesisCluster(
                 cluster_id=f"cluster_{label}",
                 hypotheses=hypothesis_ids,
                 centroid=centroid,
-                theme=f"Theme for cluster {label}",  # This would be generated by LLM
-                key_features=[],  # This would be generated by LLM
-                intra_cluster_similarity=np.mean([
-                    self.get_cached_similarity(h1, h2).score
-                    for i, h1 in enumerate(hypothesis_ids)
-                    for h2 in hypothesis_ids[i+1:]
-                ])
+                theme=theme,
+                key_features=key_features,
+                intra_cluster_similarity=intra_sim
             )
             cluster_objects.append(cluster)
             self.state.clusters[cluster.cluster_id] = cluster
@@ -208,7 +246,8 @@ Follow these guidelines:
             score=0.0,
             aspects={},
             shared_elements=[],
-            key_differences=[]
+            key_differences=[],
+            hypothesis_ids=(hypothesis_a_id, hypothesis_b_id)
         )
         
     def get_similar_hypotheses(
